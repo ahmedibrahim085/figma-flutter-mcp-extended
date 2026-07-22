@@ -385,6 +385,7 @@ function detectFooter(node: FigmaNode): boolean {
     });
 }
 
+
 /**
  * Detect whether the screen needs to own the runtime top safe-area inset
  * (i.e. no App Bar is present to absorb it).

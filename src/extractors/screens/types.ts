@@ -49,6 +49,7 @@ export interface ScreenLayoutInfo extends LayoutInfo {
     };
 }
 
+
 /**
  * Screen-owned runtime safe-area evidence.
  */

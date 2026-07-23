@@ -4,6 +4,7 @@ import type { DeduplicatedComponentAnalysis } from '../../../extractors/componen
 import { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
 import { generateComponentVisualContext } from '../visual-context.js';
 import type { ComponentAnalysis } from '../../../extractors/components/types.js';
+import { formatComponentProperties } from '../../../utils/component-properties.js';
 
 export function generateDeduplicatedReport(analysis: DeduplicatedComponentAnalysis): string {
   let output = `Component Analysis (Deduplicated)\n\n`;
@@ -82,7 +83,7 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   
   // Add child widget structure
   if (analysis.children.length > 0) {
-    const containerWidget = analysis.layoutDirection === 'horizontal' ? 'Row' : 'Column';
+    const containerWidget = analysis.layout.direction === 'horizontal' ? 'Row' : 'Column';
     implementation += `      child: ${containerWidget}(\n`;
     implementation += `        children: [\n`;
 
@@ -132,10 +133,21 @@ export function generateComprehensiveDeduplicatedReport(
   output += `   • Name: ${analysis.metadata.name}\n`;
   output += `   • Type: ${analysis.metadata.type}\n`;
   output += `   • Node ID: ${analysis.metadata.nodeId}\n`;
+  output += `   • Size: ${Math.round(analysis.layout.dimensions.width)}×${Math.round(analysis.layout.dimensions.height)}px\n`;
+  if (analysis.layout.sizingHorizontal) {
+    output += `   • Horizontal sizing: ${analysis.layout.sizingHorizontal}\n`;
+  }
+  if (analysis.layout.sizingVertical) {
+    output += `   • Vertical sizing: ${analysis.layout.sizingVertical}\n`;
+  }
+  if (analysis.layout.layoutAlign) {
+    output += `   • Parent alignment: ${analysis.layout.layoutAlign}\n`;
+  }
   if (analysis.metadata.componentKey) {
     output += `   • Component Key: ${analysis.metadata.componentKey}\n`;
   }
   output += `\n`;
+  output += formatComponentProperties(analysis.metadata.componentProperties);
 
   // Style references with usage information
   if (Object.keys(analysis.styleRefs).length > 0) {
@@ -164,6 +176,17 @@ export function generateComprehensiveDeduplicatedReport(
       
       if (child.textContent) {
         output += `      📝 Text: "${child.textContent}"\n`;
+      }
+
+      output += `      📐 Size: ${Math.round(child.layout.dimensions.width)}×${Math.round(child.layout.dimensions.height)}px\n`;
+      if (child.layout.sizingHorizontal) {
+        output += `      📐 Horizontal sizing: ${child.layout.sizingHorizontal}\n`;
+      }
+      if (child.layout.sizingVertical) {
+        output += `      📐 Vertical sizing: ${child.layout.sizingVertical}\n`;
+      }
+      if (child.layout.layoutAlign) {
+        output += `      📐 Parent alignment: ${child.layout.layoutAlign}\n`;
       }
       
       if (child.styleRefs.length > 0) {
@@ -258,15 +281,7 @@ export function addVisualContextToDeduplicatedReport(
   // Convert deduplicated analysis to component analysis format for visual context
   const componentAnalysis: ComponentAnalysis = {
     metadata: analysis.metadata,
-    layout: {
-      type: 'auto-layout', // Default assumption
-      dimensions: { width: 400, height: 200 }, // Default dimensions
-      direction: analysis.layoutDirection,
-      spacing: undefined,
-      padding: undefined,
-      alignItems: undefined,
-      justifyContent: undefined
-    },
+    layout: analysis.layout,
     styling: {
       fills: [],
       strokes: [],
@@ -281,11 +296,7 @@ export function addVisualContextToDeduplicatedReport(
       isNestedComponent: false,
       visualImportance: 5,
       basicInfo: {
-        layout: { 
-          type: 'auto-layout',
-          dimensions: { width: 100, height: 50 },
-          direction: 'vertical'
-        },
+        layout: child.layout,
         styling: { 
           fills: [], 
           strokes: [], 

@@ -13,6 +13,7 @@ import {
     generateSvgAssetConstants
 } from "./asset-manager.js";
 import {Logger} from "../../../utils/logger.js";
+import {isEffectivelyVisible} from "../../../utils/visibility.js";
 
 export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
     // Tool: Export SVG Flutter Assets
@@ -145,6 +146,18 @@ async function filterSvgNodes(fileId: string, targetNodeIds: string[], figmaServ
     for (const nodeId of targetNodeIds) {
         const node = targetNodes[nodeId];
         if (!node) continue;
+
+        // Skip hidden nodes / empty slots that only wrap hidden icons
+        if (!isEffectivelyVisible(node)) {
+            analysisResults.push({
+                id: nodeId,
+                name: node.name,
+                type: node.type,
+                vectorPercentage: 0,
+                isSvg: false
+            });
+            continue;
+        }
 
         // Calculate vector percentage for analysis
         let vectorPercentage = 0;

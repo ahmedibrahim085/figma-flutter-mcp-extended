@@ -9,7 +9,8 @@ import {
   extractLayoutInfo, 
   extractMetadata,
   extractTextInfo,
-  createNestedComponentInfo
+  createNestedComponentInfo,
+  isComponentNode
 } from './extractor.js';
 import type {
   ComponentMetadata,
@@ -18,10 +19,11 @@ import type {
   NestedComponentInfo,
   TextInfo
 } from './types.js';
+import { isEffectivelyVisible } from '../../utils/visibility.js';
 
 export interface DeduplicatedComponentAnalysis {
   metadata: ComponentMetadata;
-  layoutDirection: 'horizontal' | 'vertical';
+  layout: LayoutInfo;
   styleRefs: Record<string, string>;
   children: DeduplicatedComponentChild[];
   nestedComponents: NestedComponentInfo[];
@@ -33,6 +35,7 @@ export interface DeduplicatedComponentChild {
   name: string;
   type: string;
   styleRefs: string[];
+  layout: LayoutInfo;
   semanticType?: string;
   textContent?: string;
 }
@@ -77,7 +80,7 @@ export class DeduplicatedComponentExtractor {
     
     const result: DeduplicatedComponentAnalysis = {
       metadata,
-      layoutDirection: layout.direction === 'horizontal' ? 'horizontal' : 'vertical',
+      layout,
       styleRefs,
       children,
       nestedComponents
@@ -96,10 +99,10 @@ export class DeduplicatedComponentExtractor {
     const children: DeduplicatedComponentChild[] = [];
     
     for (const child of node.children) {
-      // Figma REST omits `visible` for visible layers (only sends `visible: false`).
-      if (child.visible === false) continue;
-      
+      if (!isEffectivelyVisible(child)) continue;
+
       const childStyleRefs: string[] = [];
+      const childLayout = extractLayoutInfo(child);
       
       // Extract child styling using enhanced global style manager
       const childStyling = extractStylingInfo(child);
@@ -137,6 +140,7 @@ export class DeduplicatedComponentExtractor {
         name: child.name,
         type: child.type,
         styleRefs: childStyleRefs,
+        layout: childLayout,
         semanticType: this.detectSemanticType(child),
         textContent
       });
@@ -171,7 +175,8 @@ export class DeduplicatedComponentExtractor {
     const nestedComponents: NestedComponentInfo[] = [];
     
     for (const child of node.children) {
-      if (child.type === 'COMPONENT' || child.type === 'INSTANCE' || child.type === 'COMPONENT_SET') {
+      if (!isEffectivelyVisible(child)) continue;
+      if (isComponentNode(child)) {
         nestedComponents.push(createNestedComponentInfo(child));
       }
     }

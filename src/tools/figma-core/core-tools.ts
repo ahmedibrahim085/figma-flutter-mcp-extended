@@ -6,6 +6,7 @@
 import {z} from 'zod';
 import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {FigmaService} from '../../services/figma.js';
+import {Logger} from '../../utils/logger.js';
 import fetch from 'node-fetch';
 
 // ────────────────────────────────────────────────────────────
@@ -434,5 +435,5 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
         },
     );
 
-    console.log('📋 Registered core Figma tools: ff_get_metadata, ff_get_screenshot, ff_get_design_context, ff_get_variable_defs, ff_whoami');
+    Logger.diag('📋 Registered core Figma tools: ff_get_metadata, ff_get_screenshot, ff_get_design_context, ff_get_variable_defs, ff_whoami');
 }

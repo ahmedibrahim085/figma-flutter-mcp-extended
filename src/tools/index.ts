@@ -4,6 +4,7 @@ import {registerFlutterTools} from "./flutter/index.js";
 import {registerThemeTools} from "./flutter/theme/colors/theme-tool.js";
 import {registerTypographyTools} from "./flutter/theme/typography/typography-tool.js";
 import {registerCoreTools} from "./figma-core/core-tools.js";
+import {Logger} from "../utils/logger.js";
 
 export function registerAllTools(server: McpServer, figmaApiKey: string) {
     console.error('🛠️ Tools Debug - Starting tool registration...');
@@ -22,12 +23,12 @@ export function registerAllTools(server: McpServer, figmaApiKey: string) {
     registerTypographyTools(server, figmaApiKey);
     console.error('🛠️ Tools Debug - Typography tools registered');
 
-    console.log("📋 Registered tool categories:");
-    console.log("  🔑 Core tools - ff_get_metadata, ff_get_screenshot, ff_get_design_context, ff_get_variable_defs");
-    console.log("  🚀 Flutter tools - Widgets, Screens");
-    console.log("  🏞️ Export assets - Images, SVGs");
-    console.log("  🎨 Theme tools - Colors, Typography");
-    console.log("  📝 Typography tools - Fonts, Sizes");
+    Logger.diag("📋 Registered tool categories:");
+    Logger.diag("  🔑 Core tools - ff_get_metadata, ff_get_screenshot, ff_get_design_context, ff_get_variable_defs");
+    Logger.diag("  🚀 Flutter tools - Widgets, Screens");
+    Logger.diag("  🏞️ Export assets - Images, SVGs");
+    Logger.diag("  🎨 Theme tools - Colors, Typography");
+    Logger.diag("  📝 Typography tools - Fonts, Sizes");
 
     console.error('🛠️ Tools Debug - All tools registration complete');
 }

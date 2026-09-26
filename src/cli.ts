@@ -1,9 +1,11 @@
 #!/usr/bin/env node
 import {getServerConfig} from './config.js';
 import {startMcpServer, startHttpServer} from './server.js';
+import {Logger} from './utils/logger.js';
 
 async function startServer(): Promise<void> {
     const config = getServerConfig();
+    Logger.configureMode(config.isStdioMode);
 
     if (config.isStdioMode) {
         await startMcpServer(config.figmaApiKey!);

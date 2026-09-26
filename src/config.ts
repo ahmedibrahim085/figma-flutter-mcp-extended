@@ -102,8 +102,10 @@ export function getServerConfig(): ServerConfig {
         envFileSource = "default";
     }
 
-    // Load .env file with override if custom path provided
-    loadEnv({path: envFilePath, override: !!argv.env});
+    // Load .env file with override if custom path provided.
+    // quiet: stdio mode's stdout is the JSON-RPC channel, so dotenv's own
+    // startup banner (which it prints to stdout) must not appear there.
+    loadEnv({path: envFilePath, override: !!argv.env, quiet: !!argv.stdio});
 
     const config: ServerConfig = {
         figmaApiKey: undefined,

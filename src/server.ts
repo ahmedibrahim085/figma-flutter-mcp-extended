@@ -11,7 +11,7 @@ import { Logger } from "./utils/logger.js";
 
 export function createServer(figmaApiKey: string) {
     const server = new McpServer({
-        name: "figma-flutter-mcp",
+        name: "figma-flutter",
         version: process.env.npm_package_version || "0.0.1"
     });
 

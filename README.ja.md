@@ -97,9 +97,9 @@ FIGMA API KEY を用意したら、Cursor で MCP を次の手順で設定しま
 ```
 {
   "mcpServers": {
-    "Figma Flutter MCP": {
+    "Figma Flutter": {
       "command": "npx",
-      "args": ["-y", "figma-flutter-mcp", "--figma-api-key=YOUR-API-KEY", "--stdio"]
+      "args": ["-y", "figma-flutter", "--figma-api-key=YOUR-API-KEY", "--stdio"]
     }
   }
 }
@@ -108,9 +108,9 @@ FIGMA API KEY を用意したら、Cursor で MCP を次の手順で設定しま
 ```
 {
   "mcpServers": {
-    "Figma Flutter MCP": {
+    "Figma Flutter": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "figma-flutter-mcp", "--figma-api-key=YOUR-API-KEY", "--stdio"]
+      "args": ["/c", "npx", "-y", "figma-flutter", "--figma-api-key=YOUR-API-KEY", "--stdio"]
     }
   }
 }
@@ -130,8 +130,8 @@ FIGMA API KEY を用意したら、Cursor で MCP を次の手順で設定しま
 #### 1. リポジトリのクローン
 ```
 # プロジェクトをクローン/ダウンロード
-git clone <your-repo-url> figma-flutter-mcp
-cd figma-flutter-mcp
+git clone <your-repo-url> figma-flutter
+cd figma-flutter
 
 # 依存関係のインストール
 npm install
@@ -142,10 +142,10 @@ npm install
 ```
 {
   "mcpServers": {
-    "figma-flutter-mcp": {
+    "figma-flutter": {
       "command": "node",
       "args": [
-        "/Path/to/figma-flutter-mcp/dist/server.mjs",
+        "/Path/to/figma-flutter/dist/server.mjs",
         "--figma-api-key=YOUR_API_KEY",
         "--stdio"
       ]
@@ -157,10 +157,10 @@ npm install
 ```
 {
   "mcpServers": {
-    "figma-flutter-mcp": {
+    "figma-flutter": {
       "command": "node",
       "args": [
-        "/Path/to/figma-flutter-mcp/dist/server.mjs",
+        "/Path/to/figma-flutter/dist/server.mjs",
         "--figma-api-key=YOUR_API_KEY",
         "--stdio"
       ]

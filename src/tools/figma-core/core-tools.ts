@@ -69,9 +69,9 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
         'Content-Type': 'application/json',
     };
 
-    // ── get_metadata ──────────────────────────────────────
+    // ── ff_get_metadata ──────────────────────────────────────
     server.registerTool(
-        'get_metadata',
+        'ff_get_metadata',
         {
             title: 'Get Figma File Metadata',
             description:
@@ -132,14 +132,14 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
 
                 return {content: [{type: 'text' as const, text: JSON.stringify(result, null, 2)}]};
             } catch (err: any) {
-                return {content: [{type: 'text' as const, text: `get_metadata error: ${err.message}`}]};
+                return {content: [{type: 'text' as const, text: `ff_get_metadata error: ${err.message}`}]};
             }
         },
     );
 
-    // ── get_screenshot ────────────────────────────────────
+    // ── ff_get_screenshot ────────────────────────────────────
     server.registerTool(
-        'get_screenshot',
+        'ff_get_screenshot',
         {
             title: 'Get Figma Node Screenshot',
             description:
@@ -207,21 +207,21 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     ],
                 };
             } catch (err: any) {
-                return {content: [{type: 'text' as const, text: `get_screenshot error: ${err.message}`}]};
+                return {content: [{type: 'text' as const, text: `ff_get_screenshot error: ${err.message}`}]};
             }
         },
     );
 
-    // ── get_design_context ────────────────────────────────
+    // ── ff_get_design_context ────────────────────────────────
     server.registerTool(
-        'get_design_context',
+        'ff_get_design_context',
         {
             title: 'Get Figma Design Context',
             description:
                 'Extract the full design context for a Figma node: layout tree, component structure, ' +
                 'styles, text content, and design properties. This is the primary tool for understanding ' +
                 'what a screen or component looks like and how it is structured. ' +
-                'Prefer this over separate get_screenshot + get_variable_defs calls (1 call vs 2).',
+                'Prefer this over separate ff_get_screenshot + ff_get_variable_defs calls (1 call vs 2).',
             inputSchema: {
                 fileKey: z.string().describe('Figma file key'),
                 nodeId: z.string().describe('Node ID to extract (e.g. "12:3458")'),
@@ -297,14 +297,14 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
 
                 return {content: [{type: 'text' as const, text: json}]};
             } catch (err: any) {
-                return {content: [{type: 'text' as const, text: `get_design_context error: ${err.message}`}]};
+                return {content: [{type: 'text' as const, text: `ff_get_design_context error: ${err.message}`}]};
             }
         },
     );
 
-    // ── get_variable_defs ─────────────────────────────────
+    // ── ff_get_variable_defs ─────────────────────────────────
     server.registerTool(
-        'get_variable_defs',
+        'ff_get_variable_defs',
         {
             title: 'Get Figma Variable Definitions',
             description:
@@ -393,14 +393,14 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
 
                 return {content: [{type: 'text' as const, text: json}]};
             } catch (err: any) {
-                return {content: [{type: 'text' as const, text: `get_variable_defs error: ${err.message}`}]};
+                return {content: [{type: 'text' as const, text: `ff_get_variable_defs error: ${err.message}`}]};
             }
         },
     );
 
-    // ── whoami ──────────────────────────────────────────────
+    // ── ff_whoami ──────────────────────────────────────────────
     server.registerTool(
-        'whoami',
+        'ff_whoami',
         {
             title: 'Figma Who Am I',
             description:
@@ -429,10 +429,10 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     ],
                 };
             } catch (err: any) {
-                return {content: [{type: 'text' as const, text: `whoami error: ${err.message}`}]};
+                return {content: [{type: 'text' as const, text: `ff_whoami error: ${err.message}`}]};
             }
         },
     );
 
-    console.log('📋 Registered core Figma tools: get_metadata, get_screenshot, get_design_context, get_variable_defs, whoami');
+    console.log('📋 Registered core Figma tools: ff_get_metadata, ff_get_screenshot, ff_get_design_context, ff_get_variable_defs, ff_whoami');
 }

@@ -28,9 +28,9 @@ First, you'll need a Figma access token:
 ```json
 {
   "mcpServers": {
-    "Figma Flutter MCP": {
+    "Figma Flutter": {
       "command": "npx",
-      "args": ["-y", "figma-flutter-mcp", "--figma-api-key=YOUR-API-KEY-HERE", "--stdio"]
+      "args": ["-y", "figma-flutter", "--figma-api-key=YOUR-API-KEY-HERE", "--stdio"]
     }
   }
 }
@@ -40,9 +40,9 @@ First, you'll need a Figma access token:
 ```json
 {
   "mcpServers": {
-    "Figma Flutter MCP": {
+    "Figma Flutter": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "figma-flutter-mcp", "--figma-api-key=YOUR-API-KEY-HERE", "--stdio"]
+      "args": ["/c", "npx", "-y", "figma-flutter", "--figma-api-key=YOUR-API-KEY-HERE", "--stdio"]
     }
   }
 }

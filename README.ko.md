@@ -89,9 +89,9 @@ FIGMA API KEY가 준비되면, Cursor에서 MCP를 다음과 같이 설정합니
 ```
 {
   "mcpServers": {
-    "Figma Flutter MCP": {
+    "Figma Flutter": {
       "command": "npx",
-      "args": ["-y", "figma-flutter-mcp", "--figma-api-key=YOUR-API-KEY", "--stdio"]
+      "args": ["-y", "figma-flutter", "--figma-api-key=YOUR-API-KEY", "--stdio"]
     }
   }
 }
@@ -100,9 +100,9 @@ FIGMA API KEY가 준비되면, Cursor에서 MCP를 다음과 같이 설정합니
 ```
 {
   "mcpServers": {
-    "Figma Flutter MCP": {
+    "Figma Flutter": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "figma-flutter-mcp", "--figma-api-key=YOUR-API-KEY", "--stdio"]
+      "args": ["/c", "npx", "-y", "figma-flutter", "--figma-api-key=YOUR-API-KEY", "--stdio"]
     }
   }
 }
@@ -122,8 +122,8 @@ FIGMA API KEY가 준비되면, Cursor에서 MCP를 다음과 같이 설정합니
 #### 1. 레포지토리 클론
 ```
 # 프로젝트 클론 또는 다운로드
-git clone <your-repo-url> figma-flutter-mcp
-cd figma-flutter-mcp
+git clone <your-repo-url> figma-flutter
+cd figma-flutter
 
 # 의존성 설치
 npm install
@@ -134,10 +134,10 @@ npm install
 ```
 {
   "mcpServers": {
-    "figma-flutter-mcp": {
+    "figma-flutter": {
       "command": "node",
       "args": [
-        "/Path/to/figma-flutter-mcp/dist/server.mjs",
+        "/Path/to/figma-flutter/dist/server.mjs",
         "--figma-api-key=YOUR_API_KEY",
         "--stdio"
       ]
@@ -149,10 +149,10 @@ npm install
 ```
 {
   "mcpServers": {
-    "figma-flutter-mcp": {
+    "figma-flutter": {
       "command": "node",
       "args": [
-        "/Path/to/figma-flutter-mcp/dist/server.mjs",
+        "/Path/to/figma-flutter/dist/server.mjs",
         "--figma-api-key=YOUR_API_KEY",
         "--stdio"
       ]

@@ -1,11 +1,11 @@
 {
-  "name": "figma-flutter-mcp",
+  "name": "figma-flutter",
   "version": "0.3.3",
   "description": "MCP server for Figma to Flutter conversion",
   "type": "module",
   "main": "dist/cli.js",
   "bin": {
-    "figma-flutter-mcp": "dist/cli.js"
+    "figma-flutter": "dist/cli.js"
   },
   "files": [
     "dist/**/*",

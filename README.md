@@ -93,9 +93,9 @@ Once you've the FIGMA API KEY, you can setup the MCP in cursor as follows:
 ```
 {
   "mcpServers": {
-    "Figma Flutter MCP": {
+    "Figma Flutter": {
       "command": "npx",
-      "args": ["-y", "figma-flutter-mcp", "--figma-api-key=YOUR-API-KEY", "--stdio"]
+      "args": ["-y", "figma-flutter", "--figma-api-key=YOUR-API-KEY", "--stdio"]
     }
   }
 }
@@ -104,9 +104,9 @@ Once you've the FIGMA API KEY, you can setup the MCP in cursor as follows:
 ```
 {
   "mcpServers": {
-    "Figma Flutter MCP": {
+    "Figma Flutter": {
       "command": "cmd",
-      "args": ["/c", "npx", "-y", "figma-flutter-mcp", "--figma-api-key=YOUR-API-KEY", "--stdio"]
+      "args": ["/c", "npx", "-y", "figma-flutter", "--figma-api-key=YOUR-API-KEY", "--stdio"]
     }
   }
 }
@@ -128,8 +128,8 @@ For quick local testing, you can run the server via HTTP instead of stdio:
 
 ```bash
 # Clone and setup
-git clone <your-repo-url> figma-flutter-mcp
-cd figma-flutter-mcp
+git clone <your-repo-url> figma-flutter
+cd figma-flutter
 npm install
 
 # Create .env file with your Figma API key

@@ -9,7 +9,7 @@ async function startServer(): Promise<void> {
         await startMcpServer(config.figmaApiKey!);
     } else if (config.isHttpMode) {
         if (config.isRemoteMode) {
-            console.log('Starting Figma Flutter MCP Server in REMOTE mode...');
+            console.log('Starting Figma Flutter Server in REMOTE mode...');
             if (config.figmaApiKey) {
                 console.log('✅ Server has fallback API key, but users can provide their own via:');
             } else {
@@ -20,11 +20,11 @@ async function startServer(): Promise<void> {
             console.log('  - figmaApiKey query parameter');
             console.log('📝 Get API key: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens');
         } else {
-            console.log('Starting Figma Flutter MCP Server in HTTP mode...');
+            console.log('Starting Figma Flutter Server in HTTP mode...');
         }
         await startHttpServer(config.httpPort, config.figmaApiKey);
     } else {
-        console.log('Starting Figma Flutter MCP Server...');
+        console.log('Starting Figma Flutter Server...');
         console.log('⚠️  You must provide your Figma API key via:');
         console.log('   • CLI argument: --figma-api-key=YOUR_KEY');
         console.log('   • Environment: FIGMA_API_KEY=YOUR_KEY in .env file');

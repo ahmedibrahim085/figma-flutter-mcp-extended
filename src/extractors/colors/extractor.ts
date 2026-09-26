@@ -33,8 +33,9 @@ export function extractColorsFromThemeFrame(frameNode: FigmaNode): ThemeColor[] 
  * Extract color from a single node (used by theme frame extraction)
  */
 function extractColorFromNode(node: FigmaNode): ThemeColor | null {
-    // Skip typography-related nodes
-    if (isTypographyNode(node)) {
+    // Skip typography-related nodes — but a node holding a swatch shape is a colour swatch even when
+    // its name is also a font-weight word ("Black", "Light", "Medium").
+    if (isTypographyNode(node) && !hasSwatchShape(node)) {
         return null;
     }
 
@@ -61,16 +62,8 @@ function extractColorFromNode(node: FigmaNode): ThemeColor | null {
  * Get color from node fills or child nodes
  */
 function getNodeColor(node: FigmaNode): string | null {
-    // Check node fills for solid color
-    if (node.fills && Array.isArray(node.fills)) {
-        for (const fill of node.fills) {
-            if (fill.type === 'SOLID' && fill.color && fill.visible !== false) {
-                return rgbaToHex(fill.color);
-            }
-        }
-    }
-
-    // Check children for color rectangles/frames
+    // Check children first: a swatch cell's own background (often white) is not the documented colour;
+    // the swatch inside it is.
     if (node.children) {
         for (const child of node.children) {
             if (child.type === 'RECTANGLE' || child.type === 'FRAME') {
@@ -82,7 +75,24 @@ function getNodeColor(node: FigmaNode): string | null {
         }
     }
 
+    // Check node fills for solid color
+    if (node.fills && Array.isArray(node.fills)) {
+        for (const fill of node.fills) {
+            if (fill.type === 'SOLID' && fill.color && fill.visible !== false) {
+                return rgbaToHex(fill.color);
+            }
+        }
+    }
+
     return null;
+}
+
+/**
+ * True when the node is, or directly contains, a swatch shape.
+ */
+function hasSwatchShape(node: FigmaNode): boolean {
+    const isShape = (n: FigmaNode) => n.type === 'RECTANGLE' || n.type === 'ELLIPSE';
+    return isShape(node) || !!node.children?.some(isShape);
 }
 
 /**

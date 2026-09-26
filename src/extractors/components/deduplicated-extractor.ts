@@ -94,7 +94,8 @@ export class DeduplicatedComponentExtractor {
     const children: DeduplicatedComponentChild[] = [];
     
     for (const child of node.children) {
-      if (!child.visible) continue;
+      // Figma REST omits `visible` for visible layers (only sends `visible: false`).
+      if (child.visible === false) continue;
       
       const childStyleRefs: string[] = [];
       

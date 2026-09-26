@@ -82,9 +82,10 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   
   // Add child widget structure
   if (analysis.children.length > 0) {
-    implementation += `      child: Column(\n`;
+    const containerWidget = analysis.layoutDirection === 'horizontal' ? 'Row' : 'Column';
+    implementation += `      child: ${containerWidget}(\n`;
     implementation += `        children: [\n`;
-    
+
     analysis.children.forEach(child => {
       if (child.semanticType === 'button' && child.textContent) {
         implementation += `          ElevatedButton(\n`;
@@ -92,10 +93,19 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
         implementation += `            child: Text('${child.textContent}'),\n`;
         implementation += `          ),\n`;
       } else if (child.type === 'TEXT' && child.textContent) {
-        implementation += `          Text('${child.textContent}'),\n`;
+        const textStyleId = child.styleRefs.find(id => styleLibrary.getStyle(id)?.category === 'text');
+        const textStyleCode = textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined;
+        if (textStyleCode) {
+          implementation += `          Text(\n`;
+          implementation += `            '${child.textContent}',\n`;
+          implementation += `            style: ${textStyleCode},\n`;
+          implementation += `          ),\n`;
+        } else {
+          implementation += `          Text('${child.textContent}'),\n`;
+        }
       }
     });
-    
+
     implementation += `        ],\n`;
     implementation += `      ),\n`;
   }
@@ -251,7 +261,7 @@ export function addVisualContextToDeduplicatedReport(
     layout: {
       type: 'auto-layout', // Default assumption
       dimensions: { width: 400, height: 200 }, // Default dimensions
-      direction: 'vertical',
+      direction: analysis.layoutDirection,
       spacing: undefined,
       padding: undefined,
       alignItems: undefined,

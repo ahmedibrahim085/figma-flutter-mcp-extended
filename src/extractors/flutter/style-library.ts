@@ -516,7 +516,10 @@ export class FlutterCodeGenerator {
                     'FontWeight.normal';
       parts.push(`fontWeight: ${weight}`);
     }
-    
+    if (properties.color) {
+      parts.push(`color: Color(0xFF${properties.color.substring(1)})`);
+    }
+
     return `TextStyle(${parts.join(', ')})`;
   }
 }

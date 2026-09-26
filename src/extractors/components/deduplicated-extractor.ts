@@ -21,6 +21,7 @@ import type {
 
 export interface DeduplicatedComponentAnalysis {
   metadata: ComponentMetadata;
+  layoutDirection: 'horizontal' | 'vertical';
   styleRefs: Record<string, string>;
   children: DeduplicatedComponentChild[];
   nestedComponents: NestedComponentInfo[];
@@ -76,6 +77,7 @@ export class DeduplicatedComponentExtractor {
     
     const result: DeduplicatedComponentAnalysis = {
       metadata,
+      layoutDirection: layout.direction === 'horizontal' ? 'horizontal' : 'vertical',
       styleRefs,
       children,
       nestedComponents
@@ -122,7 +124,8 @@ export class DeduplicatedComponentExtractor {
             const textStyleRef = this.globalStyleManager.addStyle({
               fontFamily: child.style.fontFamily,
               fontSize: child.style.fontSize,
-              fontWeight: child.style.fontWeight
+              fontWeight: child.style.fontWeight,
+              color: childStyling.fills?.[0]?.hex
             }, 'text');
             childStyleRefs.push(textStyleRef);
           }

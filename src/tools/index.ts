@@ -3,11 +3,16 @@ import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {registerFlutterTools} from "./flutter/index.js";
 import {registerThemeTools} from "./flutter/theme/colors/theme-tool.js";
 import {registerTypographyTools} from "./flutter/theme/typography/typography-tool.js";
+import {registerCoreTools} from "./figma-core/core-tools.js";
 
 export function registerAllTools(server: McpServer, figmaApiKey: string) {
     console.error('🛠️ Tools Debug - Starting tool registration...');
 
-    // Register all tool categories
+    // Core Figma tools (drop-in replacements for official MCP — no rate limit ceiling)
+    registerCoreTools(server, figmaApiKey);
+    console.error('🛠️ Tools Debug - Core Figma tools registered (get_metadata, get_screenshot, get_design_context, get_variable_defs)');
+
+    // Flutter-specific tools
     registerFlutterTools(server, figmaApiKey);
     console.error('🛠️ Tools Debug - Flutter tools registered');
 
@@ -18,6 +23,7 @@ export function registerAllTools(server: McpServer, figmaApiKey: string) {
     console.error('🛠️ Tools Debug - Typography tools registered');
 
     console.log("📋 Registered tool categories:");
+    console.log("  🔑 Core tools - get_metadata, get_screenshot, get_design_context, get_variable_defs");
     console.log("  🚀 Flutter tools - Widgets, Screens");
     console.log("  🏞️ Export assets - Images, SVGs");
     console.log("  🎨 Theme tools - Colors, Typography");

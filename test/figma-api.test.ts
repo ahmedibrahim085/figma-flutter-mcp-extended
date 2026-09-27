@@ -1,12 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {withServer} from './helpers/mcp-stdio.ts';
-import {startFakeFigma} from './helpers/fake-figma.ts';
-
-const FILE_KEY = 'TESTFILEKEY0000000000A';
+import {callToolOffline, nodeRoute, FILE_KEY} from './helpers/offline-tool.ts';
 
 test('ff_get_metadata reads the node tree from the configured Figma base URL', async () => {
-    const figma = await startFakeFigma({
+    const {text, requests} = await callToolOffline({
         // ff_get_metadata sends ids=1%3A2&depth=2; the fake matches decoded params in any order.
         [`/files/${FILE_KEY}/nodes?depth=2&ids=1:2`]: {
             body: {
@@ -23,64 +21,29 @@ test('ff_get_metadata reads the node tree from the configured Figma base URL', a
                 },
             },
         },
-    });
-    let reply;
-    try {
-        await withServer(async (server) => {
-            await server.initialize();
-            reply = await server.request('tools/call', {
-                name: 'ff_get_metadata',
-                arguments: {fileKey: FILE_KEY, nodeId: '1:2', depth: 2},
-            });
-        }, {env: {FIGMA_API_BASE_URL: figma.baseUrl}});
-    } finally {
-        await figma.close();
-    }
+    }, 'ff_get_metadata', {fileKey: FILE_KEY, nodeId: '1:2', depth: 2});
 
-    const text = (reply as any).result.content[0].text as string;
     assert.match(text, /Checkout Card/);
     assert.match(text, /Pay button/);
     assert.deepEqual(
-        figma.requests.map((r) => ({method: r.method, path: r.path, query: r.query})),
+        requests.map((r) => ({method: r.method, path: r.path, query: r.query})),
         [{method: 'GET', path: `/files/${FILE_KEY}/nodes`, query: {ids: '1:2', depth: '2'}}],
     );
-    assert.equal(figma.requests[0].headers['x-figma-token'], 'test-key');
+    assert.equal(requests[0].headers['x-figma-token'], 'test-key');
 });
 
 test('Flutter tools reach Figma through the same configured base URL', async () => {
-    const figma = await startFakeFigma({
-        [`/files/${FILE_KEY}/nodes`]: {
-            body: {
-                nodes: {
-                    '5:1': {
-                        document: {
-                            id: '5:1',
-                            name: 'Promo Banner',
-                            type: 'COMPONENT',
-                            absoluteBoundingBox: {x: 0, y: 0, width: 300, height: 80},
-                            children: [],
-                        },
-                    },
-                },
-            },
-        },
-    });
-    let reply;
-    try {
-        await withServer(async (server) => {
-            await server.initialize();
-            reply = await server.request('tools/call', {
-                name: 'inspect_component_structure',
-                arguments: {input: FILE_KEY, nodeId: '5:1'},
-            });
-        }, {env: {FIGMA_API_BASE_URL: figma.baseUrl}});
-    } finally {
-        await figma.close();
-    }
+    const {text, requests} = await callToolOffline(nodeRoute('5:1', {
+        id: '5:1',
+        name: 'Promo Banner',
+        type: 'COMPONENT',
+        absoluteBoundingBox: {x: 0, y: 0, width: 300, height: 80},
+        children: [],
+    }), 'inspect_component_structure', {input: FILE_KEY, nodeId: '5:1'});
 
-    assert.match((reply as any).result.content[0].text as string, /Promo Banner/);
+    assert.match(text, /Promo Banner/);
     assert.deepEqual(
-        figma.requests.map((r) => ({method: r.method, path: r.path, query: r.query})),
+        requests.map((r) => ({method: r.method, path: r.path, query: r.query})),
         [{method: 'GET', path: `/files/${FILE_KEY}/nodes`, query: {ids: '5:1'}}],
     );
 });

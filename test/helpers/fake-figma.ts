@@ -25,6 +25,9 @@ export interface FakeFigma {
     close(): Promise<void>;
 }
 
+/** Routes, or a function that builds them from the fake's base URL (for URLs that point back at it). */
+export type FakeRoutes = Record<string, FakeResponse> | ((baseUrl: string) => Record<string, FakeResponse>);
+
 /**
  * Starts a fake Figma API on a free local port. `routes` maps a path (without
  * `/v1`), optionally with a query (`/files/K/nodes?ids=1:2`), to a response.
@@ -32,8 +35,9 @@ export interface FakeFigma {
  * `ids=1:2`. A path that has query keys only answers the one whose parameters
  * match; anything else answers 404, so a missing fixture fails loudly.
  */
-export async function startFakeFigma(routes: Record<string, FakeResponse>): Promise<FakeFigma> {
+export async function startFakeFigma(routeSpec: FakeRoutes): Promise<FakeFigma> {
     const requests: RecordedRequest[] = [];
+    let routes: Record<string, FakeResponse> = {};
     const server = createServer((req, res) => {
         const url = new URL(req.url ?? '/', 'http://localhost');
         const path = url.pathname.replace(/^\/v1/, '');
@@ -58,8 +62,10 @@ export async function startFakeFigma(routes: Record<string, FakeResponse>): Prom
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const {port} = server.address() as AddressInfo;
+    const baseUrl = `http://127.0.0.1:${port}/v1`;
+    routes = typeof routeSpec === 'function' ? routeSpec(baseUrl) : routeSpec;
     return {
-        baseUrl: `http://127.0.0.1:${port}/v1`,
+        baseUrl,
         requests,
         close: () => new Promise((resolve) => server.close(() => resolve())),
     };

@@ -1,6 +1,6 @@
 // One tool call against the real server with Figma replaced by the fake.
 import {withServer} from './mcp-stdio.ts';
-import {startFakeFigma, type FakeResponse, type RecordedRequest} from './fake-figma.ts';
+import {startFakeFigma, type FakeResponse, type FakeRoutes, type RecordedRequest} from './fake-figma.ts';
 
 export const FILE_KEY = 'TESTFILEKEY0000000000A';
 
@@ -13,7 +13,7 @@ export interface OfflineToolResult {
 
 /** Serves `routes` from a fake Figma, calls `tool` once over stdio, returns its text. */
 export async function callToolOffline(
-    routes: Record<string, FakeResponse>,
+    routes: FakeRoutes,
     tool: string,
     args: Record<string, unknown>,
 ): Promise<OfflineToolResult> {

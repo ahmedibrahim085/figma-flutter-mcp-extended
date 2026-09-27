@@ -94,6 +94,16 @@ src/
    - Reference any related issues
    - Include screenshots/examples if applicable
 
+### Writing Tests
+
+`npm test` builds the server, then runs `test/*.test.ts` with Node's built-in runner (`node --test`, TypeScript through `tsx`). It needs no network and no Figma key.
+
+- **Drive the server as a client does.** Tests start `dist/cli.js --stdio` and speak MCP JSON-RPC (`test/helpers/mcp-stdio.ts`). Do not import tool internals; assert on what a tool returns. The helper fails the test if the server exits uncleanly or tries to reach the network, and keeps every stdout line so `test/protocol.test.ts` can check that stdout carries only JSON-RPC.
+- **Replace Figma with the fake.** `test/helpers/fake-figma.ts` serves canned responses by path and query (`/files/KEY/nodes?ids=1:2`), answers 404 for anything unlisted, can send error statuses and headers (403, 429 with `Retry-After`), and records every request. `callToolOffline()` in `test/helpers/offline-tool.ts` wires one tool call to it; `nodeRoute()` serves a single node.
+- **Fixtures.** Small node shapes are built inline in the test. Real Figma payloads live in `test/fixtures/` as node data only: no file keys, component keys, URLs or account data (a test enforces this).
+- **Temp projects.** Tests that write files (asset export) create their own temp Flutter project and remove it when the test ends.
+- **Pinned defects.** `test/characterization.test.ts` asserts today's known-wrong output. Each test name says `pins current behaviour, slice N replaces this`. A change that fixes one of these defects rewrites that test to assert the correct output in the same commit; never delete a pin to make the suite pass.
+
 ## 🧪 Local Testing & Development
 
 The project supports HTTP server mode for easier development and testing. This allows you to test MCP tools without setting up a full MCP client.

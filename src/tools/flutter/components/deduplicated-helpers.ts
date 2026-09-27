@@ -52,6 +52,35 @@ export function generateDeduplicatedReport(analysis: DeduplicatedComponentAnalys
   return output;
 }
 
+/** Indent every line of `code` by `spaces`, including the first line. */
+function indentAll(code: string, spaces: number): string {
+  const pad = ' '.repeat(spaces);
+  return code.split('\n').map(line => pad + line).join('\n');
+}
+
+/** Shift every line of `code` EXCEPT the first by `spaces` (for embedding after a same-line prefix like "child: "). */
+function reindentTail(code: string, spaces: number): string {
+  const pad = ' '.repeat(spaces);
+  return code.split('\n').map((line, i) => (i === 0 ? line : pad + line)).join('\n');
+}
+
+/**
+ * Wrap a child widget in Expanded when the Figma auto-layout sizing on the
+ * container's main axis is FILL — the child is meant to stretch to fill the
+ * remaining space, not keep its measured Figma dimension.
+ */
+function wrapForMainAxisSizing(
+  widgetCode: string,
+  childLayout: {sizingHorizontal?: string; sizingVertical?: string} | undefined,
+  direction: 'horizontal' | 'vertical'
+): string {
+  const mainAxisSizing = direction === 'horizontal' ? childLayout?.sizingHorizontal : childLayout?.sizingVertical;
+  if (mainAxisSizing !== 'FILL') {
+    return widgetCode;
+  }
+  return `Expanded(\n  child: ${reindentTail(widgetCode, 2)},\n)`;
+}
+
 export function generateFlutterImplementation(analysis: DeduplicatedComponentAnalysis): string {
   const styleLibrary = FlutterStyleLibrary.getInstance();
   let implementation = `Flutter Implementation:\n\n`;
@@ -88,22 +117,21 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
     implementation += `        children: [\n`;
 
     analysis.children.forEach(child => {
+      let widgetCode: string | undefined;
+
       if (child.semanticType === 'button' && child.textContent) {
-        implementation += `          ElevatedButton(\n`;
-        implementation += `            onPressed: () {},\n`;
-        implementation += `            child: Text('${child.textContent}'),\n`;
-        implementation += `          ),\n`;
+        widgetCode = `ElevatedButton(\n  onPressed: () {},\n  child: Text('${child.textContent}'),\n)`;
       } else if (child.type === 'TEXT' && child.textContent) {
         const textStyleId = child.styleRefs.find(id => styleLibrary.getStyle(id)?.category === 'text');
         const textStyleCode = textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined;
-        if (textStyleCode) {
-          implementation += `          Text(\n`;
-          implementation += `            '${child.textContent}',\n`;
-          implementation += `            style: ${textStyleCode},\n`;
-          implementation += `          ),\n`;
-        } else {
-          implementation += `          Text('${child.textContent}'),\n`;
-        }
+        widgetCode = textStyleCode
+          ? `Text(\n  '${child.textContent}',\n  style: ${textStyleCode},\n)`
+          : `Text('${child.textContent}')`;
+      }
+
+      if (widgetCode) {
+        widgetCode = wrapForMainAxisSizing(widgetCode, child.layout, containerWidget === 'Row' ? 'horizontal' : 'vertical');
+        implementation += `${indentAll(widgetCode, 10)},\n`;
       }
     });
 

@@ -1,0 +1,124 @@
+// Spawns the built server in stdio mode and speaks MCP JSON-RPC to it, the way
+// a consumer's MCP client does. Tests go through this seam only.
+import assert from 'node:assert/strict';
+import {spawn} from 'node:child_process';
+import {mkdtempSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join, dirname} from 'node:path';
+import {fileURLToPath} from 'node:url';
+
+const CLI = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'dist', 'cli.js');
+
+export interface JsonRpcMessage {
+    jsonrpc: '2.0';
+    id?: number;
+    result?: any;
+    error?: {code: number; message: string};
+}
+
+export interface McpStdioServer {
+    /** Every non-empty line the server wrote to stdout, parsed or not. */
+    stdoutLines: string[];
+    request(method: string, params?: object): Promise<JsonRpcMessage>;
+    initialize(): Promise<JsonRpcMessage>;
+}
+
+/**
+ * Starts `node dist/cli.js --stdio`, runs `body`, then closes stdin and asserts
+ * the server exits cleanly (code 0, no signal): a crash, a non-zero exit or a
+ * hang after replying fails the test. The working directory is an empty temp
+ * dir so a developer's own .env is never loaded; the API key is a dummy value.
+ */
+export async function withServer(
+    body: (server: McpStdioServer) => Promise<void>,
+    {timeoutMs = 15000} = {}
+): Promise<McpStdioServer> {
+    const child = spawn(process.execPath, [CLI, '--stdio'], {
+        cwd: mkdtempSync(join(tmpdir(), 'mcp-test-')),
+        env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key'},
+        stdio: ['pipe', 'pipe', 'pipe'],
+    });
+
+    const stdoutLines: string[] = [];
+    let stderr = '';
+    let buffer = '';
+    let nextId = 1;
+    const pending = new Map<number, {resolve: (m: JsonRpcMessage) => void; reject: (e: Error) => void; timer: NodeJS.Timeout}>();
+    const exited = new Promise<{code: number | null; signal: NodeJS.Signals | null}>((resolve) =>
+        child.once('exit', (code, signal) => {
+            for (const {reject, timer} of pending.values()) {
+                clearTimeout(timer);
+                reject(new Error(`server exited (code ${code}, signal ${signal}) before replying. stderr:\n${stderr}`));
+            }
+            pending.clear();
+            resolve({code, signal});
+        })
+    );
+
+    child.stderr.on('data', (chunk) => { stderr += chunk; });
+    child.stdout.on('data', (chunk) => {
+        buffer += chunk;
+        let newline;
+        while ((newline = buffer.indexOf('\n')) !== -1) {
+            const line = buffer.slice(0, newline);
+            buffer = buffer.slice(newline + 1);
+            if (line.trim() === '') continue;
+            stdoutLines.push(line);
+            let message: JsonRpcMessage;
+            try {
+                message = JSON.parse(line);
+            } catch {
+                continue; // kept in stdoutLines; the protocol test asserts on it
+            }
+            const waiter = message.id === undefined ? undefined : pending.get(message.id);
+            if (waiter) {
+                clearTimeout(waiter.timer);
+                pending.delete(message.id!);
+                waiter.resolve(message);
+            }
+        }
+    });
+
+    const send = (message: object) => child.stdin.write(`${JSON.stringify(message)}\n`);
+
+    const server: McpStdioServer = {
+        stdoutLines,
+        request(method, params = {}) {
+            const id = nextId++;
+            return new Promise((resolve, reject) => {
+                const timer = setTimeout(() => {
+                    pending.delete(id);
+                    reject(new Error(`no reply to ${method} within ${timeoutMs} ms. stderr:\n${stderr}`));
+                }, timeoutMs);
+                pending.set(id, {resolve, reject, timer});
+                send({jsonrpc: '2.0', id, method, params});
+            });
+        },
+        async initialize() {
+            const reply = await server.request('initialize', {
+                protocolVersion: '2025-03-26',
+                capabilities: {},
+                clientInfo: {name: 'figma-flutter-tests', version: '1.0.0'},
+            });
+            send({jsonrpc: '2.0', method: 'notifications/initialized', params: {}});
+            return reply;
+        },
+    };
+
+    let bodyError: unknown;
+    try {
+        await body(server);
+    } catch (error) {
+        bodyError = error;
+    }
+
+    child.stdin.end();
+    const killTimer = setTimeout(() => child.kill('SIGKILL'), 5000);
+    const exit = await exited;
+    clearTimeout(killTimer);
+
+    if (bodyError) throw bodyError;
+    assert.deepEqual(exit, {code: 0, signal: null},
+        `server must exit cleanly when stdin closes (SIGKILL means it hung). stderr:\n${stderr}`);
+    return server;
+}

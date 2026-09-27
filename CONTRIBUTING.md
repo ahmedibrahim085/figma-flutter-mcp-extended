@@ -74,6 +74,9 @@ src/
    # Build and check for errors
    npm run build
    
+   # Run the test suite (builds first; offline, no Figma key needed)
+   npm test
+   
    # Test locally
    npm run dev
    ```

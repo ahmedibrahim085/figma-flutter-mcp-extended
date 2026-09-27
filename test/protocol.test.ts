@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {startServer} from './helpers/mcp-stdio.mjs';
+import {withServer, type JsonRpcMessage} from './helpers/mcp-stdio.ts';
 
 // Independent source of truth: the tool names registered in src/tools.
 const EXPECTED_TOOLS = [
@@ -26,13 +26,10 @@ const EXPECTED_TOOLS = [
 ];
 
 test('stdio: every stdout line is a JSON-RPC message', async () => {
-    const server = startServer();
-    try {
-        await server.initialize();
-        await server.request('tools/list');
-    } finally {
-        await server.close();
-    }
+    const server = await withServer(async (s) => {
+        await s.initialize();
+        await s.request('tools/list');
+    });
     assert.ok(server.stdoutLines.length >= 2, `expected replies on stdout, got ${server.stdoutLines.length} lines`);
     const nonJson = server.stdoutLines.filter((line) => {
         try {
@@ -46,16 +43,13 @@ test('stdio: every stdout line is a JSON-RPC message', async () => {
 });
 
 test('stdio: server identifies as figma-flutter and lists exactly the registered tools', async () => {
-    const server = startServer();
-    let init;
-    let list;
-    try {
-        init = await server.initialize();
-        list = await server.request('tools/list');
-    } finally {
-        await server.close();
-    }
-    assert.equal(init.result.serverInfo.name, 'figma-flutter');
-    const names = list.result.tools.map((tool) => tool.name).sort();
+    let init: JsonRpcMessage | undefined;
+    let list: JsonRpcMessage | undefined;
+    await withServer(async (s) => {
+        init = await s.initialize();
+        list = await s.request('tools/list');
+    });
+    assert.equal(init!.result.serverInfo.name, 'figma-flutter');
+    const names = list!.result.tools.map((tool: {name: string}) => tool.name).sort();
     assert.deepEqual(names, EXPECTED_TOOLS);
 });

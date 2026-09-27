@@ -6,6 +6,7 @@ import {Logger} from './logger.js';
 export interface RetryOptions {
     maxAttempts?: number;
     initialDelayMs?: number;
+    /** Longest wait between attempts; a Retry-After longer than this ends the retries. */
     maxDelayMs?: number;
     backoffMultiplier?: number;
     retryableErrors?: (error: Error) => boolean;
@@ -59,8 +60,8 @@ export async function withRetry<T>(
             // Handle rate limit specific delay
             if (lastError instanceof FigmaRateLimitError && lastError.retryAfter) {
                 delay = lastError.retryAfter * 1000; // Convert to ms
-                // Retrying before Retry-After only earns another 429 (a Starter plan's
-                // monthly limit asks for days), so fail now and surface the wait.
+                // Retrying before Retry-After only earns another 429 (a real Starter-plan
+                // 429 sent Retry-After: 354850, about 4 days), so fail now and surface the wait.
                 if (delay > opts.maxDelayMs) {
                     break;
                 }

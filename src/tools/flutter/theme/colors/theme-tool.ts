@@ -4,6 +4,7 @@ import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../../services/figma.js";
 import {extractThemeColors} from "../../../../extractors/colors/index.js";
 import {SimpleThemeGenerator} from "./theme-generator.js";
+import {validateAndConvertNodeId} from "../../../../utils/figma-url-parser.js";
 import {join} from 'path';
 
 export function registerThemeTools(server: McpServer, figmaApiKey: string) {
@@ -36,6 +37,7 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                 const generator = new SimpleThemeGenerator();
 
                 // Get the specific theme frame node
+                nodeId = validateAndConvertNodeId(nodeId);
                 const themeFrame = await figmaService.getNode(fileId, nodeId);
 
                 if (!themeFrame) {
@@ -141,6 +143,7 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
 
             try {
                 const figmaService = new FigmaService(token);
+                nodeId = validateAndConvertNodeId(nodeId);
                 const frameNode = await figmaService.getNode(fileId, nodeId);
 
                 if (!frameNode) {

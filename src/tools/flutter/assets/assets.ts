@@ -14,6 +14,7 @@ import {
     type AssetInfo
 } from "./asset-manager.js";
 import {isEffectivelyVisible} from "../../../utils/visibility.js";
+import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
 
 export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string) {
     // Tool: Export Flutter Assets
@@ -47,6 +48,7 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                 const figmaService = new FigmaService(token);
 
                 // First, get node details to filter for actual images/illustrations
+                nodeIds = nodeIds.map(validateAndConvertNodeId);
                 const imageNodes = await filterImageNodes(fileId, nodeIds, figmaService);
 
                 if (imageNodes.length === 0) {

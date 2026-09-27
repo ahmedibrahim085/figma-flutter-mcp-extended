@@ -149,7 +149,7 @@ function validateFileId(fileId: string): string {
  * Validate and convert node ID to correct format
  * Handles both "123-456" (URL format) and "123:456" (API format)
  */
-function validateAndConvertNodeId(nodeId: string): string {
+export function validateAndConvertNodeId(nodeId: string): string {
     if (!nodeId || typeof nodeId !== 'string') {
         throw new FigmaError('Node ID is required', 'INVALID_NODE_ID');
     }

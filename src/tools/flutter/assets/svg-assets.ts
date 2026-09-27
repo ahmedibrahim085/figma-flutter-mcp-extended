@@ -13,6 +13,7 @@ import {
     generateSvgAssetConstants
 } from "./asset-manager.js";
 import {Logger} from "../../../utils/logger.js";
+import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
 import {isEffectivelyVisible} from "../../../utils/visibility.js";
 
 export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
@@ -43,6 +44,7 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
                 const figmaService = new FigmaService(token);
 
                 // Filter for SVG nodes (groups with vector children)
+                nodeIds = nodeIds.map(validateAndConvertNodeId);
                 const svgNodes = await filterSvgNodes(fileId, nodeIds, figmaService);
 
                 if (svgNodes.length === 0) {

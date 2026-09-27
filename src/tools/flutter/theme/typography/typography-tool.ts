@@ -6,6 +6,7 @@ import {FigmaService} from "../../../../services/figma.js";
 import {extractThemeTypography} from "../../../../extractors/typography/index.js";
 import {TypographyGenerator} from "./typography-generator.js";
 import {join} from 'path';
+import {validateAndConvertNodeId} from "../../../../utils/figma-url-parser.js";
 
 export function registerTypographyTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
@@ -38,6 +39,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 const generator = new TypographyGenerator();
 
                 // Get the specific theme frame node
+                nodeId = validateAndConvertNodeId(nodeId);
                 const themeFrame = await figmaService.getNode(fileId, nodeId);
 
                 if (!themeFrame) {
@@ -175,6 +177,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
 
             try {
                 const figmaService = new FigmaService(token);
+                nodeId = validateAndConvertNodeId(nodeId);
                 const frameNode = await figmaService.getNode(fileId, nodeId);
 
                 if (!frameNode) {

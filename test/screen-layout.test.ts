@@ -4,8 +4,14 @@ import {callToolOffline, nodeRoute, FILE_KEY} from './helpers/offline-tool.ts';
 
 const BLACK = {r: 0, g: 0, b: 0, a: 1};
 
-/** A horizontal auto-layout row whose one text child has the given horizontal sizing. */
-const row = (sizing: string) => ({
+type Sizing = 'FILL' | 'HUG' | 'FIXED';
+
+/** Calls `tool` on `node`, served by the fake under its own id. */
+const callOnNode = (node: {id: string}, tool: string, args: Record<string, unknown> = {}) =>
+    callToolOffline(nodeRoute(node.id, node), tool, {input: FILE_KEY, nodeId: node.id, ...args});
+
+/** A horizontal auto-layout row with one text child sized as given on each axis. */
+const listRow = (horizontal: Sizing, vertical: Sizing = 'HUG') => ({
     id: '2:1',
     name: 'List Row',
     type: 'FRAME',
@@ -16,14 +22,16 @@ const row = (sizing: string) => ({
         name: 'Label',
         type: 'TEXT',
         characters: 'This label should stretch',
-        layoutSizingHorizontal: sizing,
+        layoutSizingHorizontal: horizontal,
+        layoutSizingVertical: vertical,
         fills: [{type: 'SOLID', color: BLACK}],
         style: {fontFamily: 'Inter', fontWeight: 400, fontSize: 14, letterSpacing: 0, lineHeightPx: 18, textAlignHorizontal: 'LEFT', textAlignVertical: 'CENTER'},
     }],
 });
 
-const generateRow = (sizing: string) => callToolOffline(nodeRoute('2:1', row(sizing)), 'analyze_figma_component',
-    {input: FILE_KEY, nodeId: '2:1', userDefinedComponent: true, generateFlutterCode: true});
+/** Flutter code for the row, through the default (deduplicated) path. */
+const generateRow = (horizontal: Sizing, vertical?: Sizing) =>
+    callOnNode(listRow(horizontal, vertical), 'analyze_figma_component', {userDefinedComponent: true, generateFlutterCode: true});
 
 // Upstream #35: FILL on the parent's main axis must become Expanded, not a hardcoded width.
 test('a main-axis FILL child is wrapped in Expanded', async () => {
@@ -36,15 +44,22 @@ test('a main-axis FILL child is wrapped in Expanded', async () => {
               'This label should stretch',`), text);
 });
 
-test('a HUG child is not wrapped in Expanded', async () => {
-    const {text} = await generateRow('HUG');
+for (const [label, horizontal, vertical] of [
+    ['a HUG child', 'HUG', 'HUG'],
+    ['a cross-axis FILL child', 'HUG', 'FILL'],
+] as const) {
+    test(`${label} is not wrapped in Expanded`, async () => {
+        const {text} = await generateRow(horizontal, vertical);
 
-    assert.match(text, /child: Row\(/);
-    assert.doesNotMatch(text, /Expanded\(/);
-});
+        assert.match(text, /child: Row\(/);
+        assert.doesNotMatch(text, /Expanded\(/);
+    });
+}
 
-// Upstream PR #52: sizing and parent-alignment evidence reaches both component tools.
-const card = {
+// Upstream PR #52 through the deduplicated analysis (component-codegen.test.ts covers
+// inspect_component_structure). The spot check's layoutGrow and primary/counter axis
+// alignment are not reported by either tool for this node, so only reported evidence is pinned.
+const CARD = {
     id: '1:1',
     name: 'Card',
     type: 'FRAME',
@@ -58,25 +73,15 @@ const card = {
 };
 
 test('analyze_figma_component reports sizing and parent alignment', async () => {
-    const {text} = await callToolOffline(nodeRoute('1:1', card), 'analyze_figma_component',
-        {input: FILE_KEY, nodeId: '1:1', userDefinedComponent: true});
+    const {text} = await callOnNode(CARD, 'analyze_figma_component', {userDefinedComponent: true});
 
     assert.ok(text.includes(`   • Horizontal sizing: FILL
    • Vertical sizing: HUG
    • Parent alignment: STRETCH`), text);
 });
 
-test('inspect_component_structure reports sizing and parent alignment', async () => {
-    const {text} = await callToolOffline(nodeRoute('1:1', card), 'inspect_component_structure',
-        {input: FILE_KEY, nodeId: '1:1', userDefinedComponent: true});
-
-    assert.ok(text.includes(`Horizontal Sizing: FILL
-Vertical Sizing: HUG
-Parent Alignment: STRETCH`), text);
-});
-
 // A screen with an App Bar-like header and a body, both carrying sizing, padding, border and shadow evidence.
-const screen = {
+const SCREEN = {
     id: '4:1',
     name: 'Screen',
     type: 'FRAME',
@@ -112,11 +117,18 @@ const screen = {
     ],
 };
 
-const analyzeScreen = (node: {id: string}) => callToolOffline(nodeRoute(node.id, node), 'analyze_full_screen',
-    {input: FILE_KEY, nodeId: node.id, extractAssets: false});
+const NO_APP_BAR_SCREEN = {
+    id: '1:2',
+    name: 'Screen',
+    type: 'FRAME',
+    absoluteBoundingBox: {x: 0, y: 0, width: 375, height: 812},
+    children: [{id: '1:3', name: 'Body Content', type: 'FRAME', absoluteBoundingBox: {x: 0, y: 0, width: 375, height: 700}}],
+};
+
+const analyzeScreen = (node: {id: string}) => callOnNode(node, 'analyze_full_screen', {extractAssets: false});
 
 test('analyze_full_screen reports each section with sizing, border and shadow', async () => {
-    const {text, requests} = await analyzeScreen(screen);
+    const {text, requests} = await analyzeScreen(SCREEN);
 
     assert.deepEqual(requests.map((r) => ({path: r.path, query: r.query})),
         [{path: `/files/${FILE_KEY}/nodes`, query: {ids: '4:1'}}]);
@@ -143,8 +155,7 @@ test('analyze_full_screen reports each section with sizing, border and shadow', 
 });
 
 test('inspect_screen_structure reports padding, border and shadow per section', async () => {
-    const {text} = await callToolOffline(nodeRoute('4:1', screen), 'inspect_screen_structure',
-        {input: FILE_KEY, nodeId: '4:1', showAllSections: true});
+    const {text} = await callOnNode(SCREEN, 'inspect_screen_structure', {showAllSections: true});
 
     assert.ok(text.includes(`Screen Structure:
 1. Header (FRAME) [HEADER]
@@ -169,7 +180,7 @@ test('inspect_screen_structure reports padding, border and shadow per section', 
 
 // Upstream PR #53: SafeArea keeps the top edge only when no App Bar occupies it.
 test('with an App Bar header, the SafeArea leaves the top edge to it', async () => {
-    const {text} = await analyzeScreen(screen);
+    const {text} = await analyzeScreen(SCREEN);
 
     assert.ok(text.includes(`  body: SafeArea(
     top: false, // the App Bar already occupies the top edge
@@ -177,13 +188,7 @@ test('with an App Bar header, the SafeArea leaves the top edge to it', async () 
 });
 
 test('without an App Bar, the top safe area is required and SafeArea keeps the top edge', async () => {
-    const {text} = await analyzeScreen({
-        id: '1:2',
-        name: 'Screen',
-        type: 'FRAME',
-        absoluteBoundingBox: {x: 0, y: 0, width: 375, height: 812},
-        children: [{id: '1:3', name: 'Body Content', type: 'FRAME', absoluteBoundingBox: {x: 0, y: 0, width: 375, height: 700}}],
-    });
+    const {text} = await analyzeScreen(NO_APP_BAR_SCREEN);
 
     assert.match(text, /^- Top Safe Area: Required at runtime \(no App Bar present\)$/m);
     assert.ok(text.includes(`Scaffold(

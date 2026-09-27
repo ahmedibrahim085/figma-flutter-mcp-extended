@@ -333,9 +333,10 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                                         'The Variables REST API requires an Enterprise plan (other plans get 403 "Limited by Figma plan").',
                                 },
                             ],
+                            isError: true,
                         };
                     }
-                    return {content: [{type: 'text' as const, text: `Error ${resp.status}: ${body}`}]};
+                    return {content: [{type: 'text' as const, text: `Error ${resp.status}: ${body}`}], isError: true};
                 }
 
                 const data = (await resp.json()) as any;
@@ -394,7 +395,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
 
                 return {content: [{type: 'text' as const, text: json}]};
             } catch (err: any) {
-                return {content: [{type: 'text' as const, text: `ff_get_variable_defs error: ${err.message}`}]};
+                return {content: [{type: 'text' as const, text: `ff_get_variable_defs error: ${err.message}`}], isError: true};
             }
         },
     );

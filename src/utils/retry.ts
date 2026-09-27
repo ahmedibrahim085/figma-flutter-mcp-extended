@@ -59,6 +59,11 @@ export async function withRetry<T>(
             // Handle rate limit specific delay
             if (lastError instanceof FigmaRateLimitError && lastError.retryAfter) {
                 delay = lastError.retryAfter * 1000; // Convert to ms
+                // Retrying before Retry-After only earns another 429 (a Starter plan's
+                // monthly limit asks for days), so fail now and surface the wait.
+                if (delay > opts.maxDelayMs) {
+                    break;
+                }
             }
 
             // Cap the delay

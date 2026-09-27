@@ -294,7 +294,8 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                     content: [{
                         type: "text",
                         text: `Error analyzing component: ${error instanceof Error ? error.message : String(error)}`
-                    }]
+                    }],
+                    isError: true
                 };
             }
         }

@@ -7,6 +7,8 @@ export const FILE_KEY = 'TESTFILEKEY0000000000A';
 export interface OfflineToolResult {
     /** Text of the tool's first content item. */
     text: string;
+    /** The MCP result's `isError` flag, which tells the client the call failed. */
+    isError: boolean;
     /** Requests the fake Figma server received. */
     requests: RecordedRequest[];
 }
@@ -27,7 +29,7 @@ export async function callToolOffline(
     } finally {
         await figma.close();
     }
-    return {text: reply.result.content[0].text, requests: figma.requests};
+    return {text: reply.result.content[0].text, isError: reply.result.isError === true, requests: figma.requests};
 }
 
 /** Route for FigmaService.getNode / getNodes: `/files/KEY/nodes?ids=<id>` answering one node. */

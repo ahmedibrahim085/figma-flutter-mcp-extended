@@ -649,7 +649,7 @@ async function exportComponentAssets(
         const imageUrl = imageUrls[imageNode.id];
         if (!imageUrl) continue;
 
-        const filename = generateAssetFilename(imageNode.name, 'png', 2, false);
+        const filename = generateAssetFilename(imageNode.name, 'png', 2);
         const filepath = join(assetsDir, filename);
 
         try {
@@ -672,12 +672,12 @@ async function exportComponentAssets(
     }
 
     if (downloadedAssets.length > 0) {
+        // Constants first: updatePubspecAssets throws on pubspec shapes it refuses to edit
+        await generateAssetConstants(downloadedAssets, projectPath);
+
         // Update pubspec.yaml
         const pubspecPath = join(projectPath, 'pubspec.yaml');
         await updatePubspecAssets(pubspecPath, downloadedAssets);
-
-        // Generate asset constants file
-        await generateAssetConstants(downloadedAssets, projectPath);
     }
 
     return downloadedAssets;

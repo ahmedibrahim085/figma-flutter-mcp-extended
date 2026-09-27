@@ -78,7 +78,7 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                         const imageUrl = imageUrls[node.id];
                         if (!imageUrl) continue;
 
-                        const filename = generateAssetFilename(node.name, format, currentScale, includeMultipleResolutions);
+                        const filename = generateAssetFilename(node.name, format, currentScale);
                         const filepath = join(assetsDir, filename);
 
                         // Download the image
@@ -97,12 +97,12 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                     }
                 }
 
+                // Constants first: updatePubspecAssets throws on pubspec shapes it refuses to edit
+                const constantsFile = await generateAssetConstants(downloadedAssets, projectPath);
+
                 // Update pubspec.yaml
                 const pubspecPath = join(projectPath, 'pubspec.yaml');
                 await updatePubspecAssets(pubspecPath, downloadedAssets);
-
-                // Generate asset constants file
-                const constantsFile = await generateAssetConstants(downloadedAssets, projectPath);
 
                 let output = `Successfully exported ${imageNodes.length} image assets to Flutter project!\n\n`;
                 output += `Assets Directory: ${assetsDir}\n\n`;

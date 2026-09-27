@@ -93,12 +93,12 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
                     });
                 }
 
+                // Constants first: updatePubspecAssets throws on pubspec shapes it refuses to edit
+                const constantsFile = await generateSvgAssetConstants(downloadedAssets, projectPath);
+
                 // Update pubspec.yaml with SVG assets
                 const pubspecPath = join(projectPath, 'pubspec.yaml');
                 await updatePubspecAssets(pubspecPath, downloadedAssets);
-
-                // Generate SVG asset constants file
-                const constantsFile = await generateSvgAssetConstants(downloadedAssets, projectPath);
 
                 let output = `Successfully exported ${svgNodes.length} SVG assets to Flutter project!\n\n`;
                 output += `SVG Assets Directory: ${assetsDir}\n\n`;

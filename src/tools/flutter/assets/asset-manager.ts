@@ -1,4 +1,5 @@
 // tools/flutter/asset-manager.mts
+import {existsSync} from 'fs';
 import {writeFile, mkdir, readFile} from 'fs/promises';
 import {join, dirname} from 'path';
 import {detectConstantsDir} from '../../../utils/project-conventions.js';
@@ -23,7 +24,13 @@ export async function createSvgAssetsDirectory(projectPath: string): Promise<str
     return assetsDir;
 }
 
-export function generateAssetFilename(nodeName: string, format: string, scale: number, multiRes: boolean): string {
+/**
+ * Filename relative to the images folder. Scales above 1 go into Flutter's
+ * resolution-aware `N.0x/` sub-folders: Flutter treats the main asset as 1.0x
+ * and ignores flat `name@2x.png` files (docs.flutter.dev, "Resolution-aware
+ * image assets"). A 2x render saved as the main asset displays at double size.
+ */
+export function generateAssetFilename(nodeName: string, format: string, scale: number): string {
     // Clean the node name for filename
     const cleanName = nodeName
         .toLowerCase()
@@ -31,11 +38,17 @@ export function generateAssetFilename(nodeName: string, format: string, scale: n
         .replace(/_+/g, '_')
         .replace(/^_|_$/g, '');
 
-    if (multiRes && scale > 1) {
-        return `${cleanName}@${scale}x.${format}`;
+    if (scale > 1) {
+        const variantFolder = Number.isInteger(scale) ? `${scale}.0x` : `${scale}x`;
+        return `${variantFolder}/${cleanName}.${format}`;
     }
 
     return `${cleanName}.${format}`;
+}
+
+/** Strip a resolution-variant folder (`2.0x/`, `1.5x/`) so only the main asset path remains. */
+function toMainAssetPath(path: string): string {
+    return path.replace(/(^|\/)\d+(?:\.\d+)?x\//, '$1');
 }
 
 export function generateSvgFilename(nodeName: string): string {
@@ -101,42 +114,121 @@ flutter:
 `;
     }
 
-    // Extract existing assets from pubspec
-    const existingAssets = new Set<string>();
-    const assetMatch = pubspecContent.match(/assets:\s*\n((?:    - .*\n)*)/);
-    if (assetMatch) {
-        const existingAssetLines = assetMatch[1].match(/    - .*/g) || [];
-        existingAssetLines.forEach(line => {
-            const assetPath = line.replace(/^\s*-\s*/, '').trim();
-            existingAssets.add(assetPath);
-        });
+    // Only the top-level `flutter:` key owns the asset list. Matching the first
+    // `flutter:` / `assets:` text instead hit `dependencies: flutter:` and
+    // `flutter_gen: assets:` and wrote invalid YAML into the consumer's pubspec.
+    // Shapes this line editor cannot rewrite safely are refused, never guessed:
+    // the error names the lines to add by hand.
+    const mainPaths = [...new Set(assets.map(asset => toMainAssetPath(asset.path)))];
+    const refuse = (reason: string) => new Error(
+        `pubspec.yaml left unchanged (${reason}). Add these under flutter: assets: ${mainPaths.join(', ')}`);
+
+    const eol = pubspecContent.includes('\r\n') ? '\r\n' : '\n';
+    const lines = pubspecContent.split(/\r?\n/);
+    while (lines.length > 0 && lines[lines.length - 1] === '') lines.pop();
+    const isBlockLine = (line: string) => line.trim() === '' || /^\s/.test(line) || line.startsWith('#');
+    const isBlankOrComment = (line: string) => line.trim() === '' || line.trim().startsWith('#');
+
+    if (lines.some(line => /^flutter:/.test(line) && !/^flutter:\s*(#.*)?$/.test(line))) {
+        throw refuse('top-level flutter: is not a block mapping');
+    }
+    let flutterIdx = lines.findIndex(line => /^flutter:\s*(#.*)?$/.test(line));
+    if (flutterIdx === -1) {
+        lines.push('', 'flutter:');
+        flutterIdx = lines.length - 1;
+    }
+    let blockEnd = flutterIdx + 1;
+    while (blockEnd < lines.length && isBlockLine(lines[blockEnd])) blockEnd++;
+
+    const firstChild = lines.slice(flutterIdx + 1, blockEnd).find(line => line.trim() !== '' && !line.trim().startsWith('#'));
+    const childIndent = firstChild ? firstChild.match(/^\s*/)![0] : '  ';
+    const assetsKey = new RegExp(`^${childIndent}assets:\\s*(.*)$`);
+
+    let assetsIdx = -1;
+    for (let i = flutterIdx + 1; i < blockEnd; i++) {
+        if (assetsKey.test(lines[i])) {
+            assetsIdx = i;
+            break;
+        }
     }
 
-    // Add new assets to existing ones
-    const newAssetPaths = assets.map(a => a.path);
-    newAssetPaths.forEach(path => existingAssets.add(path));
-
-    // Convert back to formatted lines
-    const allAssetPaths = Array.from(existingAssets).sort().map(path => `    - ${path}`);
-
-    if (pubspecContent.includes('assets:')) {
-        // Replace existing assets section with merged assets
-        pubspecContent = pubspecContent.replace(
-            /assets:\s*\n(?:    - .*\n)*/,
-            `assets:\n${allAssetPaths.join('\n')}\n`
-        );
-    } else if (pubspecContent.includes('flutter:')) {
-        // Add assets to existing flutter section
-        pubspecContent = pubspecContent.replace(
-            'flutter:',
-            `flutter:\n  assets:\n${allAssetPaths.join('\n')}`
-        );
+    const existing: string[] = [];
+    let itemIndent = `${childIndent}  `;
+    let insertAt: number;
+    if (assetsIdx === -1) {
+        lines.splice(flutterIdx + 1, 0, `${childIndent}assets:`);
+        assetsIdx = flutterIdx + 1;
+        insertAt = assetsIdx + 1;
     } else {
-        // Add flutter section with assets
-        pubspecContent += `\nflutter:\n  assets:\n${allAssetPaths.join('\n')}\n`;
+        // Flow form (`assets: [a, b]`) on one line is rewritten as a block list.
+        const inline = lines[assetsIdx].match(assetsKey)![1].replace(/#.*$/, '').trim();
+        if (inline !== '' && !(inline.startsWith('[') && inline.endsWith(']'))) {
+            throw refuse('assets: is not a block list or a one-line flow list');
+        }
+        if (inline !== '') {
+            const flowEntries = inline.slice(1, -1).split(',').map(s => s.trim().replace(/^['"]|['"]$/g, '')).filter(Boolean);
+            lines[assetsIdx] = `${childIndent}assets:`;
+            lines.splice(assetsIdx + 1, 0, ...flowEntries.map(entry => `${itemIndent}- ${entry}`));
+        }
+        insertAt = assetsIdx + 1;
+        for (let i = assetsIdx + 1; i < lines.length; i++) {
+            if (isBlankOrComment(lines[i])) continue;
+            if (!/^\s*-\s/.test(lines[i])) {
+                // Anything indented deeper than the items belongs to a map-form entry
+                // (`- path: …` + `flavors:`), which this editor does not rewrite.
+                if (existing.length > 0 && lines[i].match(/^\s*/)![0].length > itemIndent.length) {
+                    throw refuse('asset entries use the map form');
+                }
+                break;
+            }
+            const entry = lines[i].replace(/^\s*-\s*/, '').replace(/\s+#.*$/, '').trim().replace(/^['"]|['"]$/g, '');
+            if (/^[\w-]+:(\s|$)/.test(entry)) throw refuse('asset entries use the map form');
+            itemIndent = lines[i].match(/^\s*/)![0];
+            existing.push(entry);
+            insertAt = i + 1;
+        }
     }
 
-    await writeFile(pubspecPath, pubspecContent);
+    // A directory entry bundles only files directly inside it, and only when the
+    // main file exists: a directory with just `2.0x/x.png` bundles nothing
+    // (flutter build bundle, Flutter 3.47.5). An explicit main entry works
+    // without the main file (the variant is used). Variants need no entry.
+    const projectDir = dirname(pubspecPath);
+    const isCovered = (path: string) => existing.some(entry =>
+        entry === path || (entry.endsWith('/') && path.startsWith(entry) &&
+            !path.slice(entry.length).includes('/') && existsSync(join(projectDir, path))));
+    const toAdd = mainPaths.filter(path => !isCovered(path));
+    lines.splice(insertAt, 0, ...toAdd.map(path => `${itemIndent}- ${path}`));
+
+    await writeFile(pubspecPath, `${lines.join(eol)}${eol}`);
+}
+
+const DART_RESERVED = new Set([
+    'abstract', 'as', 'assert', 'async', 'await', 'break', 'case', 'catch', 'class', 'const', 'continue',
+    'covariant', 'default', 'deferred', 'do', 'dynamic', 'else', 'enum', 'export', 'extends', 'extension',
+    'external', 'factory', 'false', 'final', 'finally', 'for', 'get', 'if', 'implements', 'import', 'in',
+    'interface', 'is', 'late', 'library', 'mixin', 'new', 'null', 'operator', 'part', 'required', 'rethrow',
+    'return', 'set', 'static', 'super', 'switch', 'sync', 'this', 'throw', 'true', 'try', 'typedef', 'var',
+    'void', 'while', 'with', 'yield',
+]);
+
+/** lowerCamelCase Dart identifier; leading digits get `prefix`, reserved words a trailing `_`. */
+function toDartIdentifier(name: string, prefix: string): string {
+    let identifier = toCamelCase(name) || prefix;
+    if (/^\d/.test(identifier)) {
+        identifier = prefix + identifier.charAt(0).toUpperCase() + identifier.slice(1);
+    }
+    return DART_RESERVED.has(identifier) ? `${identifier}_` : identifier;
+}
+
+/** True when the project generates its own `Assets` class with flutter_gen. */
+async function usesFlutterGen(projectPath: string): Promise<boolean> {
+    try {
+        const pubspec = await readFile(join(projectPath, 'pubspec.yaml'), 'utf-8');
+        return /^\s*flutter_gen(_runner)?\s*:/m.test(pubspec);
+    } catch {
+        return false;
+    }
 }
 
 export async function generateAssetConstants(assets: Array<{filename: string, nodeName: string}>, projectPath: string): Promise<string> {
@@ -160,22 +252,24 @@ export async function generateAssetConstants(assets: Array<{filename: string, no
 
     // Generate unique asset names from new assets
     const uniqueAssets = assets.reduce((acc, asset) => {
-        const baseName = asset.filename.replace(/@\d+x/, '').replace(/\.[^.]+$/, '');
-        if (!acc[baseName]) {
-            acc[baseName] = asset;
+        const mainFilename = toMainAssetPath(asset.filename);
+        if (!acc[mainFilename]) {
+            acc[mainFilename] = asset;
         }
         return acc;
     }, {} as Record<string, any>);
 
     // Add new constants to existing ones
-    Object.entries(uniqueAssets).forEach(([baseName, asset]) => {
-        const constantName = toCamelCase(asset.nodeName);
-        const assetPath = `assets/images/${baseName}.png`; // Use base resolution
-        existingConstants.set(constantName, assetPath);
+    Object.entries(uniqueAssets).forEach(([mainFilename, asset]) => {
+        const constantName = toDartIdentifier(asset.nodeName, 'image');
+        existingConstants.set(constantName, `assets/images/${mainFilename}`);
     });
 
+    // flutter_gen generates its own `Assets` class; a second one breaks compilation.
+    const className = await usesFlutterGen(projectPath) ? 'FigmaAssets' : 'Assets';
+
     // Generate the complete constants file
-    let constantsContent = `// Generated asset constants\n// Do not edit manually\n\nclass Assets {\n`;
+    let constantsContent = `// Generated asset constants\n// Do not edit manually\n\nclass ${className} {\n`;
 
     // Sort constants alphabetically for consistency
     const sortedConstants = Array.from(existingConstants.entries()).sort(([a], [b]) => a.localeCompare(b));
@@ -219,7 +313,7 @@ export async function generateSvgAssetConstants(assets: Array<{filename: string,
 
     // Add new constants to existing ones
     Object.entries(uniqueAssets).forEach(([baseName, asset]) => {
-        const constantName = toCamelCase(asset.nodeName);
+        const constantName = toDartIdentifier(asset.nodeName, 'svg');
         const assetPath = `assets/svgs/${baseName}.svg`;
         existingConstants.set(constantName, assetPath);
     });
@@ -241,7 +335,7 @@ export async function generateSvgAssetConstants(assets: Array<{filename: string,
 
 export function groupAssetsByBaseName(assets: Array<{filename: string, nodeName: string, size: string}>): Record<string, Array<{filename: string, size: string}>> {
     return assets.reduce((acc, asset) => {
-        const baseName = asset.filename.replace(/@\d+x/, '').replace(/\.[^.]+$/, '');
+        const baseName = toMainAssetPath(asset.filename).replace(/\.[^.]+$/, '');
         if (!acc[baseName]) {
             acc[baseName] = [];
         }

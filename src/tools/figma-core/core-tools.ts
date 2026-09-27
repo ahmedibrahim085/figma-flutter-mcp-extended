@@ -330,7 +330,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                                     text:
                                         'Access denied (403). This file may not have published variables, ' +
                                         'or your access token lacks the required scope. ' +
-                                        'Variables require a Pro/Organization/Enterprise plan.',
+                                        'The Variables REST API requires an Enterprise plan (other plans get 403 "Limited by Figma plan").',
                                 },
                             ],
                         };

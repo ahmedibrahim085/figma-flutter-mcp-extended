@@ -5,7 +5,7 @@
 
 import {z} from 'zod';
 import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
-import {FigmaService} from '../../services/figma.js';
+import {FigmaService, figmaApiBaseUrl} from '../../services/figma.js';
 import {Logger} from '../../utils/logger.js';
 import fetch from 'node-fetch';
 
@@ -64,7 +64,7 @@ function collectFrames(node: any, frames: any[] = []): any[] {
 
 export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     const figma = new FigmaService(figmaApiKey);
-    const baseUrl = 'https://api.figma.com/v1';
+    const baseUrl = figmaApiBaseUrl();
     const headers = {
         'X-Figma-Token': figmaApiKey,
         'Content-Type': 'application/json',

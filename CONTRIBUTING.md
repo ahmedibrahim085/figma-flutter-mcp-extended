@@ -76,6 +76,7 @@ src/
    
    # Run the test suite (builds first; offline, no Figma key needed)
    npm test
+   # Tests point FIGMA_API_BASE_URL at a local fake Figma server; unset, the real API is used
    
    # Test locally
    npm run dev

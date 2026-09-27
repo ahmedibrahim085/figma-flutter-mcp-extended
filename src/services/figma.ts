@@ -12,9 +12,17 @@ import {
 import {withRetry} from '../utils/retry.js';
 import {Logger} from '../utils/logger.js';
 
+/**
+ * Figma REST base URL. `FIGMA_API_BASE_URL` overrides it (the test suite points
+ * it at a local fake Figma server); unset means the real API.
+ */
+export function figmaApiBaseUrl(): string {
+    return process.env.FIGMA_API_BASE_URL || 'https://api.figma.com/v1';
+}
+
 export class FigmaService {
     private accessToken: string;
-    private baseUrl = 'https://api.figma.com/v1';
+    private baseUrl = figmaApiBaseUrl();
 
     constructor(accessToken: string) {
         if (!accessToken || accessToken.trim().length === 0) {

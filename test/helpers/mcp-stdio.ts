@@ -31,11 +31,11 @@ export interface McpStdioServer {
  */
 export async function withServer(
     body: (server: McpStdioServer) => Promise<void>,
-    {timeoutMs = 15000} = {}
+    {timeoutMs = 15000, env = {}}: {timeoutMs?: number; env?: Record<string, string>} = {}
 ): Promise<McpStdioServer> {
     const child = spawn(process.execPath, [CLI, '--stdio'], {
         cwd: mkdtempSync(join(tmpdir(), 'mcp-test-')),
-        env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key'},
+        env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', ...env},
         stdio: ['pipe', 'pipe', 'pipe'],
     });
 

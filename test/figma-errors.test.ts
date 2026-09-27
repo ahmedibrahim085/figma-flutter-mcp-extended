@@ -37,7 +37,14 @@ test('429 on variables is a tool error that shows the wait, plan tier and limit 
 
     assert.equal(isError, true);
     assert.equal(text, 'Error 429: {"status":429,"err":"Rate limit exceeded"} ' +
-        '(Retry-After: 354850 s, x-figma-plan-tier: starter, x-figma-rate-limit-type: high)');
+        '(Retry after 354850 seconds, x-figma-plan-tier: starter, x-figma-rate-limit-type: high)');
+});
+
+test('429 on variables without rate-limit headers shows only the body', async () => {
+    const {text, isError} = await variableDefs({status: 429, body: {status: 429, err: 'Rate limit exceeded'}});
+
+    assert.equal(isError, true);
+    assert.equal(text, 'Error 429: {"status":429,"err":"Rate limit exceeded"}');
 });
 
 test('an unreadable variables response is a tool error', async () => {

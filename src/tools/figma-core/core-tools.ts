@@ -336,12 +336,14 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                             isError: true,
                         };
                     }
-                    // A 429 is only actionable with its wait; Starter-plan limits ask for days.
-                    const rateLimit = resp.status === 429
-                        ? ` (Retry-After: ${resp.headers.get('retry-after')} s, x-figma-plan-tier: ${resp.headers.get('x-figma-plan-tier')}, ` +
-                          `x-figma-rate-limit-type: ${resp.headers.get('x-figma-rate-limit-type')})`
-                        : '';
-                    return {content: [{type: 'text' as const, text: `Error ${resp.status}: ${body}${rateLimit}`}], isError: true};
+                    // A 429 is only actionable with its wait; name the headers Figma sent.
+                    const retryAfter = resp.headers.get('retry-after');
+                    const rateLimit = resp.status === 429 ? [
+                        retryAfter && `Retry after ${retryAfter} seconds`,
+                        ...['x-figma-plan-tier', 'x-figma-rate-limit-type'].map(name => resp.headers.get(name) && `${name}: ${resp.headers.get(name)}`),
+                    ].filter(Boolean) : [];
+                    const details = rateLimit.length > 0 ? ` (${rateLimit.join(', ')})` : '';
+                    return {content: [{type: 'text' as const, text: `Error ${resp.status}: ${body}${details}`}], isError: true};
                 }
 
                 const data = (await resp.json()) as any;

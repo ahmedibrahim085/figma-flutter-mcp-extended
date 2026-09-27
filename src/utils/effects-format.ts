@@ -14,28 +14,25 @@ export function formatCategorizedEffects(
         return '';
     }
 
+    const formatShadow = (label: string, shadow: CategorizedEffects['dropShadows'][number], index: number): string => {
+        let line = `${indent}- ${label} ${index + 1}: ${shadow.hex} ` +
+            `opacity ${Math.round(shadow.opacity * 100)}% ` +
+            `offset(${shadow.offset.x}, ${shadow.offset.y}) ` +
+            `blur ${shadow.radius}px`;
+        if (shadow.spread) {
+            line += ` spread ${shadow.spread}px`;
+        }
+        return line + `\n`;
+    };
+
     let output = '';
 
     effects.dropShadows.forEach((shadow, index) => {
-        output += `${indent}- Drop shadow ${index + 1}: ${shadow.hex} ` +
-            `opacity ${Math.round(shadow.opacity * 100)}% ` +
-            `offset(${shadow.offset.x}, ${shadow.offset.y}) ` +
-            `blur ${shadow.radius}px`;
-        if (shadow.spread) {
-            output += ` spread ${shadow.spread}px`;
-        }
-        output += `\n`;
+        output += formatShadow('Drop shadow', shadow, index);
     });
 
     effects.innerShadows.forEach((shadow, index) => {
-        output += `${indent}- Inner shadow ${index + 1}: ${shadow.hex} ` +
-            `opacity ${Math.round(shadow.opacity * 100)}% ` +
-            `offset(${shadow.offset.x}, ${shadow.offset.y}) ` +
-            `blur ${shadow.radius}px`;
-        if (shadow.spread) {
-            output += ` spread ${shadow.spread}px`;
-        }
-        output += `\n`;
+        output += formatShadow('Inner shadow', shadow, index);
     });
 
     effects.blurs.forEach((blur, index) => {

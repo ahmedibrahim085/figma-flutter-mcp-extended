@@ -1,26 +1,7 @@
 // tools/flutter/asset-manager.mts
-import {writeFile, mkdir, readFile, readdir} from 'fs/promises';
+import {writeFile, mkdir, readFile} from 'fs/promises';
 import {join, dirname} from 'path';
-
-/**
- * Detect where the project already writes generated Dart constant files.
- * The theme/typography tools write to lib/theme/; if a project has already
- * used them (lib/theme/ exists) and has no separate lib/constants/, put
- * asset constants there too instead of creating a second, parallel folder.
- * Falls back to lib/constants/ (today's default) otherwise.
- */
-export async function detectConstantsDir(projectPath: string): Promise<string> {
-    const defaultDir = join(projectPath, 'lib', 'constants');
-    try {
-        const libEntries = await readdir(join(projectPath, 'lib'));
-        if (!libEntries.includes('constants') && libEntries.includes('theme')) {
-            return join(projectPath, 'lib', 'theme');
-        }
-    } catch {
-        // lib/ doesn't exist yet - keep the default
-    }
-    return defaultDir;
-}
+import {detectConstantsDir} from '../../../utils/project-conventions.js';
 
 export interface AssetInfo {
     nodeId: string;

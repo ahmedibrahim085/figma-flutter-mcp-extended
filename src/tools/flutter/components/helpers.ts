@@ -5,6 +5,7 @@ import {generateComponentVisualContext} from "../visual-context.js";
 import {formatComponentProperties} from "../../../utils/component-properties.js";
 import {formatCategorizedEffects} from "../../../utils/effects-format.js";
 import {filterEffectivelyVisibleChildren, isEffectivelyVisible} from "../../../utils/visibility.js";
+import {formatPadding, formatStrokes, formatSizingAlignment} from "../../../utils/style-format.js";
 
 /**
  * Generate variant selection prompt when there are more than 3 variants
@@ -87,23 +88,12 @@ export function generateComponentAnalysisReport(
     if (analysis.layout.spacing !== undefined) {
         output += `- Spacing: ${analysis.layout.spacing}px\n`;
     }
-    if (analysis.layout.padding) {
-        const p = analysis.layout.padding;
-        if (p.isUniform) {
-            output += `- Padding: ${p.top}px\n`;
-        } else {
-            output += `- Padding: ${p.top}px ${p.right}px ${p.bottom}px ${p.left}px (TRBL)\n`;
-        }
-    }
-    if (analysis.layout.sizingHorizontal) {
-        output += `- Horizontal Sizing: ${analysis.layout.sizingHorizontal}\n`;
-    }
-    if (analysis.layout.sizingVertical) {
-        output += `- Vertical Sizing: ${analysis.layout.sizingVertical}\n`;
-    }
-    if (analysis.layout.layoutAlign) {
-        output += `- Parent Alignment: ${analysis.layout.layoutAlign}\n`;
-    }
+    output += formatPadding(analysis.layout.padding);
+    output += formatSizingAlignment({
+        horizontal: analysis.layout.sizingHorizontal,
+        vertical: analysis.layout.sizingVertical,
+        align: analysis.layout.layoutAlign
+    }, '- ');
     if (analysis.layout.mainAxisAlignment) {
         output += `- Main Axis Alignment: ${analysis.layout.mainAxisAlignment}\n`;
     }
@@ -122,16 +112,7 @@ export function generateComponentAnalysisReport(
         }
         output += `\n`;
     }
-    if (analysis.styling.strokes && analysis.styling.strokes.length > 0) {
-        analysis.styling.strokes.forEach((stroke, index) => {
-            const label = analysis.styling.strokes!.length > 1 ? ` ${index + 1}` : '';
-            output += `- Border${label}: ${stroke.weight}px solid ${stroke.hex}`;
-            if (stroke.align) {
-                output += ` align ${stroke.align}`;
-            }
-            output += `\n`;
-        });
-    }
+    output += formatStrokes(analysis.styling.strokes);
     if (analysis.styling.cornerRadius !== undefined) {
         if (typeof analysis.styling.cornerRadius === 'number') {
             output += `- Corner radius: ${analysis.styling.cornerRadius}px\n`;
@@ -160,39 +141,17 @@ export function generateComponentAnalysisReport(
                 const dims = child.basicInfo.layout.dimensions;
                 output += `   Size: ${Math.round(dims.width)}×${Math.round(dims.height)}px\n`;
             }
-            if (child.basicInfo?.layout?.sizingHorizontal) {
-                output += `   Horizontal Sizing: ${child.basicInfo.layout.sizingHorizontal}\n`;
-            }
-            if (child.basicInfo?.layout?.sizingVertical) {
-                output += `   Vertical Sizing: ${child.basicInfo.layout.sizingVertical}\n`;
-            }
-            if (child.basicInfo?.layout?.layoutAlign) {
-                output += `   Parent Alignment: ${child.basicInfo.layout.layoutAlign}\n`;
-            }
-            if (child.basicInfo?.layout?.padding) {
-                const p = child.basicInfo.layout.padding;
-                if (p.isUniform) {
-                    output += `   Padding: ${p.top}px\n`;
-                } else {
-                    output += `   Padding: ${p.top}px ${p.right}px ${p.bottom}px ${p.left}px (TRBL)\n`;
-                }
-            }
+            output += formatSizingAlignment({
+                horizontal: child.basicInfo?.layout?.sizingHorizontal,
+                vertical: child.basicInfo?.layout?.sizingVertical,
+                align: child.basicInfo?.layout?.layoutAlign
+            }, '   ');
+            output += formatPadding(child.basicInfo?.layout?.padding, '   ', '');
 
             if (child.basicInfo?.styling?.fills && child.basicInfo.styling.fills.length > 0) {
                 output += `   Background: ${child.basicInfo.styling.fills[0].hex}\n`;
             }
-            if (child.basicInfo?.styling?.strokes && child.basicInfo.styling.strokes.length > 0) {
-                child.basicInfo.styling.strokes.forEach((stroke, strokeIndex) => {
-                    const label = child.basicInfo!.styling!.strokes!.length > 1
-                        ? ` ${strokeIndex + 1}`
-                        : '';
-                    output += `   Border${label}: ${stroke.weight}px solid ${stroke.hex}`;
-                    if (stroke.align) {
-                        output += ` align ${stroke.align}`;
-                    }
-                    output += `\n`;
-                });
-            }
+            output += formatStrokes(child.basicInfo?.styling?.strokes, '   ', undefined, '');
             if (child.basicInfo?.styling?.cornerRadius !== undefined) {
                 const radius = child.basicInfo.styling.cornerRadius;
                 if (typeof radius === 'number') {
@@ -419,15 +378,11 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
         const bbox = node.absoluteBoundingBox;
         output += `Dimensions: ${Math.round(bbox.width)}×${Math.round(bbox.height)}px\n`;
     }
-    if (node.layoutSizingHorizontal) {
-        output += `Horizontal Sizing: ${node.layoutSizingHorizontal}\n`;
-    }
-    if (node.layoutSizingVertical) {
-        output += `Vertical Sizing: ${node.layoutSizingVertical}\n`;
-    }
-    if (node.layoutAlign) {
-        output += `Parent Alignment: ${node.layoutAlign}\n`;
-    }
+    output += formatSizingAlignment({
+        horizontal: node.layoutSizingHorizontal,
+        vertical: node.layoutSizingVertical,
+        align: node.layoutAlign
+    });
 
     output += `\n`;
 
@@ -461,15 +416,11 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
             const bbox = child.absoluteBoundingBox;
             output += `   Size: ${Math.round(bbox.width)}×${Math.round(bbox.height)}px\n`;
         }
-        if (child.layoutSizingHorizontal) {
-            output += `   Horizontal Sizing: ${child.layoutSizingHorizontal}\n`;
-        }
-        if (child.layoutSizingVertical) {
-            output += `   Vertical Sizing: ${child.layoutSizingVertical}\n`;
-        }
-        if (child.layoutAlign) {
-            output += `   Parent Alignment: ${child.layoutAlign}\n`;
-        }
+        output += formatSizingAlignment({
+            horizontal: child.layoutSizingHorizontal,
+            vertical: child.layoutSizingVertical,
+            align: child.layoutAlign
+        }, '   ');
 
         if (child.children && child.children.length > 0) {
             output += `   Contains: ${child.children.length} child nodes\n`;

@@ -5,6 +5,7 @@ import { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.j
 import { generateComponentVisualContext } from '../visual-context.js';
 import type { ComponentAnalysis } from '../../../extractors/components/types.js';
 import { formatComponentProperties } from '../../../utils/component-properties.js';
+import { formatSizingAlignment } from '../../../utils/style-format.js';
 
 export function generateDeduplicatedReport(analysis: DeduplicatedComponentAnalysis): string {
   let output = `Component Analysis (Deduplicated)\n\n`;
@@ -162,15 +163,11 @@ export function generateComprehensiveDeduplicatedReport(
   output += `   • Type: ${analysis.metadata.type}\n`;
   output += `   • Node ID: ${analysis.metadata.nodeId}\n`;
   output += `   • Size: ${Math.round(analysis.layout.dimensions.width)}×${Math.round(analysis.layout.dimensions.height)}px\n`;
-  if (analysis.layout.sizingHorizontal) {
-    output += `   • Horizontal sizing: ${analysis.layout.sizingHorizontal}\n`;
-  }
-  if (analysis.layout.sizingVertical) {
-    output += `   • Vertical sizing: ${analysis.layout.sizingVertical}\n`;
-  }
-  if (analysis.layout.layoutAlign) {
-    output += `   • Parent alignment: ${analysis.layout.layoutAlign}\n`;
-  }
+  output += formatSizingAlignment({
+    horizontal: analysis.layout.sizingHorizontal,
+    vertical: analysis.layout.sizingVertical,
+    align: analysis.layout.layoutAlign
+  }, '   • ', {horizontal: 'Horizontal sizing', vertical: 'Vertical sizing', align: 'Parent alignment'});
   if (analysis.metadata.componentKey) {
     output += `   • Component Key: ${analysis.metadata.componentKey}\n`;
   }
@@ -207,15 +204,11 @@ export function generateComprehensiveDeduplicatedReport(
       }
 
       output += `      📐 Size: ${Math.round(child.layout.dimensions.width)}×${Math.round(child.layout.dimensions.height)}px\n`;
-      if (child.layout.sizingHorizontal) {
-        output += `      📐 Horizontal sizing: ${child.layout.sizingHorizontal}\n`;
-      }
-      if (child.layout.sizingVertical) {
-        output += `      📐 Vertical sizing: ${child.layout.sizingVertical}\n`;
-      }
-      if (child.layout.layoutAlign) {
-        output += `      📐 Parent alignment: ${child.layout.layoutAlign}\n`;
-      }
+      output += formatSizingAlignment({
+        horizontal: child.layout.sizingHorizontal,
+        vertical: child.layout.sizingVertical,
+        align: child.layout.layoutAlign
+      }, '      📐 ', {horizontal: 'Horizontal sizing', vertical: 'Vertical sizing', align: 'Parent alignment'});
       
       if (child.styleRefs.length > 0) {
         output += `      🎨 Style refs: ${child.styleRefs.join(', ')}\n`;

@@ -10,7 +10,8 @@ import {
 } from "../../../utils/effects-format.js";
 import {
     formatVisualBoxEvidence,
-    formatFigmaNodeBoxEvidence
+    formatFigmaNodeBoxEvidence,
+    formatSizingAlignment
 } from "../../../utils/style-format.js";
 
 export function generateChildLayoutEvidence(
@@ -119,15 +120,11 @@ export function generateScreenAnalysisReport(
                 const dims = section.layout.dimensions;
                 output += `   Size: ${Math.round(dims.width)}×${Math.round(dims.height)}px\n`;
             }
-            if (section.layout.sizingHorizontal) {
-                output += `   Horizontal Sizing: ${section.layout.sizingHorizontal}\n`;
-            }
-            if (section.layout.sizingVertical) {
-                output += `   Vertical Sizing: ${section.layout.sizingVertical}\n`;
-            }
-            if (section.layout.layoutAlign) {
-                output += `   Parent Alignment: ${section.layout.layoutAlign}\n`;
-            }
+            output += formatSizingAlignment({
+                horizontal: section.layout.sizingHorizontal,
+                vertical: section.layout.sizingVertical,
+                align: section.layout.layoutAlign
+            }, '   ');
 
             output += formatVisualBoxEvidence(section.styling, section.layout, '   ');
             output += formatCategorizedEffects(section.styling?.effects, '   ');
@@ -260,15 +257,11 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
                           Math.max(bbox.width, bbox.height) > 800 ? 'Tablet' : 'Mobile';
         output += `Device: ${screenSize} ${deviceType}\n`;
     }
-    if (node.layoutSizingHorizontal) {
-        output += `Horizontal Sizing: ${node.layoutSizingHorizontal}\n`;
-    }
-    if (node.layoutSizingVertical) {
-        output += `Vertical Sizing: ${node.layoutSizingVertical}\n`;
-    }
-    if (node.layoutAlign) {
-        output += `Parent Alignment: ${node.layoutAlign}\n`;
-    }
+    output += formatSizingAlignment({
+        horizontal: node.layoutSizingHorizontal,
+        vertical: node.layoutSizingVertical,
+        align: node.layoutAlign
+    });
 
     output += `\n`;
 
@@ -303,15 +296,11 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
             output += `   Size: ${Math.round(bbox.width)}×${Math.round(bbox.height)}px\n`;
             output += `   Position: (${Math.round(bbox.x)}, ${Math.round(bbox.y)})\n`;
         }
-        if (section.layoutSizingHorizontal) {
-            output += `   Horizontal Sizing: ${section.layoutSizingHorizontal}\n`;
-        }
-        if (section.layoutSizingVertical) {
-            output += `   Vertical Sizing: ${section.layoutSizingVertical}\n`;
-        }
-        if (section.layoutAlign) {
-            output += `   Parent Alignment: ${section.layoutAlign}\n`;
-        }
+        output += formatSizingAlignment({
+            horizontal: section.layoutSizingHorizontal,
+            vertical: section.layoutSizingVertical,
+            align: section.layoutAlign
+        }, '   ');
 
         if (section.children && section.children.length > 0) {
             output += `   Contains: ${section.children.length} child elements\n`;

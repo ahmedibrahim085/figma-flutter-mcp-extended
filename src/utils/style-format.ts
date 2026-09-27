@@ -13,7 +13,8 @@ import { rgbaToHex } from '../extractors/components/extractor.js';
  */
 export function formatPadding(
     padding: PaddingInfo | undefined,
-    indent: string = ''
+    indent: string = '',
+    linePrefix: string = '- '
 ): string {
     if (!padding) {
         return '';
@@ -25,10 +26,10 @@ export function formatPadding(
     }
 
     if (padding.isUniform) {
-        return `${indent}- Padding: ${top}px\n`;
+        return `${indent}${linePrefix}Padding: ${top}px\n`;
     }
 
-    return `${indent}- Padding: ${top}px ${right}px ${bottom}px ${left}px (TRBL)\n`;
+    return `${indent}${linePrefix}Padding: ${top}px ${right}px ${bottom}px ${left}px (TRBL)\n`;
 }
 
 /**
@@ -37,7 +38,8 @@ export function formatPadding(
 export function formatStrokes(
     strokes: StrokeInfo[] | undefined,
     indent: string = '',
-    cornerRadius?: number | CornerRadii
+    cornerRadius?: number | CornerRadii,
+    linePrefix: string = '- '
 ): string {
     if (!strokes || strokes.length === 0) {
         return '';
@@ -46,7 +48,7 @@ export function formatStrokes(
     let output = '';
     strokes.forEach((stroke, index) => {
         const label = strokes.length > 1 ? ` ${index + 1}` : '';
-        output += `${indent}- Border${label}: ${stroke.weight}px solid ${stroke.hex}`;
+        output += `${indent}${linePrefix}Border${label}: ${stroke.weight}px solid ${stroke.hex}`;
         if (stroke.align) {
             output += ` align ${stroke.align}`;
         }
@@ -74,6 +76,35 @@ export function formatCornerRadius(
 
     const r = cornerRadius;
     return `${indent}- Corner radius: ${r.topLeft}px ${r.topRight}px ${r.bottomRight}px ${r.bottomLeft}px\n`;
+}
+
+/**
+ * Format Auto Layout sizing/alignment evidence (Horizontal Sizing, Vertical
+ * Sizing, Parent Alignment) as one line per populated field, skipping unset
+ * ones. Takes plain values rather than a typed object so it works for both
+ * the extracted LayoutInfo shape (sizingHorizontal/sizingVertical) and raw
+ * Figma node properties (layoutSizingHorizontal/layoutSizingVertical).
+ */
+export function formatSizingAlignment(
+    values: {horizontal?: string; vertical?: string; align?: string},
+    linePrefix: string = '',
+    labels: {horizontal: string; vertical: string; align: string} = {
+        horizontal: 'Horizontal Sizing',
+        vertical: 'Vertical Sizing',
+        align: 'Parent Alignment'
+    }
+): string {
+    let output = '';
+    if (values.horizontal) {
+        output += `${linePrefix}${labels.horizontal}: ${values.horizontal}\n`;
+    }
+    if (values.vertical) {
+        output += `${linePrefix}${labels.vertical}: ${values.vertical}\n`;
+    }
+    if (values.align) {
+        output += `${linePrefix}${labels.align}: ${values.align}\n`;
+    }
+    return output;
 }
 
 /**
@@ -112,6 +143,8 @@ export function formatFigmaNodeBoxEvidence(
         output += formatPadding({ top, right, bottom, left, isUniform }, indent);
     }
 
+    const cornerRadius = (node as FigmaNode & { cornerRadius?: number }).cornerRadius;
+
     const visibleStrokes = (node.strokes || []).filter(
         (s) => s.visible !== false && s.type === 'SOLID' && s.color
     );
@@ -119,14 +152,9 @@ export function formatFigmaNodeBoxEvidence(
         const strokes: StrokeInfo[] = visibleStrokes.map((stroke) =>
             strokePaintToStrokeInfo(stroke, node)
         );
-        const cornerRadius =
-            (node as FigmaNode & { cornerRadius?: number }).cornerRadius;
         output += formatStrokes(strokes, indent, cornerRadius);
-    } else if ((node as FigmaNode & { cornerRadius?: number }).cornerRadius !== undefined) {
-        output += formatCornerRadius(
-            (node as FigmaNode & { cornerRadius?: number }).cornerRadius,
-            indent
-        );
+    } else if (cornerRadius !== undefined) {
+        output += formatCornerRadius(cornerRadius, indent);
     }
 
     return output;

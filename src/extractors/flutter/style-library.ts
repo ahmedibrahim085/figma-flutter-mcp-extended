@@ -29,6 +29,25 @@ export interface OptimizationReport {
   memoryReduction: string;
 }
 
+/**
+ * JSON with object keys sorted at every depth. A key-array replacer
+ * (`JSON.stringify(obj, keys)`) filters nested objects to those keys, so
+ * different gradients or effects hashed the same.
+ */
+export function stableStringify(value: any): string {
+    return JSON.stringify(value, (key, value) => {
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        // Sort object keys for consistent hashing
+        const sortedObj: any = {};
+        Object.keys(value).sort().forEach(k => {
+          sortedObj[k] = value[k];
+        });
+        return sortedObj;
+      }
+      return value;
+    });
+}
+
 export class FlutterStyleLibrary {
   private static instance: FlutterStyleLibrary;
   private styles = new Map<string, FlutterStyleDefinition>();
@@ -253,18 +272,7 @@ export class FlutterStyleLibrary {
   }
   
   private generateHash(properties: any): string {
-    // Use a more robust hash generation that preserves nested object properties
-    return JSON.stringify(properties, (key, value) => {
-      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-        // Sort object keys for consistent hashing
-        const sortedObj: any = {};
-        Object.keys(value).sort().forEach(k => {
-          sortedObj[k] = value[k];
-        });
-        return sortedObj;
-      }
-      return value;
-    });
+    return stableStringify(properties);
   }
   
   private generateSemanticHash(properties: any): string {
@@ -329,6 +337,11 @@ export class FlutterStyleLibrary {
     if (properties.fills && properties.fills.length > 0) {
       // Use the actual hex value to distinguish different colors
       key.color = properties.fills[0].hex?.toLowerCase();
+      // Gradient/image and stacked fills have no single hex; without the full
+      // fills every such style shared one key.
+      if (properties.fills.length > 1 || (properties.fills[0] && properties.fills[0].type !== 'SOLID')) {
+        key.fills = properties.fills;
+      }
     }
     
     if (properties.cornerRadius !== undefined) {
@@ -341,6 +354,15 @@ export class FlutterStyleLibrary {
       key.padding = properties.padding.isUniform 
         ? properties.padding.uniform 
         : JSON.stringify(properties.padding);
+    }
+    
+    // Properties without a normalised form still separate styles. Text styles
+    // (fontSize, fontWeight, ...) used to produce an empty key, so every text
+    // reused the first text's style. Empty effects equal absent effects.
+    for (const [name, value] of Object.entries(properties)) {
+      if (['fills', 'cornerRadius', 'padding'].includes(name) || value === undefined) continue;
+      if (name === 'effects' && value && Object.values(value as object).every(v => Array.isArray(v) && v.length === 0)) continue;
+      key[name] = value;
     }
     
     if (properties.effects?.dropShadows?.length > 0) {
@@ -358,7 +380,7 @@ export class FlutterStyleLibrary {
   }
   
   private hashObject(obj: any): string {
-    return JSON.stringify(obj, Object.keys(obj).sort());
+    return stableStringify(obj);
   }
   
   private findPotentialParent(properties: any, threshold: number = 0.8): FlutterStyleDefinition | undefined {

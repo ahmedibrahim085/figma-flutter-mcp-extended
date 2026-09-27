@@ -1,6 +1,6 @@
 // src/extractors/flutter/global-vars.ts
 
-import { FlutterStyleLibrary, FlutterStyleDefinition, StyleRelationship, OptimizationReport } from './style-library.js';
+import { FlutterStyleLibrary, FlutterStyleDefinition, StyleRelationship, OptimizationReport, stableStringify } from './style-library.js';
 import { Logger } from '../../utils/logger.js';
 
 export interface GlobalVars {
@@ -208,7 +208,7 @@ export class GlobalStyleManager {
   
   // Helper methods (delegated to style library for consistency)
   private generateHash(properties: any): string {
-    return JSON.stringify(properties, Object.keys(properties).sort());
+    return stableStringify(properties);
   }
   
   private generateSemanticHash(properties: any): string {
@@ -216,7 +216,7 @@ export class GlobalStyleManager {
     // For now, delegate to a simplified version
     const normalized = this.normalizeProperties(properties);
     const semanticKey = this.createSemanticKey(normalized);
-    return JSON.stringify(semanticKey, Object.keys(semanticKey).sort());
+    return stableStringify(semanticKey);
   }
   
   private normalizeProperties(properties: any): any {
@@ -250,18 +250,32 @@ export class GlobalStyleManager {
     
     if (properties.fills) {
       key.color = properties.fills[0]?.normalized || properties.fills[0]?.hex;
+      // Gradient/image and stacked fills have no single hex; without the full
+      // fills every such style shared one key.
+      if (properties.fills.length > 1 || (properties.fills[0] && properties.fills[0].type !== 'SOLID')) {
+        key.fills = properties.fills;
+      }
     }
     
     if (properties.cornerRadius !== undefined) {
       key.borderRadius = typeof properties.cornerRadius === 'number' 
         ? properties.cornerRadius 
-        : 'complex';
+        : JSON.stringify(properties.cornerRadius);
     }
     
     if (properties.padding) {
       key.padding = properties.padding.isUniform 
         ? properties.padding.uniform 
-        : 'complex';
+        : JSON.stringify(properties.padding);
+    }
+    
+    // Properties without a normalised form still separate styles. Text styles
+    // (fontSize, fontWeight, ...) used to produce an empty key, so every text
+    // reused the first text's style. Empty effects equal absent effects.
+    for (const [name, value] of Object.entries(properties)) {
+      if (['fills', 'cornerRadius', 'padding'].includes(name) || value === undefined) continue;
+      if (name === 'effects' && value && Object.values(value as object).every(v => Array.isArray(v) && v.length === 0)) continue;
+      key[name] = value;
     }
     
     return key;

@@ -7,7 +7,8 @@ const FILE_KEY = 'TESTFILEKEY0000000000A';
 
 test('ff_get_metadata reads the node tree from the configured Figma base URL', async () => {
     const figma = await startFakeFigma({
-        [`/files/${FILE_KEY}/nodes`]: {
+        // ff_get_metadata sends ids=1%3A2&depth=2; the fake matches decoded params in any order.
+        [`/files/${FILE_KEY}/nodes?depth=2&ids=1:2`]: {
             body: {
                 nodes: {
                     '1:2': {

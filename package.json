@@ -14,6 +14,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "prepare": "npm run build",
     "start": "node dist/cli.js",
     "dev": "tsx src/cli.ts --http",
     "dev:stdio": "tsx src/cli.ts --stdio",

@@ -124,6 +124,18 @@ test('component analysis reports padding, sizing, alignment, borders and radius'
     assert.match(report, /- CrossAxisAlignment: CrossAxisAlignment\.end/);
 });
 
+for (const [primary, counter, main, cross] of [
+    ['CENTER', 'MAX', 'MainAxisAlignment.center', 'CrossAxisAlignment.end'],
+    ['SPACE_BETWEEN', 'MIN', 'MainAxisAlignment.spaceBetween', 'CrossAxisAlignment.start'],
+    ['MAX', 'CENTER', 'MainAxisAlignment.end', 'CrossAxisAlignment.center'],
+]) {
+    test(`layout guidance maps ${primary}/${counter} to ${main} and ${cross}`, async () => {
+        const report = await analyze(nodeRoute('3:1', {...CARD_ROW, primaryAxisAlignItems: primary, counterAxisAlignItems: counter}), '3:1', {useDeduplication: false});
+        assert.match(report, new RegExp(`- MainAxisAlignment: ${main.replace('.', '\\.')}\\n`));
+        assert.match(report, new RegExp(`- CrossAxisAlignment: ${cross.replace('.', '\\.')}\\n`));
+    });
+}
+
 test('inspect_component_structure reports sizing and alignment for the component and its children', async () => {
     const {text, requests} = await callToolOffline(nodeRoute('3:1', CARD_ROW), 'inspect_component_structure',
         {input: FILE_KEY, nodeId: '3:1', userDefinedComponent: true});

@@ -249,12 +249,12 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
         const crossAxisAlignment =
             analysis.layout.crossAxisAlignment ?? analysis.layout.justifyContent;
         if (crossAxisAlignment) {
-            guidance += `- CrossAxisAlignment: ${mapFigmaToFlutterAlignment(crossAxisAlignment)}\n`;
+            guidance += `- CrossAxisAlignment: ${mapFigmaToFlutterAlignment(crossAxisAlignment, 'cross')}\n`;
         }
         const mainAxisAlignment =
             analysis.layout.mainAxisAlignment ?? analysis.layout.alignItems;
         if (mainAxisAlignment) {
-            guidance += `- MainAxisAlignment: ${mapFigmaToFlutterAlignment(mainAxisAlignment)}\n`;
+            guidance += `- MainAxisAlignment: ${mapFigmaToFlutterAlignment(mainAxisAlignment, 'main')}\n`;
         }
     } else {
         guidance += `- Use Container() or Stack() for layout\n`;
@@ -473,17 +473,29 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
 }
 
 // Helper functions
-export function mapFigmaToFlutterAlignment(alignment: string): string {
-    const alignmentMap: Record<string, string> = {
-        'MIN': 'CrossAxisAlignment.start',
-        'CENTER': 'CrossAxisAlignment.center',
-        'MAX': 'CrossAxisAlignment.end',
-        'SPACE_BETWEEN': 'MainAxisAlignment.spaceBetween',
-        'SPACE_AROUND': 'MainAxisAlignment.spaceAround',
-        'SPACE_EVENLY': 'MainAxisAlignment.spaceEvenly'
-    };
+/**
+ * Maps a Figma auto-layout alignment to the Flutter enum for that axis. One
+ * shared map used to hand `CrossAxisAlignment.*` to the main axis as well.
+ */
+export function mapFigmaToFlutterAlignment(alignment: string, axis: 'main' | 'cross'): string {
+    const alignmentMap: Record<string, string> = axis === 'main'
+        ? {
+            'MIN': 'MainAxisAlignment.start',
+            'CENTER': 'MainAxisAlignment.center',
+            'MAX': 'MainAxisAlignment.end',
+            'SPACE_BETWEEN': 'MainAxisAlignment.spaceBetween',
+            'SPACE_AROUND': 'MainAxisAlignment.spaceAround',
+            'SPACE_EVENLY': 'MainAxisAlignment.spaceEvenly'
+        }
+        : {
+            'MIN': 'CrossAxisAlignment.start',
+            'CENTER': 'CrossAxisAlignment.center',
+            'MAX': 'CrossAxisAlignment.end',
+            'BASELINE': 'CrossAxisAlignment.baseline',
+            'STRETCH': 'CrossAxisAlignment.stretch'
+        };
 
-    return alignmentMap[alignment] || 'CrossAxisAlignment.center';
+    return alignmentMap[alignment] || (axis === 'main' ? 'MainAxisAlignment.center' : 'CrossAxisAlignment.center');
 }
 
 export function hasVisualStyling(styling: any): boolean {

@@ -16,6 +16,7 @@
     "build": "tsc",
     "prepare": "npm run build",
     "start": "node dist/cli.js",
+    "test": "npm run build && node --test",
     "dev": "tsx src/cli.ts --http",
     "dev:stdio": "tsx src/cli.ts --stdio",
     "dev:port": "tsx src/cli.ts --http --port",

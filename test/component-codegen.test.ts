@@ -128,6 +128,7 @@ for (const [primary, counter, main, cross] of [
     ['CENTER', 'MAX', 'MainAxisAlignment.center', 'CrossAxisAlignment.end'],
     ['SPACE_BETWEEN', 'MIN', 'MainAxisAlignment.spaceBetween', 'CrossAxisAlignment.start'],
     ['MAX', 'CENTER', 'MainAxisAlignment.end', 'CrossAxisAlignment.center'],
+    ['MIN', 'BASELINE', 'MainAxisAlignment.start', 'CrossAxisAlignment.baseline'],
 ]) {
     test(`layout guidance maps ${primary}/${counter} to ${main} and ${cross}`, async () => {
         const report = await analyze(nodeRoute('3:1', {...CARD_ROW, primaryAxisAlignItems: primary, counterAxisAlignItems: counter}), '3:1', {useDeduplication: false});

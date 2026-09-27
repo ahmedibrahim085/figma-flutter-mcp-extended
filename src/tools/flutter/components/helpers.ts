@@ -491,11 +491,11 @@ export function mapFigmaToFlutterAlignment(alignment: string, axis: 'main' | 'cr
             'MIN': 'CrossAxisAlignment.start',
             'CENTER': 'CrossAxisAlignment.center',
             'MAX': 'CrossAxisAlignment.end',
-            'BASELINE': 'CrossAxisAlignment.baseline',
-            'STRETCH': 'CrossAxisAlignment.stretch'
+            'BASELINE': 'CrossAxisAlignment.baseline'
         };
 
-    return alignmentMap[alignment] || (axis === 'main' ? 'MainAxisAlignment.center' : 'CrossAxisAlignment.center');
+    // Unknown values fall back to start: Figma's default alignment is MIN.
+    return alignmentMap[alignment] || (axis === 'main' ? 'MainAxisAlignment.start' : 'CrossAxisAlignment.start');
 }
 
 export function hasVisualStyling(styling: any): boolean {

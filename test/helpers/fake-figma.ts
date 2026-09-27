@@ -29,7 +29,7 @@ export interface FakeFigma {
 export type FakeRoutes = Record<string, FakeResponse> | ((baseUrl: string) => Record<string, FakeResponse>);
 
 /**
- * Starts a fake Figma API on a free local port. `routes` maps a path (without
+ * Starts a fake Figma API on a free local port. `routeSpec` maps a path (without
  * `/v1`), optionally with a query (`/files/K/nodes?ids=1:2`), to a response.
  * Queries match on decoded parameters in any order, so `ids=1%3A2` matches
  * `ids=1:2`. A path that has query keys only answers the one whose parameters

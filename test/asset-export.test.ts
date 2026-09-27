@@ -17,6 +17,8 @@ const image = (id: string, name: string) => ({id, name, type: 'RECTANGLE', fills
 const vector = (id: string, name: string) => ({id, name, type: 'VECTOR', fills: [{type: 'SOLID', color: {r: 0, g: 0, b: 0, a: 1}}]});
 const HERO = image('2:1', 'Hero Image');
 
+type Format = 'png' | 'jpg' | 'svg';
+
 const FLUTTER_CREATE_PUBSPEC = `name: app
 
 dependencies:
@@ -28,7 +30,7 @@ flutter:
 `;
 
 /** A temp Flutter project, removed when the test ends. */
-async function project(t: TestContext, pubspec?: string): Promise<string> {
+async function tempProject(t: TestContext, pubspec?: string): Promise<string> {
     const dir = await mkdtemp(join(tmpdir(), 'figma-flutter-assets-'));
     t.after(() => rm(dir, {recursive: true, force: true}));
     if (pubspec !== undefined) await writeFile(join(dir, 'pubspec.yaml'), pubspec);
@@ -36,7 +38,7 @@ async function project(t: TestContext, pubspec?: string): Promise<string> {
 }
 
 /** Serves `nodes`, their render URLs per scale, and the rendered bytes, all from the fake. */
-function renderRoutes(nodes: Array<{id: string}>, format: string, scales: number[]): FakeRoutes {
+function renderRoutes(nodes: Array<{id: string}>, format: Format, scales: number[]): FakeRoutes {
     const ids = nodes.map((n) => n.id).join(',');
     return (baseUrl) => {
         const routes: Record<string, FakeResponse> = {
@@ -56,7 +58,7 @@ function renderRoutes(nodes: Array<{id: string}>, format: string, scales: number
     };
 }
 
-async function exportImages(dir: string, nodes: Array<{id: string}>, args: {format?: string; scale?: number; includeMultipleResolutions?: boolean} = {}) {
+async function exportImages(dir: string, nodes: Array<{id: string}>, args: {format?: Format; scale?: number; includeMultipleResolutions?: boolean} = {}) {
     const scales = args.includeMultipleResolutions ? [1, 2, 3] : [args.scale ?? 2];
     return callToolOffline(renderRoutes(nodes, args.format ?? 'png', scales), 'export_flutter_assets',
         {fileId: FILE_KEY, nodeIds: nodes.map((n) => n.id), projectPath: dir, ...args});
@@ -69,7 +71,7 @@ async function readPubspec(dir: string): Promise<{text: string; doc: any}> {
 }
 
 test('assets go under the top-level flutter block, not dependencies: flutter:', async (t) => {
-    const dir = await project(t, FLUTTER_CREATE_PUBSPEC);
+    const dir = await tempProject(t, FLUTTER_CREATE_PUBSPEC);
     const {text} = await exportImages(dir, [HERO]);
 
     assert.match(text, /Successfully exported 1 image assets/);
@@ -89,7 +91,7 @@ flutter:
 });
 
 test('a 2x render lands in the 2.0x variant folder; the pubspec lists the main path', async (t) => {
-    const dir = await project(t, FLUTTER_CREATE_PUBSPEC);
+    const dir = await tempProject(t, FLUTTER_CREATE_PUBSPEC);
     await exportImages(dir, [HERO], {scale: 2});
 
     assert.deepEqual(await readFile(join(dir, 'assets/images/2.0x/hero_image.png')), PNG);
@@ -99,7 +101,7 @@ test('a 2x render lands in the 2.0x variant folder; the pubspec lists the main p
 });
 
 test('multiple resolutions write 1x, 2.0x and 3.0x and declare the main path once', async (t) => {
-    const dir = await project(t, FLUTTER_CREATE_PUBSPEC);
+    const dir = await tempProject(t, FLUTTER_CREATE_PUBSPEC);
     await exportImages(dir, [HERO], {includeMultipleResolutions: true});
 
     for (const file of ['hero_image.png', '2.0x/hero_image.png', '3.0x/hero_image.png']) {
@@ -109,7 +111,7 @@ test('multiple resolutions write 1x, 2.0x and 3.0x and declare the main path onc
 });
 
 test('an existing block list keeps its entries and comments; new paths append after them', async (t) => {
-    const dir = await project(t, `name: app
+    const dir = await tempProject(t, `name: app
 
 flutter:
   uses-material-design: true
@@ -143,12 +145,12 @@ flutter:
   assets:
     - assets/images/
 `;
-    const covered = await project(t, withDirectory);
+    const covered = await tempProject(t, withDirectory);
     await exportImages(covered, [HERO], {includeMultipleResolutions: true});
     assert.equal((await readPubspec(covered)).text, withDirectory);
 
     // Only 2.0x/hero_image.png exists: Flutter bundles nothing from the directory entry.
-    const variantOnly = await project(t, withDirectory);
+    const variantOnly = await tempProject(t, withDirectory);
     await exportImages(variantOnly, [HERO], {scale: 2});
     assert.deepEqual((await readPubspec(variantOnly)).doc.flutter.assets,
         ['assets/images/', 'assets/images/hero_image.png']);
@@ -169,7 +171,7 @@ flutter_gen:
 flutter:
   uses-material-design: true
 `;
-    const dir = await project(t, flutterGen);
+    const dir = await tempProject(t, flutterGen);
     await exportImages(dir, [HERO]);
 
     const pubspec = await readPubspec(dir);
@@ -181,7 +183,7 @@ flutter:
 });
 
 test('a pubspec without a flutter block gets one appended', async (t) => {
-    const dir = await project(t, 'name: app\n');
+    const dir = await tempProject(t, 'name: app\n');
     await exportImages(dir, [HERO]);
 
     assert.equal((await readPubspec(dir)).text, `name: app
@@ -193,7 +195,7 @@ flutter:
 });
 
 test('a CRLF pubspec stays CRLF', async (t) => {
-    const dir = await project(t, FLUTTER_CREATE_PUBSPEC.replace(/\n/g, '\r\n'));
+    const dir = await tempProject(t, FLUTTER_CREATE_PUBSPEC.replace(/\n/g, '\r\n'));
     await exportImages(dir, [HERO]);
 
     const pubspec = await readPubspec(dir);
@@ -214,19 +216,23 @@ flutter:
 for (const [shape, pubspec, reason] of [
     ['a flow-mapping flutter:', 'name: app\nflutter: {uses-material-design: true}\n', 'top-level flutter: is not a block mapping'],
     ['a scalar assets:', 'name: app\nflutter:\n  assets: assets/icons/\n', 'assets: is not a block list or a one-line flow list'],
+    ['a multi-line flow assets:', 'name: app\nflutter:\n  assets: [\n    assets/icons/,\n  ]\n', 'assets: is not a block list or a one-line flow list'],
     ['map-form asset entries', 'name: app\nflutter:\n  assets:\n    - path: assets/icons/\n      flavors:\n        - free\n', 'asset entries use the map form'],
 ] as const) {
     test(`${shape} is refused: pubspec byte-identical, error names the lines to add`, async (t) => {
-        const dir = await project(t, pubspec);
+        const dir = await tempProject(t, pubspec);
         const {text} = await exportImages(dir, [HERO]);
 
         assert.equal(text, `Error exporting assets: pubspec.yaml left unchanged (${reason}). Add these under flutter: assets: assets/images/hero_image.png`);
         assert.equal(await readFile(join(dir, 'pubspec.yaml'), 'utf-8'), pubspec);
+        // Constants are written before the pubspec edit, so a refusal does not lose them.
+        assert.match(await readFile(join(dir, 'lib/constants/assets.dart'), 'utf-8'),
+            /^  static const String heroImage = 'assets\/images\/hero_image\.png';$/m);
     });
 }
 
 test('constants keep the real extension and are valid Dart identifiers', async (t) => {
-    const dir = await project(t, FLUTTER_CREATE_PUBSPEC);
+    const dir = await tempProject(t, FLUTTER_CREATE_PUBSPEC);
     await exportImages(dir, [HERO, image('2:2', '404 Illustration'), image('2:3', 'Default')], {format: 'jpg'});
 
     assert.equal(await readFile(join(dir, 'lib/constants/assets.dart'), 'utf-8'), `// Generated asset constants
@@ -241,7 +247,7 @@ class Assets {
 });
 
 test('export_svg_flutter_assets writes the SVG, its constant, and the pubspec entry', async (t) => {
-    const dir = await project(t, FLUTTER_CREATE_PUBSPEC);
+    const dir = await tempProject(t, FLUTTER_CREATE_PUBSPEC);
     const brandMark = vector('3:1', 'Brand Mark');
     const {text} = await callToolOffline(renderRoutes([brandMark], 'svg', [1]), 'export_svg_flutter_assets',
         {fileId: FILE_KEY, nodeIds: [brandMark.id], projectPath: dir});

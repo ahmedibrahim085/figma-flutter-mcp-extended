@@ -5,7 +5,6 @@
     "1:86": {
      "description": "Test fixture: variants Size x State; props Show icon (BOOLEAN), Icon (INSTANCE_SWAP), Label (TEXT).",
      "documentationLinks": [],
-     "key": "71d2771a40ed14bfe49c7b062139300c2199e6ce",
      "name": "Button"
     }
    },
@@ -13,14 +12,12 @@
     "1:66": {
      "description": "",
      "documentationLinks": [],
-     "key": "2f59505d0a3204cd32ddb388a707fb5900dd20ed",
      "name": "Icon/Star",
      "remote": false
     },
     "1:68": {
      "description": "",
      "documentationLinks": [],
-     "key": "37804f3d78a30b2bf8fb3f778da2003afc2aaf51",
      "name": "Icon/Burst",
      "remote": false
     },
@@ -28,7 +25,6 @@
      "componentSetId": "1:86",
      "description": "",
      "documentationLinks": [],
-     "key": "a7ce50a45495194cc3c367ccfc76702c6215aed9",
      "name": "Size=Small, State=Default",
      "remote": false
     },
@@ -36,7 +32,6 @@
      "componentSetId": "1:86",
      "description": "",
      "documentationLinks": [],
-     "key": "1126092a807d40c1354640f7510f4b87a751675d",
      "name": "Size=Small, State=Disabled",
      "remote": false
     },
@@ -44,7 +39,6 @@
      "componentSetId": "1:86",
      "description": "",
      "documentationLinks": [],
-     "key": "5788e3b3e34b5297c3a80bb42e7c6b9046021395",
      "name": "Size=Large, State=Default",
      "remote": false
     },
@@ -52,7 +46,6 @@
      "componentSetId": "1:86",
      "description": "",
      "documentationLinks": [],
-     "key": "cfa71a6caabb4e89f901f32a8f633801c7441a9c",
      "name": "Size=Large, State=Disabled",
      "remote": false
     }

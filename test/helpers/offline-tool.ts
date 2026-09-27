@@ -35,7 +35,12 @@ export function nodeRoute(nodeId: string, document: object): Record<string, Fake
     return {[`/files/${FILE_KEY}/nodes?ids=${nodeId}`]: {body: {nodes: {[nodeId]: {document}}}}};
 }
 
-/** Replaces generated style ids (e.g. `decorationMujwk412ueha`) so output compares across runs. */
+/**
+ * Replaces generated style ids so output compares across runs. Ids are the
+ * category plus a 12-character base36 id with its first character uppercased
+ * (`decorationMujwk412ueha`), or `<category>Merged` plus 12 lowercase base36
+ * characters; words such as `textDirection` do not match.
+ */
 export function normalizeStyleIds(text: string): string {
-    return text.replace(/\b(decoration|padding|text|layout|style_)[A-Za-z0-9]{8,}\b/g, '$1ID');
+    return text.replace(/\b(decoration|padding|text|layout)(?:Merged[a-z0-9]{12}|[A-Z0-9][a-z0-9]{11})\b/g, '$1ID');
 }

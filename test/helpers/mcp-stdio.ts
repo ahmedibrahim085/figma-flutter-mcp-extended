@@ -8,6 +8,9 @@ import {join, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const CLI = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'dist', 'cli.js');
+// Resolved here: the server runs from an empty temp dir, where bare `tsx` would not resolve.
+const TSX_LOADER = import.meta.resolve('tsx');
+const BLOCK_NETWORK = new URL('./block-network.ts', import.meta.url).href;
 
 export interface JsonRpcMessage {
     jsonrpc: '2.0';
@@ -19,6 +22,8 @@ export interface JsonRpcMessage {
 export interface McpStdioServer {
     /** Every non-empty line the server wrote to stdout, parsed or not. */
     stdoutLines: string[];
+    /** Hosts the server tried to resolve (network is blocked); filled after exit. */
+    blockedHosts: string[];
     request(method: string, params?: object): Promise<JsonRpcMessage>;
     initialize(): Promise<JsonRpcMessage>;
 }
@@ -28,12 +33,15 @@ export interface McpStdioServer {
  * the server exits cleanly (code 0, no signal): a crash, a non-zero exit or a
  * hang after replying fails the test. The working directory is an empty temp
  * dir so a developer's own .env is never loaded; the API key is a dummy value.
+ * Network access is blocked (see block-network.ts); any attempted host fails the
+ * test unless `allowNetworkAttempts` is set by a test that asserts on it.
  */
 export async function withServer(
     body: (server: McpStdioServer) => Promise<void>,
-    {timeoutMs = 15000, env = {}}: {timeoutMs?: number; env?: Record<string, string>} = {}
+    {timeoutMs = 15000, env = {}, allowNetworkAttempts = false}:
+        {timeoutMs?: number; env?: Record<string, string>; allowNetworkAttempts?: boolean} = {}
 ): Promise<McpStdioServer> {
-    const child = spawn(process.execPath, [CLI, '--stdio'], {
+    const child = spawn(process.execPath, ['--import', TSX_LOADER, '--import', BLOCK_NETWORK, CLI, '--stdio'], {
         cwd: mkdtempSync(join(tmpdir(), 'mcp-test-')),
         env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', ...env},
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -83,6 +91,7 @@ export async function withServer(
 
     const server: McpStdioServer = {
         stdoutLines,
+        blockedHosts: [],
         request(method, params = {}) {
             const id = nextId++;
             return new Promise((resolve, reject) => {
@@ -117,7 +126,11 @@ export async function withServer(
     const exit = await exited;
     clearTimeout(killTimer);
 
+    server.blockedHosts = [...stderr.matchAll(/^BLOCKED-NETWORK (\S+)$/gm)].map((match) => match[1]);
     if (bodyError) throw bodyError;
+    if (!allowNetworkAttempts) {
+        assert.deepEqual(server.blockedHosts, [], 'the server tried to reach the network');
+    }
     assert.deepEqual(exit, {code: 0, signal: null},
         `server must exit cleanly when stdin closes (SIGKILL means it hung). stderr:\n${stderr}`);
     return server;

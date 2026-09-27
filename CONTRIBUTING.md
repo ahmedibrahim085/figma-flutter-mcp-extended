@@ -191,6 +191,9 @@ HTTP_MODE=true
 
 # Optional: Set default HTTP port
 HTTP_PORT=3333
+
+# Optional: Figma REST base URL (default https://api.figma.com/v1; the tests point it at a local fake)
+FIGMA_API_BASE_URL=https://api.figma.com/v1
 ```
 
 ## 📋 Pull Request Checklist

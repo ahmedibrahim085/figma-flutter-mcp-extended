@@ -78,18 +78,22 @@ test('Flutter tools reach Figma through the same configured base URL', async () 
     }
 
     assert.match((reply as any).result.content[0].text as string, /Promo Banner/);
-    assert.ok(figma.requests.length > 0, 'the tool must have called the fake Figma server');
-    assert.ok(figma.requests.every((r) => r.path === `/files/${FILE_KEY}/nodes`),
-        `unexpected requests: ${JSON.stringify(figma.requests.map((r) => r.path))}`);
+    assert.deepEqual(
+        figma.requests.map((r) => ({method: r.method, path: r.path, query: r.query})),
+        [{method: 'GET', path: `/files/${FILE_KEY}/nodes`, query: {ids: '5:1'}}],
+    );
 });
 
-test('without FIGMA_API_BASE_URL the real Figma API is used', async () => {
-    const {figmaApiBaseUrl} = await import('../dist/services/figma.js');
-    const saved = process.env.FIGMA_API_BASE_URL;
-    delete process.env.FIGMA_API_BASE_URL;
-    try {
-        assert.equal(figmaApiBaseUrl(), 'https://api.figma.com/v1');
-    } finally {
-        if (saved !== undefined) process.env.FIGMA_API_BASE_URL = saved;
-    }
-});
+for (const [tool, args] of [
+    ['ff_get_metadata', {fileKey: FILE_KEY, nodeId: '1:2'}],
+    ['inspect_component_structure', {input: FILE_KEY, nodeId: '5:1'}],
+] as const) {
+    test(`without FIGMA_API_BASE_URL, ${tool} calls the real Figma API host`, async () => {
+        const server = await withServer(async (s) => {
+            await s.initialize();
+            await s.request('tools/call', {name: tool, arguments: args});
+        }, {allowNetworkAttempts: true});
+        assert.ok(server.blockedHosts.length > 0, 'the tool must have tried to reach Figma');
+        assert.deepEqual([...new Set(server.blockedHosts)], ['api.figma.com']);
+    });
+}

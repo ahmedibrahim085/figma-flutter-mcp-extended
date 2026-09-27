@@ -27,8 +27,9 @@ export interface FakeFigma {
 
 /**
  * Starts a fake Figma API on a free local port. `routes` maps a path (without
- * `/v1`) to a response; an unknown path answers 404 so a missing fixture fails
- * loudly instead of silently reaching the real API.
+ * `/v1`), optionally with its exact query string (`/files/K/nodes?ids=1:2`), to a
+ * response; a path+query key wins over a bare path key. An unknown path answers
+ * 404 so a missing fixture fails loudly instead of silently reaching the real API.
  */
 export async function startFakeFigma(routes: Record<string, FakeResponse>): Promise<FakeFigma> {
     const requests: RecordedRequest[] = [];
@@ -41,7 +42,7 @@ export async function startFakeFigma(routes: Record<string, FakeResponse>): Prom
             query: Object.fromEntries(url.searchParams),
             headers: req.headers,
         });
-        const route = routes[path];
+        const route = routes[`${path}${url.search}`] ?? routes[path];
         if (!route) {
             res.writeHead(404, {'Content-Type': 'application/json'});
             res.end(JSON.stringify({status: 404, err: `fake Figma has no fixture for ${path}`}));

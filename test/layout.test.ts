@@ -175,3 +175,13 @@ test('a frame cut off at the depth limit keeps its own size and decoration', asy
 
     assert.match(await toolText(root), /\/\/ approximate: "Level 8" is deeper than 8 levels; its children are not rendered\n\s*Container\(\n\s*width: 100,\n\s*height: 100,\n\s*decoration: decorationID,\n\s*\)/);
 });
+
+test('a nested frame with nothing but children renders its Row or Column directly', async () => {
+    const code = await widgetCode({
+        id: '57:1', name: 'Outer', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(200, 80),
+        children: [{id: '57:2', name: 'Bare', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(200, 40),
+            children: [{id: '57:3', name: 'Dot', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(10, 10)}]}],
+    });
+
+    assert.ok(dedent(code).includes(['child: Column(', 'children: [', 'Row(', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
+});

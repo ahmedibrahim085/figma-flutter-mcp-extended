@@ -179,7 +179,10 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
   const padding = styleOf('padding');
   if (padding) props.push(`padding: ${padding},`);
   if (child.children?.length) {
-    props.push(`child: ${indentTail(layoutWidget(child.children, child.layout.direction, styleLibrary, approximations), 2)},`);
+    const layout = layoutWidget(child.children, child.layout.direction, styleLibrary, approximations);
+    // A Container holding only a child adds nothing (avoid_unnecessary_containers).
+    if (props.length === 0) return layout;
+    props.push(`child: ${indentTail(layout, 2)},`);
   }
   if (props.length === 0) return placeholder;
   if (BOUNDING_BOX_TYPES.has(child.type)) {

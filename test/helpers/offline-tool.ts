@@ -19,17 +19,38 @@ export async function callToolOffline(
     tool: string,
     args: Record<string, unknown>,
 ): Promise<OfflineToolResult> {
+    const [result] = await callToolsOffline(routes, [[tool, args]]);
+    return result;
+}
+
+/**
+ * Like callToolOffline, but makes several calls in one server process, so
+ * in-memory state (the style library) carries from one call to the next as it
+ * does for a consumer. Each result lists only the requests its own call made.
+ */
+export async function callToolsOffline(
+    routes: FakeRoutes,
+    calls: Array<[tool: string, args: Record<string, unknown>]>,
+): Promise<OfflineToolResult[]> {
     const figma = await startFakeFigma(routes);
-    let reply: any;
+    const results: OfflineToolResult[] = [];
     try {
         await withServer(async (server) => {
             await server.initialize();
-            reply = await server.request('tools/call', {name: tool, arguments: args});
+            for (const [tool, args] of calls) {
+                const before = figma.requests.length;
+                const reply: any = await server.request('tools/call', {name: tool, arguments: args});
+                results.push({
+                    text: reply.result.content[0].text,
+                    isError: reply.result.isError === true,
+                    requests: figma.requests.slice(before),
+                });
+            }
         }, {env: {FIGMA_API_BASE_URL: figma.baseUrl}});
     } finally {
         await figma.close();
     }
-    return {text: reply.result.content[0].text, isError: reply.result.isError === true, requests: figma.requests};
+    return results;
 }
 
 /** Route for FigmaService.getNode / getNodes: `/files/KEY/nodes?ids=<id>` answering one node. */

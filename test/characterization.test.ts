@@ -1,15 +1,13 @@
 // Known codegen defects, pinned as they are today. Each test asserts current
-// (wrong) output and names the slice that replaces it; that slice's first commit
-// flips the expectation to the correct output. Do not read these as desired behaviour.
+// (wrong) output and names the slice that replaces it; the commit that fixes a
+// defect rewrites its pin to the correct output. Do not read these as desired behaviour.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {callToolOffline, nodeRoute, normalizeStyleIds, FILE_KEY} from './helpers/offline-tool.ts';
-import {withServer} from './helpers/mcp-stdio.ts';
-import {startFakeFigma} from './helpers/fake-figma.ts';
+import {callToolOffline, callToolsOffline, nodeRoute, normalizeStyleIds, FILE_KEY} from './helpers/offline-tool.ts';
 
 const color = (r: number, g: number, b: number) => ({r, g, b, a: 1});
 const BLACK_FILL = {type: 'SOLID', color: color(0, 0, 0)};
-const text = (id: string, characters: string, style: object, extra: object = {}) =>
+const textNode = (id: string, characters: string, style: object, extra: object = {}) =>
     ({id, name: characters, type: 'TEXT', characters, fills: [BLACK_FILL], style, ...extra});
 const box = (id: string, name: string, fills: object[], extra: object = {}) =>
     ({id, name, type: 'FRAME', layoutMode: 'VERTICAL', absoluteBoundingBox: {x: 0, y: 0, width: 200, height: 100}, fills, children: [], ...extra});
@@ -18,38 +16,31 @@ const box = (id: string, name: string, fills: object[], extra: object = {}) =>
 async function widgetCode(node: {id: string}): Promise<string> {
     const {text} = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component',
         {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, generateFlutterCode: true});
-    return normalizeStyleIds(text.slice(text.indexOf('class ')));
+    const start = text.indexOf('class ');
+    assert.ok(start >= 0, `no generated class in:\n${text}`);
+    return normalizeStyleIds(text.slice(start));
 }
 
 /** Style definitions printed by generate_flutter_implementation after analysing `node` in the same server. */
 async function styleDefinitions(node: {id: string}): Promise<string> {
-    const figma = await startFakeFigma(nodeRoute(node.id, node));
-    let generated = '';
-    try {
-        await withServer(async (server) => {
-            await server.initialize();
-            await server.request('tools/call', {name: 'analyze_figma_component', arguments: {
-                input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true,
-            }});
-            const reply = await server.request('tools/call', {name: 'generate_flutter_implementation', arguments: {componentNodeId: node.id}});
-            generated = reply.result.content[0].text;
-        }, {env: {FIGMA_API_BASE_URL: figma.baseUrl}});
-    } finally {
-        await figma.close();
-    }
-    return normalizeStyleIds(generated);
+    const [, generated] = await callToolsOffline(nodeRoute(node.id, node), [
+        ['analyze_figma_component', {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true}],
+        ['generate_flutter_implementation', {componentNodeId: node.id}],
+    ]);
+    return normalizeStyleIds(generated.text);
 }
 
 test('TextStyle keeps only family, size, weight and colour (pins current behaviour, slice 1 replaces this)', async () => {
     const code = await widgetCode({
         id: '11:1', name: 'Text Frame', type: 'FRAME', layoutMode: 'VERTICAL', fills: [],
-        children: [text('11:2', 'Heading', {
+        children: [textNode('11:2', 'Heading', {
             fontFamily: 'Inter', fontWeight: 600, fontSize: 16, lineHeightPx: 24, lineHeightUnit: 'PIXELS',
             letterSpacing: 0.5, textCase: 'UPPER', textDecoration: 'UNDERLINE', italic: true, textAlignHorizontal: 'CENTER',
         })],
     });
 
     // Line height, letter spacing, italic, underline, upper case and centring are all dropped.
+    // The component extractor never reads letterSpacing, so the fix spans extractor and generator.
     assert.ok(code.includes(`            'Heading',
             style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF000000)),
           ),`), code);
@@ -60,16 +51,21 @@ test('auto-layout Row has no alignment, spacing or fixed size (pins current beha
         id: '12:1', name: 'Toolbar', type: 'FRAME', layoutMode: 'HORIZONTAL', itemSpacing: 12,
         primaryAxisAlignItems: 'SPACE_BETWEEN', counterAxisAlignItems: 'CENTER', paddingLeft: 16, paddingRight: 16,
         layoutSizingHorizontal: 'FIXED', layoutSizingVertical: 'FIXED', absoluteBoundingBox: {x: 0, y: 0, width: 320, height: 48}, fills: [],
-        children: [text('12:2', 'Left', {fontFamily: 'Inter', fontWeight: 400, fontSize: 14}), text('12:3', 'Right', {fontFamily: 'Inter', fontWeight: 400, fontSize: 14})],
+        children: [textNode('12:2', 'Left', {fontFamily: 'Inter', fontWeight: 400, fontSize: 14}), textNode('12:3', 'Right', {fontFamily: 'Inter', fontWeight: 400, fontSize: 14})],
     });
 
-    // SPACE_BETWEEN, CENTER, itemSpacing 12 and the fixed 320×48 size are all dropped.
+    // SPACE_BETWEEN, CENTER, itemSpacing 12 and the fixed 320×48 size are all dropped:
+    // no alignment, no size, and the two Texts sit next to each other with no gap.
     assert.ok(code.includes(`    return Container(
       padding: paddingID,
       child: Row(
         children: [
           Text(
-            'Left',`), code);
+            'Left',
+            style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: Color(0xFF000000)),
+          ),
+          Text(
+            'Right',`), code);
 });
 
 const GRADIENT_FILL = {
@@ -94,7 +90,7 @@ test('component properties give no widget parameters and a nested ElevatedButton
         id: '16:1', name: 'Primary Button', type: 'COMPONENT', layoutMode: 'HORIZONTAL', paddingLeft: 16, paddingRight: 16,
         cornerRadius: 8, fills: [{type: 'SOLID', color: color(0, 0.4, 1)}],
         componentPropertyDefinitions: {'Label#1:0': {type: 'TEXT', defaultValue: 'Submit'}, 'Disabled#1:1': {type: 'BOOLEAN', defaultValue: false}},
-        children: [text('16:2', 'Submit', {fontFamily: 'Inter', fontWeight: 500, fontSize: 14}, {componentPropertyReferences: {characters: 'Label#1:0'}})],
+        children: [textNode('16:2', 'Submit', {fontFamily: 'Inter', fontWeight: 500, fontSize: 14}, {componentPropertyReferences: {characters: 'Label#1:0'}})],
     });
 
     // Label and Disabled are not constructor parameters; the button's own label is wrapped in another ElevatedButton.

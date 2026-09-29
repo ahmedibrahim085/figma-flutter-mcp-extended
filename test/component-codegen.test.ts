@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {readFileSync} from 'node:fs';
+import {readdirSync, readFileSync} from 'node:fs';
 import {callToolOffline, nodeRoute, normalizeStyleIds, FILE_KEY} from './helpers/offline-tool.ts';
 import {withServer} from './helpers/mcp-stdio.ts';
 import {startFakeFigma, type FakeResponse} from './helpers/fake-figma.ts';
@@ -50,21 +50,27 @@ const textStyleOf = (code: string, label: string) =>
 const refsOf = (report: string, name: string) =>
     report.match(new RegExp(`\\d\\. ${name} \\([A-Z_]+\\)[^]*?Style refs: ([^\\n]+)`))?.[1].split(', ') ?? [];
 
-test('committed Figma fixture is node data only: no file metadata, keys, URLs or account data', () => {
-    const raw = readFileSync(BUTTON_SET_FIXTURE, 'utf-8');
-    const json = JSON.parse(raw);
-    assert.deepEqual(Object.keys(json), ['nodes']);
-    for (const forbidden of [/thumbnail/i, /https?:\/\//, /lastModified/, /linkAccess/, /"role"/, /"key"/, /[\w.+-]+@[\w-]+\.[\w.]+/]) {
-        assert.doesNotMatch(raw, forbidden);
+const FIXTURES_DIR = new URL('./fixtures/', import.meta.url);
+
+test('every committed Figma fixture is node data only: no file metadata, keys, URLs or account data', () => {
+    const files = readdirSync(FIXTURES_DIR).filter((name) => name.endsWith('.json'));
+    assert.ok(files.includes('component-button-set.json'), 'the fixture directory must be the one the tests read');
+    for (const file of files) {
+        const raw = readFileSync(new URL(file, FIXTURES_DIR), 'utf-8');
+        const json = JSON.parse(raw);
+        assert.deepEqual(Object.keys(json), ['nodes'], file);
+        for (const forbidden of [/thumbnail/i, /https?:\/\//, /lastModified/, /linkAccess/, /"role"/, /"key"/, /[\w.+-]+@[\w-]+\.[\w.]+/]) {
+            assert.doesNotMatch(raw, forbidden, file);
+        }
+        // Figma file keys are 22 base62 characters; component publish keys are 40 hex characters.
+        const strings: string[] = [];
+        const walk = (value: unknown): void => {
+            if (typeof value === 'string') strings.push(value);
+            else if (value && typeof value === 'object') Object.values(value).forEach(walk);
+        };
+        walk(json);
+        assert.deepEqual(strings.filter((s) => /^[A-Za-z0-9]{22}$/.test(s) || /^[0-9a-f]{40}$/.test(s)), [], file);
     }
-    // Figma file keys are 22 base62 characters; component publish keys are 40 hex characters.
-    const strings: string[] = [];
-    const walk = (value: unknown): void => {
-        if (typeof value === 'string') strings.push(value);
-        else if (value && typeof value === 'object') Object.values(value).forEach(walk);
-    };
-    walk(json);
-    assert.deepEqual(strings.filter((s) => /^[A-Za-z0-9]{22}$/.test(s) || /^[0-9a-f]{40}$/.test(s)), []);
 });
 
 test('analyze_figma_component on the real Button fixture reports its structure and styles, stable across runs', async () => {

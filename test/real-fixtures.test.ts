@@ -73,6 +73,18 @@ test('Text fixture: variable and paint-style colours become literals (pins curre
     assert.ok(code.includes("'Colour from paint style',\n            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFFD93359)),"), code);
 });
 
+test('Text fixture: the frame\'s variable-bound item spacing is dropped (pins current behaviour, slice 2 replaces this)', async () => {
+    const {routes, document} = fixture('text-frame.json', '1:8');
+    // The fixture frame is a vertical auto layout with itemSpacing 12 bound to a variable.
+    assert.equal(document.itemSpacing, 12);
+    assert.equal(document.boundVariables.itemSpacing.type, 'VARIABLE_ALIAS');
+
+    const code = await widgetCode(routes, '1:8');
+    // No spacing between the texts: the Column opens straight onto the first Text.
+    assert.ok(code.includes("      child: Column(\n        children: [\n          Text(\n            'Heading styled by text style',"), code);
+    assert.doesNotMatch(code, /spacing: |SizedBox\(height: 12/);
+});
+
 test('Paints fixture: shape children produce no widgets (pins current behaviour, slice 2 replaces this)', async () => {
     const {routes, document} = fixture('paints-frame.json', '1:20');
     assert.equal(document.children.length, 13);
@@ -94,8 +106,8 @@ test('Paints fixture: gradients and a second fill are dropped from the decoratio
     // Gradient direction and centre are dropped from the style key, so the three linear
     // swatches share one style and the two radial ones another.
     const idOf = (name: string) => decorations.get(name)!.id;
-    assert.deepEqual(new Set(gradients.slice(0, 3).map(idOf)).size, 1);
-    assert.deepEqual(new Set(gradients.slice(3, 5).map(idOf)).size, 1);
+    assert.equal(new Set(gradients.slice(0, 3).map(idOf)).size, 1);
+    assert.equal(new Set(gradients.slice(3, 5).map(idOf)).size, 1);
     assert.equal(new Set(gradients.map(idOf)).size, 4);
     // Gradient over solid keeps only the solid; the 50% fill opacity is lost too.
     assert.equal(decorations.get('Paint / gradient over solid (2 fills)')?.code, 'BoxDecoration(\n  color: Color(0xFFF2F2F2),\n  borderRadius: BorderRadius.circular(8),\n)');

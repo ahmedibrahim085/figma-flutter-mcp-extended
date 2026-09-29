@@ -41,7 +41,17 @@ export interface DeduplicatedComponentChild {
   textContent?: string;
   /** Text-widget fields (letter case applied, alignment, truncation). */
   textWidget?: TextWidgetFields;
+  /** This child's own visible children, for frames and groups rendered inline. */
+  children?: DeduplicatedComponentChild[];
+  /** True when the child has children below the depth limit, which are not analysed. */
+  truncated?: boolean;
 }
+
+/** How many frame levels below the component are analysed; deeper content is named as an approximation. */
+export const MAX_CHILD_DEPTH = 8;
+
+/** Types rendered as a placeholder and analysed separately, never inlined. */
+const NESTED_COMPONENT_TYPES = new Set(['INSTANCE', 'COMPONENT', 'COMPONENT_SET']);
 
 export class DeduplicatedComponentExtractor {
   private styleLibrary = FlutterStyleLibrary.getInstance();
@@ -96,7 +106,7 @@ export class DeduplicatedComponentExtractor {
     return result;
   }
   
-  private async analyzeChildren(node: FigmaNode): Promise<DeduplicatedComponentChild[]> {
+  private async analyzeChildren(node: FigmaNode, depth = 1): Promise<DeduplicatedComponentChild[]> {
     if (!node.children) return [];
     
     const children: DeduplicatedComponentChild[] = [];
@@ -117,6 +127,9 @@ export class DeduplicatedComponentExtractor {
         }, 'decoration');
         childStyleRefs.push(decorationRef);
       }
+      if (child.type !== 'TEXT' && !NESTED_COMPONENT_TYPES.has(child.type) && childLayout.padding) {
+        childStyleRefs.push(this.globalStyleManager.addStyle({ padding: childLayout.padding }, 'padding'));
+      }
       
       // Extract text styling for text nodes using enhanced global style manager
       let textContent: string | undefined;
@@ -135,6 +148,12 @@ export class DeduplicatedComponentExtractor {
         }
       }
       
+      // Frames and groups render their own children inline, down to MAX_CHILD_DEPTH.
+      const hasVisibleChildren = child.type !== 'TEXT' && !NESTED_COMPONENT_TYPES.has(child.type)
+        && (child.children ?? []).some(grandchild => isEffectivelyVisible(grandchild));
+      const truncated = hasVisibleChildren && depth >= MAX_CHILD_DEPTH;
+      const grandchildren = hasVisibleChildren && !truncated ? await this.analyzeChildren(child, depth + 1) : undefined;
+
       children.push({
         nodeId: child.id,
         name: child.name,
@@ -143,7 +162,9 @@ export class DeduplicatedComponentExtractor {
         layout: childLayout,
         semanticType: this.detectSemanticType(child),
         textContent,
-        textWidget
+        textWidget,
+        ...(grandchildren ? {children: grandchildren} : {}),
+        ...(truncated ? {truncated: true} : {})
       });
     }
     

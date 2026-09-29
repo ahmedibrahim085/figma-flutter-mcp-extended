@@ -86,7 +86,9 @@ test('analyze_figma_component on the real Button fixture reports its structure a
     assert.match(first, /2\. Button \(COMPONENT_SET\)/);
     assert.match(first, /3\. Button instances \(FRAME\)/);
     assert.match(first, /Node ID: 1:86\n\s+🔧 Needs separate analysis: Yes/);
-    assert.match(first, /• decoration: 2 style\(s\)\n\s+• padding: 1 style\(s\)/);
+    // Nested frames are analysed too: white frame fill (root, Icons, Button instances), the set's radius 5,
+    // the instances' radius 6 and radius 10. Instance and component contents are not analysed.
+    assert.match(first, /• decoration: 4 style\(s\)\n\s+• padding: 1 style\(s\)/);
     assert.match(first, /class FixtureComponents extends StatelessWidget/);
 });
 

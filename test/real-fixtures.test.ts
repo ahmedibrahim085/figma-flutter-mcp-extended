@@ -115,12 +115,13 @@ test('Text fixture: the frame\'s variable-bound item spacing is dropped (pins cu
     assert.doesNotMatch(code, /spacing: |SizedBox\(height: 12/);
 });
 
-test('Paints fixture: shape children produce no widgets (pins current behaviour, slice 2 replaces this)', async () => {
+test('Paints fixture: each shape child renders as a sized container in the Row', async () => {
     const {routes, document} = fixture('paints-frame.json', '1:20');
     assert.equal(document.children.length, 13);
 
     const code = await widgetCode(routes, '1:20');
-    assert.ok(code.includes('      child: Row(\n        children: [\n        ],\n      ),'), code);
+    assert.match(code, /      child: Row\(\n        children: \[\n          Container\(\n            width: 140,\n            height: 100,\n            decoration: /);
+    assert.equal(code.match(/Container\(\n\s+width: 140,\n\s+height: 100,\n\s+decoration: /g)?.length, 13, code);
 });
 
 test('Paints fixture: gradients and a second fill are dropped from the decoration (pins current behaviour, slice 3 replaces this)', async () => {
@@ -153,17 +154,26 @@ test('Paints fixture: image fills lose the image and their scale mode (pins curr
     }
 });
 
-test('Layout fixture: nested frames produce no widgets (pins current behaviour, slice 2 replaces this)', async () => {
+test('Layout fixture: nested frames render their own children, in layer order', async () => {
     const {routes, document} = fixture('layout-frame.json', '1:34');
     assert.equal(document.children.length, 8);
 
     const code = await widgetCode(routes, '1:34');
-    assert.ok(code.includes('      child: Column(\n        children: [\n        ],\n      ),'), code);
+    // Seven auto-layout rows and one frame without auto layout (a Column until ticket 05 gives it a Stack).
+    assert.equal(code.match(/child: Row\(/g)?.length, 7, code);
+    assert.equal(code.match(/child: Column\(/g)?.length, 2, code);
+    // Every rectangle of the eight case frames, from the fixture, in order.
+    const sizes = [...code.matchAll(/width: (\d+),\n\s+height: (\d+),/g)].map(([, w, h]) => `${w}x${h}`);
+    assert.deepEqual(sizes, [
+        '60x40', '268x40', '60x40', '198x40', '198x40', '80x40', '80x84', '240x40',
+        '80x40', '80x40', '16x16', '60x24', '60x24', '60x24', '60x24', '60x24', '60x24',
+        '60x30', '60x30', '200x120', '60x30',
+    ]);
 });
 
 // Case frames analysed on their own, from their subtree in the fixture. These pin the
-// container widget only: the empty children are the nested-frames defect above.
-// The FILL, min/max and absolute-child cases cannot be pinned until children render.
+// container widget only.
+// The FILL, min/max and absolute-child cases are tested by their own slice-2 tickets.
 for (const [name, container, why] of [
     ['Layout / wrap', 'Row(\n        children: [', 'layoutWrap WRAP should give a Wrap'],
     ['Layout / space-between', 'Row(\n        children: [', 'SPACE_BETWEEN and cross-axis CENTER are dropped'],

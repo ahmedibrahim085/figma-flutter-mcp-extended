@@ -1,6 +1,6 @@
 // src/tools/flutter/components/deduplicated-helpers.mts
 
-import type { DeduplicatedComponentAnalysis } from '../../../extractors/components/deduplicated-extractor.js';
+import { MAX_CHILD_DEPTH, type DeduplicatedComponentAnalysis, type DeduplicatedComponentChild } from '../../../extractors/components/deduplicated-extractor.js';
 import { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
 import { dartString, indentTail, textWidgetCode } from '../../../extractors/flutter/text-style.js';
 import { generateComponentVisualContext } from '../visual-context.js';
@@ -107,37 +107,77 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   }
   
   // Add child widget structure
+  const approximations: string[] = [];
   if (analysis.children.length > 0) {
-    const containerWidget = analysis.layout.direction === 'horizontal' ? 'Row' : 'Column';
-    implementation += `      child: ${containerWidget}(\n`;
-    implementation += `        children: [\n`;
-
-    analysis.children.forEach(child => {
-      let widgetCode: string | undefined;
-
-      if (child.semanticType === 'button' && child.textContent) {
-        widgetCode = `ElevatedButton(\n  onPressed: () {},\n  child: Text(${dartString((child.textWidget ?? {text: child.textContent}).text)}),\n)`;
-      } else if (child.type === 'TEXT' && child.textContent) {
-        const textStyleId = child.styleRefs.find(id => styleLibrary.getStyle(id)?.category === 'text');
-        const textStyleCode = textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined;
-        widgetCode = textWidgetCode(child.textWidget ?? {text: child.textContent}, textStyleCode);
-      }
-
-      if (widgetCode) {
-        widgetCode = wrapForMainAxisSizing(widgetCode, child.layout, containerWidget === 'Row' ? 'horizontal' : 'vertical');
-        implementation += `${indentAll(widgetCode, 10)},\n`;
-      }
-    });
-
-    implementation += `        ],\n`;
-    implementation += `      ),\n`;
+    const layout = layoutWidget(analysis.children, analysis.layout.direction, styleLibrary, approximations);
+    implementation += `      child: ${indentTail(layout, 6)},\n`;
   }
   
   implementation += `    );\n`;
   implementation += `  }\n`;
   implementation += `}\n`;
+  if (approximations.length > 0) {
+    implementation += `\n⚠️ Approximations:\n${approximations.map(note => `- ${note}\n`).join('')}`;
+  }
   
   return implementation;
+}
+
+const SHAPE_TYPES = new Set(['RECTANGLE', 'ELLIPSE', 'VECTOR', 'LINE', 'STAR', 'POLYGON', 'BOOLEAN_OPERATION']);
+const NESTED_COMPONENT_TYPES = new Set(['INSTANCE', 'COMPONENT', 'COMPONENT_SET']);
+
+/** A Row or Column holding `children`, each rendered by childWidget. */
+function layoutWidget(
+  children: DeduplicatedComponentChild[],
+  direction: 'horizontal' | 'vertical' | undefined,
+  styleLibrary: FlutterStyleLibrary,
+  approximations: string[]
+): string {
+  const axis = direction === 'horizontal' ? 'horizontal' : 'vertical';
+  const items = children.map(child => {
+    const code = childWidget(child, styleLibrary, approximations);
+    return code ? `${indentAll(wrapForMainAxisSizing(code, child.layout, axis), 4)},\n` : '';
+  }).join('');
+  return `${axis === 'horizontal' ? 'Row' : 'Column'}(\n  children: [\n${items}  ],\n)`;
+}
+
+/** An approximation: a comment at the widget, and a line in the tool output's Approximations list. */
+function approximate(note: string, widget: string, approximations: string[]): string {
+  approximations.push(note);
+  return `// approximate: ${note}\n${widget}`;
+}
+
+/** Dart for one analysed child: text, button, shape, frame (recursively) or a nested-component placeholder. */
+function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterStyleLibrary, approximations: string[]): string | undefined {
+  if (child.semanticType === 'button' && child.textContent) {
+    return `ElevatedButton(\n  onPressed: () {},\n  child: Text(${dartString((child.textWidget ?? {text: child.textContent}).text)}),\n)`;
+  }
+  const styleOf = (category: string) => child.styleRefs.find(id => styleLibrary.getStyle(id)?.category === category);
+  if (child.type === 'TEXT') {
+    if (!child.textContent) return undefined;
+    const textStyleId = styleOf('text');
+    return textWidgetCode(child.textWidget ?? {text: child.textContent}, textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined);
+  }
+  const width = Math.round(child.layout.dimensions.width);
+  const height = Math.round(child.layout.dimensions.height);
+  const placeholder = `SizedBox(width: ${width}, height: ${height})`;
+  if (NESTED_COMPONENT_TYPES.has(child.type)) {
+    return approximate(`component "${child.name}" is not inlined; analyze it separately`, placeholder, approximations);
+  }
+  if (child.truncated) {
+    return approximate(`"${child.name}" is deeper than ${MAX_CHILD_DEPTH} levels; its children are not rendered`, placeholder, approximations);
+  }
+  const decoration = styleOf('decoration');
+  const props: string[] = [];
+  if (SHAPE_TYPES.has(child.type)) props.push(`width: ${width},`, `height: ${height},`);
+  if (decoration) props.push(`decoration: ${decoration},`);
+  const padding = styleOf('padding');
+  if (padding) props.push(`padding: ${padding},`);
+  if (child.children?.length) {
+    props.push(`child: ${indentTail(layoutWidget(child.children, child.layout.direction, styleLibrary, approximations), 2)},`);
+  }
+  if (props.length === 0) return placeholder;
+  return `Container(\n${props.map(prop => `  ${prop}\n`).join('')})`;
 }
 
 /**

@@ -1,6 +1,7 @@
 // src/extractors/flutter/style-library.mts
 
 import { Logger } from '../../utils/logger.js';
+import { textStyleCode, type TextStyleFields } from './text-style.js';
 
 export interface FlutterStyleDefinition {
   id: string;
@@ -522,26 +523,7 @@ export class FlutterCodeGenerator {
     return `EdgeInsets.fromLTRB(${p.left}, ${p.top}, ${p.right}, ${p.bottom})`;
   }
   
-  static generateTextStyle(properties: any): string {
-    const parts: string[] = [];
-    
-    if (properties.fontFamily) {
-      parts.push(`fontFamily: '${properties.fontFamily}'`);
-    }
-    if (properties.fontSize) {
-      parts.push(`fontSize: ${properties.fontSize}`);
-    }
-    if (properties.fontWeight && properties.fontWeight !== 400) {
-      const weight = properties.fontWeight >= 700 ? 'FontWeight.bold' : 
-                    properties.fontWeight >= 600 ? 'FontWeight.w600' :
-                    properties.fontWeight >= 500 ? 'FontWeight.w500' :
-                    'FontWeight.normal';
-      parts.push(`fontWeight: ${weight}`);
-    }
-    if (properties.color) {
-      parts.push(`color: Color(0xFF${properties.color.substring(1)})`);
-    }
-
-    return `TextStyle(${parts.join(', ')})`;
+  static generateTextStyle(properties: TextStyleFields): string {
+    return textStyleCode(properties) ?? 'TextStyle()';
   }
 }

@@ -20,6 +20,7 @@ import { detectSemanticTypeAdvanced, generateSemanticContext } from '../../tools
 import {Logger} from '../../utils/logger.js';
 import {filterEffectivelyVisibleChildren} from '../../utils/visibility.js';
 import {extractComponentProperties} from '../../utils/component-properties.js';
+import {textStyleCode, type TextStyleFields} from '../flutter/text-style.js';
 
 /**
  * Extract component metadata
@@ -482,6 +483,18 @@ export function extractBasicStyling(node: FigmaNode): Partial<StylingInfo> {
 /**
  * Extract enhanced text information
  */
+/** The TextStyle inputs of a TEXT node, or undefined when the node carries no style. */
+export function textStyleFields(node: FigmaNode): TextStyleFields | undefined {
+    if (!node.style) return undefined;
+    const firstFill = node.fills?.[0];
+    return {
+        fontFamily: node.style.fontFamily,
+        fontSize: node.style.fontSize,
+        fontWeight: node.style.fontWeight,
+        color: firstFill?.color ? rgbaToHex(firstFill.color) : undefined,
+    };
+}
+
 export function extractTextInfo(node: FigmaNode, parent?: FigmaNode, siblings?: FigmaNode[]): TextInfo | undefined {
     if (node.type !== 'TEXT') return undefined;
 
@@ -495,6 +508,7 @@ export function extractTextInfo(node: FigmaNode, parent?: FigmaNode, siblings?: 
         fontSize: node.style?.fontSize,
         fontWeight: node.style?.fontWeight,
         textAlign: node.style?.textAlignHorizontal,
+        style: textStyleFields(node),
         textCase: detectTextCase(textContent),
         semanticType: detectSemanticType(textContent, node.name, node, parent, siblings),
         placeholder: isPlaceholder
@@ -845,23 +859,7 @@ export function generateFlutterTextWidget(textInfo: TextInfo): string {
         return `Text('${escapedContent}') // TODO: Replace with actual content`;
     }
 
-    // Generate style properties based on text info
-    const styleProps: string[] = [];
-    if (textInfo.fontFamily) {
-        styleProps.push(`fontFamily: '${textInfo.fontFamily}'`);
-    }
-    if (textInfo.fontSize) {
-        styleProps.push(`fontSize: ${textInfo.fontSize}`);
-    }
-    if (textInfo.fontWeight && textInfo.fontWeight !== 400) {
-        const fontWeight = textInfo.fontWeight >= 700 ? 'FontWeight.bold' : 
-                          textInfo.fontWeight >= 600 ? 'FontWeight.w600' :
-                          textInfo.fontWeight >= 500 ? 'FontWeight.w500' :
-                          textInfo.fontWeight <= 300 ? 'FontWeight.w300' : 'FontWeight.normal';
-        styleProps.push(`fontWeight: ${fontWeight}`);
-    }
-
-    const customStyle = styleProps.length > 0 ? `TextStyle(${styleProps.join(', ')})` : null;
+    const customStyle = (textInfo.style && textStyleCode(textInfo.style)) ?? null;
 
     switch (textInfo.semanticType) {
         case 'button':

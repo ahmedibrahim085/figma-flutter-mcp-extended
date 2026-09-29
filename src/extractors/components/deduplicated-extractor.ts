@@ -123,13 +123,8 @@ export class DeduplicatedComponentExtractor {
           textContent = textInfo.content;
           
           // Add text style to library using enhanced deduplication
-          if (child.style) {
-            const textStyleRef = this.globalStyleManager.addStyle({
-              fontFamily: child.style.fontFamily,
-              fontSize: child.style.fontSize,
-              fontWeight: child.style.fontWeight,
-              color: childStyling.fills?.[0]?.hex
-            }, 'text');
+          if (textInfo.style) {
+            const textStyleRef = this.globalStyleManager.addStyle(textInfo.style, 'text');
             childStyleRefs.push(textStyleRef);
           }
         }

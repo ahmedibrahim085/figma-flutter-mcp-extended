@@ -1,6 +1,7 @@
 // src/extractors/components/types.mts
 
 import type {FigmaNode, FigmaColor, FigmaEffect} from '../../types/figma.js';
+import type {TextStyleFields} from '../flutter/text-style.js';
 
 /**
  * Main component analysis result
@@ -189,6 +190,8 @@ export interface TextInfo {
     fontSize?: number;
     fontWeight?: number;
     textAlign?: string;
+    /** TextStyle inputs, shared by every code path that writes this text. */
+    style?: TextStyleFields;
     textCase?: 'uppercase' | 'lowercase' | 'capitalize' | 'sentence' | 'mixed';
     semanticType?: 'heading' | 'body' | 'label' | 'button' | 'link' | 'caption' | 'error' | 'success' | 'warning' | 'other';
     placeholder?: boolean; // Flag for Flutter implementation

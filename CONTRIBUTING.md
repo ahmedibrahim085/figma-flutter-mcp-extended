@@ -102,7 +102,7 @@ src/
 - **Replace Figma with the fake.** `test/helpers/fake-figma.ts` serves canned responses by path and query (`/files/KEY/nodes?ids=1:2`), answers 404 for anything unlisted, can send error statuses and headers (403, 429 with `Retry-After`), and records every request. `callToolOffline()` in `test/helpers/offline-tool.ts` wires one tool call to it, `callToolsOffline()` several calls in one server process (style state carries over), and `nodeRoute()` serves a single node.
 - **Fixtures.** Small node shapes are built inline in the test. Real Figma payloads live in `test/fixtures/` as node data only: no file keys, component keys, URLs or account data (a test checks every `.json` file there).
 - **Temp projects.** Tests that write files (asset export) create their own temp Flutter project and remove it when the test ends.
-- **Pinned defects.** `test/characterization.test.ts` asserts today's known-wrong output. Each test name says `pins current behaviour, slice N replaces this`. A change that fixes one of these defects rewrites that test to assert the correct output in the same commit; never delete a pin to make the suite pass.
+- **Pinned defects.** `test/characterization.test.ts` (hand-built nodes) and `test/real-fixtures.test.ts` (real Figma fixtures) assert today's known-wrong output. Each test name says `pins current behaviour, slice N replaces this`. A change that fixes one of these defects rewrites that test to assert the correct output in the same commit; never delete a pin to make the suite pass.
 
 ## 🧪 Local Testing & Development
 

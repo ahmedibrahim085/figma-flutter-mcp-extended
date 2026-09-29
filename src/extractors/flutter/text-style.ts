@@ -11,6 +11,7 @@ export interface TextStyleFields {
   fontFamily?: string;
   fontSize?: number;
   fontWeight?: number;
+  /** true emits FontStyle.italic; false (a run switching italic off) emits FontStyle.normal. */
   italic?: boolean;
   /** `#AARRGGBB` of the text's first fill, paint opacity included. */
   color?: string;
@@ -18,8 +19,9 @@ export interface TextStyleFields {
   letterSpacing?: number;
   /** Line height as a multiple of fontSize, when Figma gives one. */
   height?: number;
-  decoration?: 'underline' | 'lineThrough';
-  /** OpenType tags for small caps (INFERRED mapping, research 03b). */
+  /** 'none' only for a run switching the base decoration off. */
+  decoration?: 'underline' | 'lineThrough' | 'none';
+  /** OpenType tags for small caps (INFERRED mapping, research 03b); [] for a run switching them off. */
   fontFeatures?: string[];
 }
 
@@ -48,8 +50,8 @@ export interface TextRun {
 export interface TextOverrides {
   characterStyleOverrides?: number[];
   styleOverrideTable?: Record<string, Partial<FigmaTextStyle> & {fills?: FigmaFill[]}>;
-  /** The node's first fill, the base color a run overrides. */
-  fill?: FigmaFill;
+  /** The node's first fill: the base color a run's own fill replaces. */
+  baseFill?: FigmaFill;
 }
 
 /** `#AARRGGBB` of a solid fill: the color's alpha times the paint opacity. */
@@ -103,11 +105,18 @@ function applyTextCase(text: string, textCase?: string, before = ''): string {
   return text;
 }
 
-/** The fields of `run` whose value differs from `base`. */
+/** What a run must emit to switch off a base field it does not have (a span otherwise inherits it). */
+const SWITCHED_OFF: Partial<TextStyleFields> = {italic: false, decoration: 'none', fontFeatures: []};
+
+/** The fields of `run` whose value differs from `base`; a field the run turns off becomes its explicit "off" value. */
 function overriddenFields(run: TextStyleFields, base: TextStyleFields): TextStyleFields | undefined {
-  const changed = Object.fromEntries(Object.entries(run)
-    .filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(base[key as keyof TextStyleFields])));
-  return Object.keys(changed).length > 0 ? changed as TextStyleFields : undefined;
+  const changed: Record<string, unknown> = {};
+  for (const key of new Set([...Object.keys(run), ...Object.keys(base)]) as Set<keyof TextStyleFields>) {
+    if (JSON.stringify(run[key]) === JSON.stringify(base[key])) continue;
+    changed[key] = run[key] === undefined ? SWITCHED_OFF[key] : run[key];
+  }
+  const fields = Object.fromEntries(Object.entries(changed).filter(([, value]) => value !== undefined));
+  return Object.keys(fields).length > 0 ? fields as TextStyleFields : undefined;
 }
 
 /**
@@ -116,18 +125,20 @@ function overriddenFields(run: TextStyleFields, base: TextStyleFields): TextStyl
  */
 function textRuns(content: string, style: FigmaTextStyle, overrides: TextOverrides): TextRun[] | undefined {
   const ids = overrides.characterStyleOverrides ?? [];
-  if (!ids.some((id) => id !== 0)) return undefined;
-  const base = convertTypeStyle(style, overrides.fill);
+  if (!content || !ids.some((id) => id !== 0)) return undefined;
+  const idAt = (i: number) => ids[i] ?? 0;
+  const base = convertTypeStyle(style, overrides.baseFill);
   const runs: TextRun[] = [];
   let start = 0;
+  // Walk to one past the end so the last run is closed by the same test as every other.
   for (let i = 1; i <= content.length; i++) {
-    const id = ids[start] ?? 0;
-    if (i < content.length && (ids[i] ?? 0) === id) continue;
+    const id = idAt(start);
+    if (i < content.length && idAt(i) === id) continue;
     const entry = id === 0 ? undefined : overrides.styleOverrideTable?.[String(id)];
     const merged = {...style, ...entry} as FigmaTextStyle;
     runs.push({
       text: applyTextCase(content.slice(start, i), merged.textCase, content.slice(Math.max(0, start - 1), start)),
-      style: entry ? overriddenFields(convertTypeStyle(merged, entry.fills?.[0] ?? overrides.fill), base) : undefined,
+      style: entry ? overriddenFields(convertTypeStyle(merged, entry.fills?.[0] ?? overrides.baseFill), base) : undefined,
     });
     start = i;
   }
@@ -200,7 +211,7 @@ export function textStyleCode(fields: TextStyleFields, colorCode?: string): stri
   if (fields.fontFamily) parts.push(`fontFamily: ${dartString(fields.fontFamily)}`);
   if (fields.fontSize) parts.push(`fontSize: ${fields.fontSize}`);
   if (fields.fontWeight) parts.push(`fontWeight: ${fontWeightCode(fields.fontWeight)}`);
-  if (fields.italic) parts.push('fontStyle: FontStyle.italic');
+  if (fields.italic !== undefined) parts.push(`fontStyle: FontStyle.${fields.italic ? 'italic' : 'normal'}`);
   if (colorCode) parts.push(`color: ${colorCode}`);
   else if (fields.color) parts.push(`color: Color(0x${fields.color.substring(1)})`);
   if (fields.letterSpacing !== undefined) parts.push(`letterSpacing: ${fields.letterSpacing}`);
@@ -209,7 +220,8 @@ export function textStyleCode(fields: TextStyleFields, colorCode?: string): stri
     parts.push(`height: ${fields.height}`, 'leadingDistribution: TextLeadingDistribution.even');
   }
   if (fields.decoration) parts.push(`decoration: TextDecoration.${fields.decoration}`);
-  if (fields.fontFeatures) {
+  if (fields.fontFeatures?.length === 0) parts.push('fontFeatures: const []');
+  else if (fields.fontFeatures) {
     parts.push(`fontFeatures: [${fields.fontFeatures.map((tag) => `FontFeature.enable('${tag}')`).join(', ')}] /* inferred */`);
   }
   return parts.length > 0 ? `TextStyle(${parts.join(', ')})` : undefined;

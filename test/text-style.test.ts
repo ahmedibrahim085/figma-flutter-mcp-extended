@@ -295,3 +295,57 @@ test('an override array of only zeros stays a plain Text, on both code paths', a
     const expected = `Text(\n'Order total',\n${PLAIN_STYLE}\n)`;
     assert.deepEqual(await textWidgetOnBothPaths(node, 'Order total'), {dedup: expected, plain: expected});
 });
+
+// A run that switches a base style OFF must say so explicitly, or the span inherits the base.
+for (const [name, base, off, baseStyleTail, span] of [
+    ['italic switched off', {italic: true}, {italic: false},
+        "fontStyle: FontStyle.italic, color: Color(0xFF112233), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even),",
+        "TextSpan(text: 'then', style: TextStyle(fontStyle: FontStyle.normal)),"],
+    ['underline switched off', {textDecoration: 'UNDERLINE'}, {textDecoration: 'NONE'},
+        "color: Color(0xFF112233), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even, decoration: TextDecoration.underline),",
+        "TextSpan(text: 'then', style: TextStyle(decoration: TextDecoration.none)),"],
+] as const) {
+    test(`a run with ${name} resets it explicitly, on both code paths`, async () => {
+        const node = frameWithText('Now then', restStyle(16, 400, base));
+        Object.assign(node.children[0], {characterStyleOverrides: [0, 0, 0, 0, 1, 1, 1, 1], styleOverrideTable: {1: off}});
+
+        const {dedup, plain} = await richTextOnBothPaths(node, "TextSpan(text: 'Now '),");
+        const expected = [
+            'Text.rich(',
+            'TextSpan(children: [',
+            "TextSpan(text: 'Now '),",
+            span,
+            ']),',
+            `style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, ${baseStyleTail}`,
+            ')',
+        ].join('\n');
+        assert.deepEqual({dedup, plain}, {dedup: expected, plain: expected});
+    });
+}
+
+test('TITLE case across runs does not capitalise a run that starts mid-word', async () => {
+    // "order total" with "de" bold: runs "or" | "de" | "r total" -> "Or" | "de" | "r Total".
+    const node = withRuns('order total', [0, 0, 1, 1], {1: {fontWeight: 700}});
+    Object.assign(node.children[0].style, {textCase: 'TITLE'});
+
+    const expected = [
+        'Text.rich(',
+        'TextSpan(children: [',
+        "TextSpan(text: 'Or'),",
+        "TextSpan(text: 'de', style: TextStyle(fontWeight: FontWeight.w700)),",
+        "TextSpan(text: 'r Total'),",
+        ']),',
+        PLAIN_STYLE,
+        ')',
+    ].join('\n');
+    assert.deepEqual(await richTextOnBothPaths(node, "TextSpan(text: 'Or'),"), {dedup: expected, plain: expected});
+});
+
+test('runs are dropped, not misaligned, when the text content was trimmed from node.characters', async () => {
+    // Override indices address node.characters (" Order total"); the emitted content is trimmed
+    // ("Order total"), so applying the indices would shift the bold run by one. It stays a plain Text.
+    const node = withRuns(' Order total', [0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1], {1: {fontWeight: 700}});
+
+    const expected = `Text(\n'Order total',\n${PLAIN_STYLE}\n)`;
+    assert.deepEqual(await textWidgetOnBothPaths(node, 'Order total'), {dedup: expected, plain: expected});
+});

@@ -20,7 +20,7 @@ import { detectSemanticTypeAdvanced, generateSemanticContext } from '../../tools
 import {Logger} from '../../utils/logger.js';
 import {filterEffectivelyVisibleChildren} from '../../utils/visibility.js';
 import {extractComponentProperties} from '../../utils/component-properties.js';
-import {dartString, textStyleCode, textWidgetCode, convertTypeStyle, convertTextWidget, type TextStyleFields} from '../flutter/text-style.js';
+import {dartString, textStyleCode, textWidgetCode, convertTypeStyle, convertTextWidget, type TextOverrides, type TextStyleFields} from '../flutter/text-style.js';
 
 /**
  * Extract component metadata
@@ -486,6 +486,15 @@ export function textStyleFields(node: FigmaNode): TextStyleFields | undefined {
 }
 
 /**
+ * A text node's character style overrides. Their indices address node.characters, so they apply
+ * only when the emitted content is exactly that string (not trimmed or taken from elsewhere).
+ */
+function textOverrides(node: FigmaNode, content: string): TextOverrides | undefined {
+    if (node.characters !== content) return undefined;
+    return {characterStyleOverrides: node.characterStyleOverrides, styleOverrideTable: node.styleOverrideTable, baseFill: node.fills?.[0]};
+}
+
+/**
  * Extract enhanced text information
  */
 export function extractTextInfo(node: FigmaNode, parent?: FigmaNode, siblings?: FigmaNode[]): TextInfo | undefined {
@@ -502,10 +511,7 @@ export function extractTextInfo(node: FigmaNode, parent?: FigmaNode, siblings?: 
         fontWeight: node.style?.fontWeight,
         textAlign: node.style?.textAlignHorizontal,
         style: textStyleFields(node),
-        // Override indices address node.characters, so runs apply only when the content is exactly that.
-        widget: convertTextWidget(textContent, node.style, node.absoluteBoundingBox?.height, node.characters === textContent
-            ? {characterStyleOverrides: node.characterStyleOverrides, styleOverrideTable: node.styleOverrideTable, fill: node.fills?.[0]}
-            : undefined),
+        widget: convertTextWidget(textContent, node.style, node.absoluteBoundingBox?.height, textOverrides(node, textContent)),
         textCase: detectTextCase(textContent),
         semanticType: detectSemanticType(textContent, node.name, node, parent, siblings),
         placeholder: isPlaceholder

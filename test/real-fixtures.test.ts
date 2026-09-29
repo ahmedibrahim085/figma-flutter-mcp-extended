@@ -65,11 +65,13 @@ test('Text fixture: alignment, truncation and upper case reach the Text widget',
     const code = await widgetCode(routes, '1:8');
 
     // Each Text's arguments after its style line, as written by hand from the fixture.
-    const argsAfterStyle = (literal: string) => code.slice(code.indexOf(`            ${literal},\n`)).split('\n').slice(2, 5).join('\n');
+    const argsAfterStyle = (literal: string, lines = 3) => code.slice(code.indexOf(`            ${literal},\n`)).split('\n').slice(2, 2 + lines).join('\n');
     assert.equal(argsAfterStyle("'Centered in a fixed 320px box'"), '            textAlign: TextAlign.center,\n          ),\n          Text(');
     assert.equal(argsAfterStyle("'Right aligned'"), '            textAlign: TextAlign.right,\n          ),\n          Text(');
-    assert.equal(argsAfterStyle("'This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.'"),
-        '            maxLines: 2,\n            overflow: TextOverflow.ellipsis,\n          ),');
+    // The paragraph is LEFT-aligned and truncated at 2 lines.
+    assert.equal(argsAfterStyle("'This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.'", 4),
+        '            textAlign: TextAlign.left,\n            maxLines: 2,\n            overflow: TextOverflow.ellipsis,\n          ),');
+    assert.equal(argsAfterStyle("'Heading styled by text style'"), '            textAlign: TextAlign.left,\n          ),\n          Text(');
     assert.ok(code.includes("            'TRACKED LABEL',\n"), code);
 });
 

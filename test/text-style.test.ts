@@ -161,6 +161,9 @@ for (const [name, characters, style, box, expected] of [
     // A word starts after any non-letter, not only after a space; the apostrophe stays inside the word.
     ['TITLE capitalises a word after punctuation', "(order total) o'neil", {textCase: 'TITLE'}, undefined,
         `Text(\n'(Order Total) O\\'neil',\n${PLAIN_STYLE}\n)`],
+    // LEFT is emitted, not left to Flutter's start: start is right-aligned in RTL text (owner decision).
+    ['LEFT gives textAlign left', 'Order total', {textAlignHorizontal: 'LEFT'}, undefined,
+        `Text(\n'Order total',\n${PLAIN_STYLE}\ntextAlign: TextAlign.left,\n)`],
     ['CENTER gives textAlign center', 'Order total', {textAlignHorizontal: 'CENTER'}, undefined,
         `Text(\n'Order total',\n${PLAIN_STYLE}\ntextAlign: TextAlign.center,\n)`],
     ['JUSTIFIED gives textAlign justify', 'Order total', {textAlignHorizontal: 'JUSTIFIED'}, undefined,

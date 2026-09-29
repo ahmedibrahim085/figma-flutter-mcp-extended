@@ -27,7 +27,7 @@ export interface TextStyleFields {
 export interface TextWidgetFields {
   /** The string after Figma's letter case is applied. */
   text: string;
-  textAlign?: 'center' | 'right' | 'justify';
+  textAlign?: 'left' | 'center' | 'right' | 'justify';
   maxLines?: number;
   /** True when maxLines was derived from the box height, not given by Figma. */
   maxLinesInferred?: boolean;
@@ -88,7 +88,8 @@ function applyTextCase(text: string, textCase?: string): string {
  */
 export function convertTextWidget(content: string, style?: FigmaTextStyle, boxHeight?: number): TextWidgetFields {
   const widget: TextWidgetFields = {text: applyTextCase(content, style?.textCase)};
-  const aligns: Record<string, TextWidgetFields['textAlign']> = {CENTER: 'center', RIGHT: 'right', JUSTIFIED: 'justify'};
+  // LEFT is explicit: Flutter's default `start` is right-aligned in RTL text.
+  const aligns: Record<string, TextWidgetFields['textAlign']> = {LEFT: 'left', CENTER: 'center', RIGHT: 'right', JUSTIFIED: 'justify'};
   if (style?.textAlignHorizontal) widget.textAlign = aligns[style.textAlignHorizontal];
   if (style?.textTruncation === 'ENDING' || style?.textAutoResize === 'TRUNCATE') {
     widget.ellipsis = true;

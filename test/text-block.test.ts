@@ -21,16 +21,22 @@ const frameWithText = (characters: string, style: object, box?: object) => ({
  * The `lines`-line block starting at the line `first` on each code path (default and
  * `useDeduplication: false`), each line's indentation removed so the paths compare directly.
  */
-async function blockOnBothPaths(node: {id: string}, first: string, lines: number) {
+/** The analyze_figma_component output on the default path and with `useDeduplication: false`. */
+async function outputOnBothPaths(node: {id: string}) {
     const args = {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, generateFlutterCode: true};
     const dedup = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', args);
     const plain = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', {...args, useDeduplication: false});
+    return {dedup: dedup.text, plain: plain.text};
+}
+
+async function blockOnBothPaths(node: {id: string}, first: string, lines: number) {
+    const {dedup, plain} = await outputOnBothPaths(node);
     const block = (text: string) => {
         const all = text.split('\n').map((line) => line.trim());
         const start = all.indexOf(first);
         return start < 0 ? undefined : all.slice(start, start + lines).join('\n').replace(/,$/, '');
     };
-    return {dedup: block(dedup.text), plain: block(plain.text)};
+    return {dedup: block(dedup), plain: block(plain)};
 }
 
 test('bottom alignment in a fixed-height box wraps the Text in SizedBox + Align, labelled inferred', async () => {
@@ -76,6 +82,7 @@ test('paragraph spacing splits the text into Texts separated by a gap, labelled 
 
     const expected = [
         'Column(',
+        'mainAxisSize: MainAxisSize.min,',
         'crossAxisAlignment: CrossAxisAlignment.start, // inferred: paragraph spacing as separate Texts',
         'children: [',
         'Text(',
@@ -90,7 +97,7 @@ test('paragraph spacing splits the text into Texts separated by a gap, labelled 
         '],',
         ')',
     ].join('\n');
-    assert.deepEqual(await blockOnBothPaths(node, 'Column(', 14), {dedup: expected.replace(/,$/, ''), plain: expected.replace(/,$/, '')});
+    assert.deepEqual(await blockOnBothPaths(node, 'Column(', 15), {dedup: expected, plain: expected});
 });
 
 test('paragraph indent, list spacing and vertical trim are named in a "not converted" comment', async () => {
@@ -104,11 +111,64 @@ test('paragraph indent, list spacing and vertical trim are named in a "not conve
 test('leadingTrim NONE is Figma\'s default and is not named as unconverted', async () => {
     const node = frameWithText('Order total', {leadingTrim: 'NONE'});
 
-    const args = {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, generateFlutterCode: true};
-    const dedup = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', args);
-    const plain = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', {...args, useDeduplication: false});
+    const {dedup, plain} = await outputOnBothPaths(node);
     // The comment would sit on the line before Text(, so check the whole output, not the Text block.
-    assert.doesNotMatch(dedup.text, /not converted/);
-    assert.doesNotMatch(plain.text, /not converted/);
-    assert.match(dedup.text, /'Order total',/);
+    for (const output of [dedup, plain]) {
+        assert.doesNotMatch(output, /not converted/);
+        assert.match(output, /'Order total',/);
+    }
+});
+
+// Measured with flutter test on the generated widget (200 x 96 box, BOTTOM + RIGHT, two paragraphs):
+// the paragraphs rendered at the top-left because the Column filled the box and aligned its children
+// to the start. It must shrink to its content and align children with the text's horizontal alignment.
+for (const [horizontal, cross] of [['LEFT', 'start'], ['CENTER', 'center'], ['RIGHT', 'end'], ['JUSTIFIED', 'start']] as const) {
+    test(`${horizontal} paragraphs align their Column children to ${cross} and the Column shrinks to its content`, async () => {
+        const node = frameWithText('First\nSecond', {paragraphSpacing: 8, textAlignHorizontal: horizontal});
+
+        const {dedup, plain} = await blockOnBothPaths(node, 'Column(', 3);
+        const expected = ['Column(', 'mainAxisSize: MainAxisSize.min,', `crossAxisAlignment: CrossAxisAlignment.${cross}, // inferred: paragraph spacing as separate Texts`].join('\n');
+        assert.deepEqual({dedup, plain}, {dedup: expected, plain: expected});
+    });
+}
+
+// Review findings (Spec, ticket 05): each case below let a mutant survive or produced a wrong layout.
+for (const [name, style, box, first, lines, expected] of [
+    ['TRUNCATE is a fixed-height box too', {textAlignVertical: 'BOTTOM', textAutoResize: 'TRUNCATE'}, 48, 'SizedBox(', 4,
+        ['SizedBox(', 'height: 48,', 'child: Align(', 'alignment: Alignment.bottomLeft, // inferred: vertical alignment inside the fixed-height box']],
+    ['JUSTIFIED sits on the left of the box', {textAlignHorizontal: 'JUSTIFIED', textAlignVertical: 'BOTTOM', textAutoResize: 'NONE'}, 48, 'SizedBox(', 4,
+        ['SizedBox(', 'height: 48,', 'child: Align(', 'alignment: Alignment.bottomLeft, // inferred: vertical alignment inside the fixed-height box']],
+    ['TOP in a fixed box needs no wrapper', {textAlignVertical: 'TOP', textAutoResize: 'NONE'}, 48, 'Text(', 4,
+        ['Text(', "'Order total',", STYLE_LINE, ')']],
+    ['a fixed box with no height cannot be wrapped', {textAlignVertical: 'BOTTOM', textAutoResize: 'NONE'}, undefined, 'Text(', 4,
+        ['Text(', "'Order total',", STYLE_LINE, ')']],
+] as const) {
+    test(`${name}, on both code paths`, async () => {
+        const node = frameWithText('Order total', style, box ? {x: 0, y: 0, width: 200, height: box} : undefined);
+
+        const want = expected.join('\n');
+        assert.deepEqual(await blockOnBothPaths(node, first, lines), {dedup: want, plain: want});
+    });
+}
+
+test('truncated text is not split into paragraphs; its paragraph spacing is named as not converted', async () => {
+    // Splitting would give every paragraph the box's maxLines: flutter test reported a RenderFlex overflow.
+    const node = frameWithText('One\nTwo', {paragraphSpacing: 12, textAutoResize: 'TRUNCATE'}, {x: 0, y: 0, width: 200, height: 48});
+
+    const {dedup, plain} = await outputOnBothPaths(node);
+    for (const output of [dedup, plain]) {
+        assert.match(output, /\/\/ not converted: paragraphSpacing 12 \(truncated text\)/);
+        assert.doesNotMatch(output, /paragraph spacing as separate Texts/);
+    }
+});
+
+test('text with mixed-style runs keeps its runs; its paragraph spacing is named as not converted', async () => {
+    const node = frameWithText('One\nTwo', {paragraphSpacing: 12});
+    Object.assign(node.children[0], {characterStyleOverrides: [1, 1, 1], styleOverrideTable: {1: {fontWeight: 700}}});
+
+    const {dedup, plain} = await outputOnBothPaths(node);
+    for (const output of [dedup, plain]) {
+        assert.match(output, /\/\/ not converted: paragraphSpacing 12 \(mixed-style runs\)/);
+        assert.match(output, /Text\.rich\(/);
+    }
 });

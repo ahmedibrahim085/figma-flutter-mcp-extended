@@ -2,7 +2,7 @@
 
 import type { DeduplicatedComponentAnalysis } from '../../../extractors/components/deduplicated-extractor.js';
 import { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
-import { dartString, textWidgetCode } from '../../../extractors/flutter/text-style.js';
+import { dartString, indentTail, textWidgetCode } from '../../../extractors/flutter/text-style.js';
 import { generateComponentVisualContext } from '../visual-context.js';
 import type { ComponentAnalysis } from '../../../extractors/components/types.js';
 import { formatComponentProperties } from '../../../utils/component-properties.js';
@@ -60,12 +60,6 @@ function indentAll(code: string, spaces: number): string {
   return code.split('\n').map(line => pad + line).join('\n');
 }
 
-/** Shift every line of `code` EXCEPT the first by `spaces` (for embedding after a same-line prefix like "child: "). */
-function reindentTail(code: string, spaces: number): string {
-  const pad = ' '.repeat(spaces);
-  return code.split('\n').map((line, i) => (i === 0 ? line : pad + line)).join('\n');
-}
-
 /**
  * Wrap a child widget in Expanded when the Figma auto-layout sizing on the
  * container's main axis is FILL — the child is meant to stretch to fill the
@@ -80,7 +74,7 @@ function wrapForMainAxisSizing(
   if (mainAxisSizing !== 'FILL') {
     return widgetCode;
   }
-  return `Expanded(\n  child: ${reindentTail(widgetCode, 2)},\n)`;
+  return `Expanded(\n  child: ${indentTail(widgetCode, 2)},\n)`;
 }
 
 export function generateFlutterImplementation(analysis: DeduplicatedComponentAnalysis): string {

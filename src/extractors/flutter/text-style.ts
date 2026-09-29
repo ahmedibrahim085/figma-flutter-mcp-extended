@@ -4,6 +4,8 @@
 // (the deduplicated style library and the plain text-widget guidance) call it, so a
 // text renders the same whichever path runs. Conversion rules: research 03b.
 
+import type {FigmaFill, FigmaTextStyle} from '../../types/figma.js';
+
 /** The Figma text properties the generated TextStyle is built from. */
 export interface TextStyleFields {
   fontFamily?: string;
@@ -19,39 +21,37 @@ export interface TextStyleFields {
   decoration?: 'underline' | 'lineThrough';
 }
 
-/** Figma's text fields, as the REST TypeStyle carries them. */
-export interface FigmaTypeStyle {
-  fontFamily?: string;
-  fontSize?: number;
-  fontWeight?: number;
-  italic?: boolean;
-  letterSpacing?: number;
-  lineHeightPx?: number;
-  lineHeightUnit?: string;
-  lineHeightPercentFontSize?: number;
-  textDecoration?: string;
+/** `#AARRGGBB` of a solid fill: the color's alpha times the paint opacity. */
+function argbHex(fill: FigmaFill): string | undefined {
+  if (!fill.color) return undefined;
+  const {r, g, b, a} = fill.color;
+  const alpha = (a ?? 1) * (fill.opacity ?? 1);
+  return `#${[alpha, r, g, b].map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join('').toUpperCase()}`;
 }
 
 /**
- * TextStyle fields from a Figma TypeStyle and the text's color.
+ * TextStyle fields from a Figma TypeStyle and the text's first fill.
  * Line height: PIXELS and Auto (INTRINSIC_%) are lineHeightPx / fontSize; FONT_SIZE_% is percent / 100.
  */
-export function toTextStyleFields(style: FigmaTypeStyle, color?: string): TextStyleFields {
+export function convertTypeStyle(style: FigmaTextStyle, fill?: FigmaFill): TextStyleFields {
   const {fontSize} = style;
-  const height = style.lineHeightUnit === 'FONT_SIZE_%' && style.lineHeightPercentFontSize
-    ? style.lineHeightPercentFontSize / 100
-    : style.lineHeightPx && fontSize ? style.lineHeightPx / fontSize : undefined;
+  let height: number | undefined;
+  if (style.lineHeightUnit === 'FONT_SIZE_%' && style.lineHeightPercentFontSize) {
+    height = style.lineHeightPercentFontSize / 100;
+  } else if (style.lineHeightPx && fontSize) {
+    height = style.lineHeightPx / fontSize;
+  }
+  const decorations: Record<string, TextStyleFields['decoration']> = {UNDERLINE: 'underline', STRIKETHROUGH: 'lineThrough'};
   return {
     fontFamily: style.fontFamily,
     fontSize,
     fontWeight: style.fontWeight,
     italic: style.italic === true || undefined,
-    color,
+    color: fill ? argbHex(fill) : undefined,
     // Figma's default is 0; emitting it keeps Material 3's 0.25 from being inherited.
     letterSpacing: style.letterSpacing ?? 0,
     height: height === undefined ? undefined : Number(height.toFixed(4)),
-    decoration: style.textDecoration === 'UNDERLINE' ? 'underline'
-      : style.textDecoration === 'STRIKETHROUGH' ? 'lineThrough' : undefined,
+    decoration: style.textDecoration ? decorations[style.textDecoration] : undefined,
   };
 }
 

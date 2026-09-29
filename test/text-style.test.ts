@@ -82,9 +82,12 @@ for (const [name, style, fill, expected] of [
         "TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF112233), letterSpacing: -0.4, height: 1.5, leadingDistribution: TextLeadingDistribution.even)"],
     ['strikethrough gives TextDecoration.lineThrough', restStyle(16, 400, {textDecoration: 'STRIKETHROUGH'}), undefined,
         "TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF112233), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even, decoration: TextDecoration.lineThrough)"],
-    // 50 % paint opacity on an opaque colour: alpha 0x80 (round(0.5 * 255) = 128).
-    ['paint opacity goes into the colour alpha', restStyle(16, 400), {type: 'SOLID', color: TEAL, opacity: 0.5},
+    // 50 % paint opacity on an opaque color: alpha 0x80 (round(0.5 * 255) = 128).
+    ['paint opacity goes into the color alpha', restStyle(16, 400), {type: 'SOLID', color: TEAL, opacity: 0.5},
         "TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0x80112233), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even)"],
+    // Color alpha 0.5 times paint opacity 0.5 is 0.25: round(0.25 * 255) = 64 = 0x40.
+    ['color alpha and paint opacity multiply', restStyle(16, 400), {type: 'SOLID', color: {...TEAL, a: 0.5}, opacity: 0.5},
+        "TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0x40112233), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even)"],
 ] as const) {
     test(`${name}, on both code paths`, async () => {
         const styles = await textStyleOnBothPaths(frameWithText('Sample copy', style, fill), 'Sample copy');

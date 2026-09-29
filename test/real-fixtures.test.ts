@@ -43,8 +43,8 @@ test('Text fixture: each TextStyle carries the Figma style fields', async () => 
     const {routes} = fixture('text-frame.json', '1:8');
     const code = await widgetCode(routes, '1:8');
 
-    // Heights by hand: 40/32 = 1.25; 150 % = 1.5; Auto 16.943/14 = 1.2102; 28/18 = 1.5556; Auto 19.364/16 = 1.2102.
-    // The two colour cases are pinned in the colour test; these are the other nine texts.
+    // Heights by hand: 40/32 = 1.25; 150 % = 1.5; Auto 16.9432/14 = 1.2102; 28/18 = 1.5556; Auto 19.3636/16 = 1.2102.
+    // The two color cases are pinned in the color test; these are the other nine texts.
     for (const [label, style] of [
         ['Heading styled by text style', "fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.w700, color: Color(0xFF000000), letterSpacing: -0.5, height: 1.25, leadingDistribution: TextLeadingDistribution.even"],
         ['Body copy styled by text style, line height 150%.', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even"],

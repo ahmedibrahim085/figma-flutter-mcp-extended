@@ -151,6 +151,12 @@ export interface FigmaTextStyle {
     lineHeightPx: number;
     textAlignHorizontal: string;
     textAlignVertical: string;
+    italic?: boolean;
+    /** PIXELS, FONT_SIZE_% or INTRINSIC_% (Figma's Auto). */
+    lineHeightUnit?: string;
+    lineHeightPercentFontSize?: number;
+    /** NONE, UNDERLINE or STRIKETHROUGH. */
+    textDecoration?: string;
 }
 
 export interface FigmaConstraints {

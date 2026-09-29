@@ -21,12 +21,16 @@ function fontWeightCode(weight: number): string {
   return 'FontWeight.normal';
 }
 
-/** Dart `TextStyle(...)` for `fields`, or undefined when there is nothing to emit. */
-export function textStyleCode(fields: TextStyleFields): string | undefined {
+/**
+ * Dart `TextStyle(...)` for `fields`, or undefined when there is nothing to emit.
+ * `colorCode` replaces the fields' color with a Dart expression (a semantic color).
+ */
+export function textStyleCode(fields: TextStyleFields, colorCode?: string): string | undefined {
   const parts: string[] = [];
   if (fields.fontFamily) parts.push(`fontFamily: '${fields.fontFamily}'`);
   if (fields.fontSize) parts.push(`fontSize: ${fields.fontSize}`);
   if (fields.fontWeight && fields.fontWeight !== 400) parts.push(`fontWeight: ${fontWeightCode(fields.fontWeight)}`);
-  if (fields.color) parts.push(`color: Color(0xFF${fields.color.substring(1)})`);
+  if (colorCode) parts.push(`color: ${colorCode}`);
+  else if (fields.color) parts.push(`color: Color(0xFF${fields.color.substring(1)})`);
   return parts.length > 0 ? `TextStyle(${parts.join(', ')})` : undefined;
 }

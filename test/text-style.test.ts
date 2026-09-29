@@ -47,15 +47,16 @@ test('a light weight is FontWeight.w300 on both code paths', async () => {
     assert.deepEqual(styles, {dedup: expected, plain: expected});
 });
 
-// The plain path gives error, success and warning texts a semantic colour. It must
-// replace the design colour, not add a second `color:` (Dart: duplicate_named_argument).
-for (const [label, colour] of [
+// The plain path gives error, success and warning texts a semantic color. It must
+// replace the design color, not add a second `color:` (Dart: duplicate_named_argument).
+for (const [label, colorCode] of [
     ['Invalid password', 'Theme.of(context).colorScheme.error'],
     ['Warning: low balance', 'Colors.orange'],
+    ['Payment successful', 'Colors.green'],
 ] as const) {
-    test(`"${label}" has exactly one colour on the plain path`, async () => {
+    test(`"${label}" has exactly one color on the plain path`, async () => {
         const {plain} = await textStyleOnBothPaths(frameWithText(label, {fontFamily: 'Inter', fontWeight: 500, fontSize: 14}), label);
 
-        assert.equal(plain, `TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500, color: ${colour})`);
+        assert.equal(plain, `TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500, color: ${colorCode})`);
     });
 }

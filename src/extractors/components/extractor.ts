@@ -860,11 +860,8 @@ export function generateFlutterTextWidget(textInfo: TextInfo): string {
     }
 
     const customStyle = textInfo.style ? textStyleCode(textInfo.style) ?? null : null;
-    // A semantic colour replaces the design colour: TextStyle cannot take `color:` twice.
-    const withSemanticColour = (colour: string) => {
-        const base = textInfo.style ? textStyleCode({...textInfo.style, color: undefined}) : undefined;
-        return base ? `${base.slice(0, -1)}, color: ${colour})` : `TextStyle(color: ${colour})`;
-    };
+    // A semantic color replaces the design color: TextStyle cannot take `color:` twice.
+    const withSemanticColor = (colorCode: string) => textStyleCode(textInfo.style ?? {}, colorCode)!;
 
     switch (textInfo.semanticType) {
         case 'button':
@@ -890,15 +887,15 @@ export function generateFlutterTextWidget(textInfo: TextInfo): string {
             return `Text(\n  '${escapedContent}',\n  style: ${labelStyle},\n)`;
 
         case 'error':
-            const errorStyle = withSemanticColour('Theme.of(context).colorScheme.error');
+            const errorStyle = withSemanticColor('Theme.of(context).colorScheme.error');
             return `Text(\n  '${escapedContent}',\n  style: ${errorStyle},\n)`;
 
         case 'success':
-            const successStyle = withSemanticColour('Colors.green');
+            const successStyle = withSemanticColor('Colors.green');
             return `Text(\n  '${escapedContent}',\n  style: ${successStyle},\n)`;
 
         case 'warning':
-            const warningStyle = withSemanticColour('Colors.orange');
+            const warningStyle = withSemanticColor('Colors.orange');
             return `Text(\n  '${escapedContent}',\n  style: ${warningStyle},\n)`;
 
         default:

@@ -4,7 +4,7 @@ import { MAX_CHILD_DEPTH, NESTED_COMPONENT_TYPES, type DeduplicatedComponentAnal
 import { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
 import { dartString, indentTail, textWidgetCode } from '../../../extractors/flutter/text-style.js';
 import { generateComponentVisualContext } from '../visual-context.js';
-import type { ComponentAnalysis } from '../../../extractors/components/types.js';
+import type { ComponentAnalysis, LayoutInfo } from '../../../extractors/components/types.js';
 import { formatComponentProperties } from '../../../utils/component-properties.js';
 import { formatSizingAlignment } from '../../../utils/style-format.js';
 
@@ -95,6 +95,7 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   implementation += `  @override\n`;
   implementation += `  Widget build(BuildContext context) {\n`;
   implementation += `    return Container(\n`;
+  implementation += fixedSizeProps(analysis.layout).map(prop => `      ${prop}\n`).join('');
   
   // Apply decoration if exists
   if (analysis.styleRefs.decoration) {
@@ -109,7 +110,7 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   // Add child widget structure
   const approximations: string[] = [];
   if (analysis.children.length > 0) {
-    const layout = layoutWidget(analysis.children, analysis.layout.direction, styleLibrary, approximations);
+    const layout = layoutWidget(analysis.children, analysis.layout, styleLibrary, approximations);
     implementation += `      child: ${indentTail(layout, 6)},\n`;
   }
   
@@ -123,23 +124,39 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   return implementation;
 }
 
-const SHAPE_TYPES = new Set(['RECTANGLE', 'ELLIPSE', 'VECTOR', 'LINE', 'STAR', 'POLYGON', 'BOOLEAN_OPERATION']);
 /** Shapes whose outline a BoxDecoration cannot draw; they render as their bounding box. */
 const BOUNDING_BOX_TYPES = new Set(['LINE', 'STAR', 'POLYGON', 'BOOLEAN_OPERATION']);
 
-/** A Row or Column holding `children`, each rendered by childWidget. */
+/**
+ * Pixel sizes for the axes Figma sizes as FIXED. HUG and FILL axes carry none (upstream #35).
+ * Nodes outside auto layout have no sizing in the REST response and keep their measured size.
+ */
+function fixedSizeProps(layout: LayoutInfo): string[] {
+  const props: string[] = [];
+  if (layout.sizingHorizontal !== 'HUG' && layout.sizingHorizontal !== 'FILL' && layout.dimensions.width > 0) {
+    props.push(`width: ${Math.round(layout.dimensions.width)},`);
+  }
+  if (layout.sizingVertical !== 'HUG' && layout.sizingVertical !== 'FILL' && layout.dimensions.height > 0) {
+    props.push(`height: ${Math.round(layout.dimensions.height)},`);
+  }
+  return props;
+}
+
+/** The Row or Column for a frame's `children`, each rendered by childWidget; a HUG main axis shrinks to them. */
 function layoutWidget(
   children: DeduplicatedComponentChild[],
-  direction: 'horizontal' | 'vertical' | undefined,
+  frame: LayoutInfo,
   styleLibrary: FlutterStyleLibrary,
   approximations: string[]
 ): string {
-  const axis = direction === 'horizontal' ? 'horizontal' : 'vertical';
+  const axis = frame.direction === 'horizontal' ? 'horizontal' : 'vertical';
+  const mainAxisSizing = axis === 'horizontal' ? frame.sizingHorizontal : frame.sizingVertical;
   const items = children.map(child => {
     const code = childWidget(child, styleLibrary, approximations);
     return code ? `${indentAll(wrapForMainAxisSizing(code, child.layout, axis), 4)},\n` : '';
   }).join('');
-  return `${axis === 'horizontal' ? 'Row' : 'Column'}(\n  children: [\n${items}  ],\n)`;
+  const mainAxisSize = mainAxisSizing === 'HUG' ? '  mainAxisSize: MainAxisSize.min,\n' : '';
+  return `${axis === 'horizontal' ? 'Row' : 'Column'}(\n${mainAxisSize}  children: [\n${items}  ],\n)`;
 }
 
 /** An approximation: a comment at the widget, and a line in the tool output's Approximations list. */
@@ -173,19 +190,20 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
     const widget = decoration ? container([`width: ${width},`, `height: ${height},`, `decoration: ${decoration},`]) : placeholder;
     return approximate(`"${child.name}" is deeper than ${MAX_CHILD_DEPTH} levels; its children are not rendered`, widget, approximations);
   }
-  const props: string[] = [];
-  if (SHAPE_TYPES.has(child.type)) props.push(`width: ${width},`, `height: ${height},`);
+  const props = fixedSizeProps(child.layout);
   if (decoration) props.push(`decoration: ${decoration},`);
   const padding = styleOf('padding');
   if (padding) props.push(`padding: ${padding},`);
   if (child.children?.length) {
-    const layout = layoutWidget(child.children, child.layout.direction, styleLibrary, approximations);
+    const layout = layoutWidget(child.children, child.layout, styleLibrary, approximations);
     // A Container holding only a child adds nothing (avoid_unnecessary_containers).
     if (props.length === 0) return layout;
     props.push(`child: ${indentTail(layout, 2)},`);
   }
   // Nothing drawn and no child: the node only holds space (sized_box_for_whitespace).
-  const widget = decoration || padding ? container(props) : placeholder;
+  const widget = decoration || padding || child.children?.length
+    ? container(props)
+    : `SizedBox(${props.map(prop => prop.slice(0, -1)).join(', ')})`;
   if (BOUNDING_BOX_TYPES.has(child.type)) {
     return approximate(`"${child.name}" (${child.type}) is drawn as its bounding box`, widget, approximations);
   }

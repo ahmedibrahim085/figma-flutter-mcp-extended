@@ -111,7 +111,7 @@ test('Text fixture: the frame\'s variable-bound item spacing is dropped (pins cu
 
     const code = await widgetCode(routes, '1:8');
     // No spacing between the texts: the Column opens straight onto the first Text.
-    assert.ok(code.includes("      child: Column(\n        children: [\n          Text(\n            'Heading styled by text style',"), code);
+    assert.ok(code.includes("      child: Column(\n        mainAxisSize: MainAxisSize.min,\n        children: [\n          Text(\n            'Heading styled by text style',"), code);
     assert.doesNotMatch(code, /spacing: |SizedBox\(height: 12/);
 });
 
@@ -162,12 +162,20 @@ test('Layout fixture: nested frames render their own children, in layer order', 
     // Seven auto-layout rows and one frame without auto layout (a Column until ticket 05 gives it a Stack).
     assert.equal(code.match(/child: Row\(/g)?.length, 7, code);
     assert.equal(code.match(/child: Column\(/g)?.length, 2, code);
-    // Every rectangle of the eight case frames, from the fixture, in order.
-    const sizes = [...code.matchAll(/width: (\d+),\n\s+height: (\d+),/g)].map(([, w, h]) => `${w}x${h}`);
+    // Every container in layer order, with the pixels of its FIXED axes ('-' for a HUG or FILL axis),
+    // from the fixture's layoutSizing fields. Children of the plain frame have none and keep their size.
+    const sizes = [...code.matchAll(/Container\(\n(?:\s+width: (\d+),\n)?(?:\s+height: (\d+),\n)?/g)]
+        .map(([, w, h]) => `${w ?? '-'}x${h ?? '-'}`);
     assert.deepEqual(sizes, [
-        '60x40', '268x40', '60x40', '198x40', '198x40', '80x40', '80x84', '240x40',
-        '80x40', '80x40', '16x16', '60x24', '60x24', '60x24', '60x24', '60x24', '60x24',
-        '60x30', '60x30', '200x120', '60x30',
+        '-x-',
+        '420x-', '60x40', '-x40', '60x40',
+        '420x-', '-x40', '-x40',
+        '-x100', '80x40', '80x-',
+        '420x-', '-x40',
+        '-x-', '80x40', '80x40', '16x16',
+        '220x-', '60x24', '60x24', '60x24', '60x24', '60x24', '60x24',
+        '420x60', '60x30', '60x30',
+        '200x120', '200x120', '60x30',
     ]);
 });
 

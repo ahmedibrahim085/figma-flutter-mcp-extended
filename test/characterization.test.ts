@@ -53,7 +53,7 @@ test('upper case is baked into the string and centring goes on the Text widget',
     assert.match(code, /\n            textAlign: TextAlign\.center,\n          \),/);
 });
 
-test('auto-layout Row has no alignment, spacing or fixed size (pins current behaviour, slice 2 replaces this)', async () => {
+test('auto-layout Row keeps its fixed size but has no alignment or spacing (pins current behaviour, slice 2 replaces this)', async () => {
     const code = await widgetCode({
         id: '12:1', name: 'Toolbar', type: 'FRAME', layoutMode: 'HORIZONTAL', itemSpacing: 12,
         primaryAxisAlignItems: 'SPACE_BETWEEN', counterAxisAlignItems: 'CENTER', paddingLeft: 16, paddingRight: 16,
@@ -61,9 +61,11 @@ test('auto-layout Row has no alignment, spacing or fixed size (pins current beha
         children: [textNode('12:2', 'Left', {fontFamily: 'Inter', fontWeight: 400, fontSize: 14}), textNode('12:3', 'Right', {fontFamily: 'Inter', fontWeight: 400, fontSize: 14})],
     });
 
-    // SPACE_BETWEEN, CENTER, itemSpacing 12 and the fixed 320×48 size are all dropped:
-    // no alignment, no size, and the two Texts sit next to each other with no gap.
+    // The fixed 320×48 size is emitted. SPACE_BETWEEN, CENTER and itemSpacing 12 are dropped:
+    // no alignment, and the two Texts sit next to each other with no gap.
     assert.ok(code.includes(`    return Container(
+      width: 320,
+      height: 48,
       padding: paddingID,
       child: Row(
         children: [

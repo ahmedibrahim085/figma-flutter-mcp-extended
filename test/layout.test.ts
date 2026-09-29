@@ -38,6 +38,8 @@ test('a nested frame renders as a container around its own Row, three levels dee
         'child: Column(',
         'children: [',
         'Container(',
+        'width: 200,',
+        'height: 40,',
         'decoration: decorationID,',
         'child: Row(',
         'children: [',
@@ -137,7 +139,7 @@ test('a nested frame keeps its own padding', async () => {
         }],
     });
 
-    assert.ok(dedent(code).includes(['Container(', 'padding: paddingID,', 'child: Row(', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
+    assert.ok(dedent(code).includes(['Container(', 'width: 200,', 'height: 40,', 'padding: paddingID,', 'child: Row(', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
 });
 
 test('an empty frame without decoration keeps its space as a sized box', async () => {
@@ -180,6 +182,7 @@ test('a nested frame with nothing but children renders its Row or Column directl
     const code = await widgetCode({
         id: '57:1', name: 'Outer', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(200, 80),
         children: [{id: '57:2', name: 'Bare', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(200, 40),
+            layoutSizingHorizontal: 'FILL', layoutSizingVertical: 'HUG',
             children: [{id: '57:3', name: 'Dot', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(10, 10)}]}],
     });
 
@@ -197,4 +200,83 @@ test('a shape without a fill keeps its space as a sized box', async () => {
 
     assert.match(text, /children: \[\n\s+SizedBox\(width: 7, height: 7\),\n/);
     assert.match(text, /\/\/ approximate: "Cut" \(BOOLEAN_OPERATION\) is drawn as its bounding box\n\s*SizedBox\(width: 9, height: 9\),/);
+});
+
+// Ticket 02: only a FIXED axis carries pixels; a HUG main axis shrinks to its children.
+const sized = (horizontal: string | undefined, vertical: string | undefined) =>
+    ({layoutSizingHorizontal: horizontal, layoutSizingVertical: vertical});
+
+test('a FIXED component root carries its size', async () => {
+    const code = await widgetCode({
+        id: '50:1', name: 'Bar', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [RED], absoluteBoundingBox: box(320, 48), ...sized('FIXED', 'FIXED'),
+        children: [{id: '50:2', name: 'Dot', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(10, 10), ...sized('FIXED', 'FIXED')}],
+    });
+
+    assert.match(code, /    return Container\(\n      width: 320,\n      height: 48,\n      decoration: decorationID,\n/);
+});
+
+test('a HUG component root carries no size and its Row shrinks to its children', async () => {
+    const code = await widgetCode({
+        id: '51:1', name: 'Chip', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [RED], absoluteBoundingBox: box(90, 24), ...sized('HUG', 'HUG'),
+        children: [{id: '51:2', name: 'Dot', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(10, 10), ...sized('FIXED', 'FIXED')}],
+    });
+
+    assert.doesNotMatch(code, /width: 90|height: 24/);
+    assert.match(code, /      child: Row\(\n        mainAxisSize: MainAxisSize\.min,\n        children: \[/);
+});
+
+test('a nested FIXED frame carries both sizes; a nested HUG column carries none and shrinks', async () => {
+    const code = await widgetCode({
+        id: '52:1', name: 'Outer', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(400, 100), ...sized('FIXED', 'FIXED'),
+        children: [
+            {id: '52:2', name: 'Fixed', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [RED], absoluteBoundingBox: box(120, 60), ...sized('FIXED', 'FIXED'),
+                children: [{id: '52:3', name: 'A', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(11, 11), ...sized('FIXED', 'FIXED')}]},
+            {id: '52:4', name: 'Hug', type: 'FRAME', layoutMode: 'VERTICAL', fills: [RED], absoluteBoundingBox: box(33, 77), ...sized('HUG', 'HUG'),
+                children: [{id: '52:5', name: 'B', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(12, 12), ...sized('FIXED', 'FIXED')}]},
+        ],
+    });
+
+    assert.ok(dedent(code).includes(['Container(', 'width: 120,', 'height: 60,', 'decoration: decorationID,', 'child: Row(', 'children: ['].join('\n')), code);
+    assert.ok(dedent(code).includes(['Container(', 'decoration: decorationID,', 'child: Column(', 'mainAxisSize: MainAxisSize.min,', 'children: ['].join('\n')), code);
+    assert.doesNotMatch(code, /width: 33|height: 77/);
+});
+
+test('a FILL shape carries no pixels on its FILL axis', async () => {
+    const code = await widgetCode({
+        id: '53:1', name: 'Track', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(300, 20), ...sized('FIXED', 'FIXED'),
+        children: [{id: '53:2', name: 'Bar', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(268, 8), layoutGrow: 1, ...sized('FILL', 'FIXED')}],
+    });
+
+    assert.doesNotMatch(code, /width: 268/);
+    assert.ok(dedent(code).includes(['Expanded(', 'child: Container(', 'height: 8,', 'decoration: decorationID,', '),'].join('\n')), code);
+});
+
+test('a HUG text carries no width', async () => {
+    const code = await widgetCode({
+        id: '54:1', name: 'Label row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(200, 20), ...sized('FIXED', 'FIXED'),
+        children: [{id: '54:2', name: 'Label', type: 'TEXT', characters: 'Hello', fills: [], absoluteBoundingBox: box(87, 17), ...sized('HUG', 'HUG'),
+            style: {fontFamily: 'Inter', fontSize: 14, fontWeight: 400, textAutoResize: 'WIDTH_AND_HEIGHT'}}],
+    });
+
+    assert.match(code, /'Hello'/);
+    assert.doesNotMatch(code, /width: 87|height: 17/);
+});
+
+test('a shape outside auto layout keeps its pixel size', async () => {
+    const code = await widgetCode({
+        id: '55:1', name: 'Canvas', type: 'FRAME', fills: [], absoluteBoundingBox: box(200, 120), ...sized('FIXED', 'FIXED'),
+        children: [{id: '55:2', name: 'Blob', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(44, 22)}],
+    });
+
+    assert.ok(dedent(code).includes(['Container(', 'width: 44,', 'height: 22,', 'decoration: decorationID,'].join('\n')), code);
+});
+
+test('a FIXED frame without decoration keeps its size and its children', async () => {
+    const code = await widgetCode({
+        id: '59:1', name: 'Outer', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(300, 100), ...sized('FIXED', 'FIXED'),
+        children: [{id: '59:2', name: 'Slot', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(150, 50), ...sized('FIXED', 'FIXED'),
+            children: [{id: '59:3', name: 'Dot', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(10, 10), ...sized('FIXED', 'FIXED')}]}],
+    });
+
+    assert.ok(dedent(code).includes(['Container(', 'width: 150,', 'height: 50,', 'child: Row(', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
 });

@@ -480,9 +480,6 @@ export function extractBasicStyling(node: FigmaNode): Partial<StylingInfo> {
     return styling;
 }
 
-/**
- * Extract enhanced text information
- */
 /** The TextStyle inputs of a TEXT node, or undefined when the node carries no style. */
 export function textStyleFields(node: FigmaNode): TextStyleFields | undefined {
     if (!node.style) return undefined;
@@ -495,6 +492,9 @@ export function textStyleFields(node: FigmaNode): TextStyleFields | undefined {
     };
 }
 
+/**
+ * Extract enhanced text information
+ */
 export function extractTextInfo(node: FigmaNode, parent?: FigmaNode, siblings?: FigmaNode[]): TextInfo | undefined {
     if (node.type !== 'TEXT') return undefined;
 
@@ -859,7 +859,12 @@ export function generateFlutterTextWidget(textInfo: TextInfo): string {
         return `Text('${escapedContent}') // TODO: Replace with actual content`;
     }
 
-    const customStyle = (textInfo.style && textStyleCode(textInfo.style)) ?? null;
+    const customStyle = textInfo.style ? textStyleCode(textInfo.style) ?? null : null;
+    // A semantic colour replaces the design colour: TextStyle cannot take `color:` twice.
+    const withSemanticColour = (colour: string) => {
+        const base = textInfo.style ? textStyleCode({...textInfo.style, color: undefined}) : undefined;
+        return base ? `${base.slice(0, -1)}, color: ${colour})` : `TextStyle(color: ${colour})`;
+    };
 
     switch (textInfo.semanticType) {
         case 'button':
@@ -885,21 +890,15 @@ export function generateFlutterTextWidget(textInfo: TextInfo): string {
             return `Text(\n  '${escapedContent}',\n  style: ${labelStyle},\n)`;
 
         case 'error':
-            const errorStyle = customStyle ? 
-                `${customStyle.slice(0, -1)}, color: Theme.of(context).colorScheme.error)` :
-                'TextStyle(color: Theme.of(context).colorScheme.error)';
+            const errorStyle = withSemanticColour('Theme.of(context).colorScheme.error');
             return `Text(\n  '${escapedContent}',\n  style: ${errorStyle},\n)`;
 
         case 'success':
-            const successStyle = customStyle ?
-                `${customStyle.slice(0, -1)}, color: Colors.green)` :
-                'TextStyle(color: Colors.green)';
+            const successStyle = withSemanticColour('Colors.green');
             return `Text(\n  '${escapedContent}',\n  style: ${successStyle},\n)`;
 
         case 'warning':
-            const warningStyle = customStyle ?
-                `${customStyle.slice(0, -1)}, color: Colors.orange)` :
-                'TextStyle(color: Colors.orange)';
+            const warningStyle = withSemanticColour('Colors.orange');
             return `Text(\n  '${escapedContent}',\n  style: ${warningStyle},\n)`;
 
         default:

@@ -100,3 +100,15 @@ test('paragraph indent, list spacing and vertical trim are named in a "not conve
     const first = '// not converted: paragraphIndent 16, listSpacing 8, leadingTrim CAP_HEIGHT';
     assert.deepEqual(await blockOnBothPaths(node, first, 5), {dedup: expected, plain: expected});
 });
+
+test('leadingTrim NONE is Figma\'s default and is not named as unconverted', async () => {
+    const node = frameWithText('Order total', {leadingTrim: 'NONE'});
+
+    const args = {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, generateFlutterCode: true};
+    const dedup = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', args);
+    const plain = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', {...args, useDeduplication: false});
+    // The comment would sit on the line before Text(, so check the whole output, not the Text block.
+    assert.doesNotMatch(dedup.text, /not converted/);
+    assert.doesNotMatch(plain.text, /not converted/);
+    assert.match(dedup.text, /'Order total',/);
+});

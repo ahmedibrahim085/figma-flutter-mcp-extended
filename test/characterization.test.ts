@@ -46,11 +46,11 @@ test('TextStyle carries every Figma text style field', async () => {
         + "color: Color(0xFF000000), letterSpacing: 0.5, height: 1.5, leadingDistribution: TextLeadingDistribution.even, decoration: TextDecoration.underline),"), code);
 });
 
-test('upper case and centring are dropped (pins current behaviour, slice 1 replaces this)', async () => {
+test('upper case is baked into the string and centring goes on the Text widget', async () => {
     const code = await widgetCode(STYLED_HEADING);
 
-    assert.ok(code.includes("            'Heading',\n            style: TextStyle("), code);
-    assert.doesNotMatch(code, /textAlign: TextAlign/);
+    assert.ok(code.includes("            'HEADING',\n            style: TextStyle("), code);
+    assert.match(code, /\n            textAlign: TextAlign\.center,\n          \),/);
 });
 
 test('auto-layout Row has no alignment, spacing or fixed size (pins current behaviour, slice 2 replaces this)', async () => {

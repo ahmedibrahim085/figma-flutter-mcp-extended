@@ -46,26 +46,38 @@ test('Text fixture: each TextStyle carries the Figma style fields', async () => 
     // Heights by hand: 40/32 = 1.25; 150 % = 1.5; Auto 16.9432/14 = 1.2102; 28/18 = 1.5556; Auto 19.3636/16 = 1.2102.
     // The two color cases are pinned in the color test; these are the other nine texts.
     for (const [label, style] of [
-        ['Heading styled by text style', "fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.w700, color: Color(0xFF000000), letterSpacing: -0.5, height: 1.25, leadingDistribution: TextLeadingDistribution.even"],
-        ['Body copy styled by text style, line height 150%.', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even"],
-        ['Tracked label', "fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF000000), letterSpacing: 2, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
-        ['Raw line height 28px without a style', "fontFamily: 'Inter', fontSize: 18, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.5556, leadingDistribution: TextLeadingDistribution.even"],
-        ['Centered in a fixed 320px box', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
-        ['Right aligned', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
-        ['Underlined link text', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even, decoration: TextDecoration.underline"],
-        ['This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
-        ['Regular then bold run', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
+        ["'Heading styled by text style'", "fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.w700, color: Color(0xFF000000), letterSpacing: -0.5, height: 1.25, leadingDistribution: TextLeadingDistribution.even"],
+        ["'Body copy styled by text style, line height 150%.'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even"],
+        ["'TRACKED LABEL'", "fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF000000), letterSpacing: 2, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
+        ["'Raw line height 28px without a style'", "fontFamily: 'Inter', fontSize: 18, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.5556, leadingDistribution: TextLeadingDistribution.even"],
+        ["'Centered in a fixed 320px box'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
+        ["'Right aligned'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
+        ["'Underlined link text'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even, decoration: TextDecoration.underline"],
+        ["'This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
+        ["'Regular then bold run'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
     ]) {
-        assert.ok(code.includes(`            '${label}',\n            style: TextStyle(${style}),\n          ),`), `${label}\n${code}`);
+        assert.ok(code.includes(`            ${label},\n            style: TextStyle(${style}),\n`), `${label}\n${code}`);
     }
 });
 
-test('Text fixture: alignment, truncation, upper case and the bold run are dropped (pins current behaviour, slice 1 replaces this)', async () => {
+test('Text fixture: alignment, truncation and upper case reach the Text widget', async () => {
     const {routes} = fixture('text-frame.json', '1:8');
     const code = await widgetCode(routes, '1:8');
 
-    assert.doesNotMatch(code, /maxLines: \d|overflow: TextOverflow|textAlign: TextAlign|Text\.rich/);
-    assert.ok(code.includes("            'Tracked label',\n"), code);
+    // Each Text's arguments after its style line, as written by hand from the fixture.
+    const argsAfterStyle = (literal: string) => code.slice(code.indexOf(`            ${literal},\n`)).split('\n').slice(2, 5).join('\n');
+    assert.equal(argsAfterStyle("'Centered in a fixed 320px box'"), '            textAlign: TextAlign.center,\n          ),\n          Text(');
+    assert.equal(argsAfterStyle("'Right aligned'"), '            textAlign: TextAlign.right,\n          ),\n          Text(');
+    assert.equal(argsAfterStyle("'This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.'"),
+        '            maxLines: 2,\n            overflow: TextOverflow.ellipsis,\n          ),');
+    assert.ok(code.includes("            'TRACKED LABEL',\n"), code);
+});
+
+test('Text fixture: the bold run is flattened into one style (pins current behaviour, slice 1 replaces this)', async () => {
+    const {routes} = fixture('text-frame.json', '1:8');
+    const code = await widgetCode(routes, '1:8');
+
+    assert.doesNotMatch(code, /Text\.rich/);
 });
 
 test('Text fixture: variable and paint-style colours become literals (pins current behaviour, slice 5 replaces this)', async () => {

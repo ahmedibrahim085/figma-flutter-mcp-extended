@@ -19,6 +19,19 @@ export interface TextStyleFields {
   /** Line height as a multiple of fontSize, when Figma gives one. */
   height?: number;
   decoration?: 'underline' | 'lineThrough';
+  /** OpenType tags for small caps (INFERRED mapping, research 03b). */
+  fontFeatures?: string[];
+}
+
+/** The Text-widget side of a text: the string as written and the fields TextStyle cannot hold. */
+export interface TextWidgetFields {
+  /** The string after Figma's letter case is applied. */
+  text: string;
+  textAlign?: 'center' | 'right' | 'justify';
+  maxLines?: number;
+  /** True when maxLines was derived from the box height, not given by Figma. */
+  maxLinesInferred?: boolean;
+  ellipsis?: boolean;
 }
 
 /** `#AARRGGBB` of a solid fill: the color's alpha times the paint opacity. */
@@ -52,7 +65,54 @@ export function convertTypeStyle(style: FigmaTextStyle, fill?: FigmaFill): TextS
     letterSpacing: style.letterSpacing ?? 0,
     height: height === undefined ? undefined : Number(height.toFixed(4)),
     decoration: style.textDecoration ? decorations[style.textDecoration] : undefined,
+    fontFeatures: style.textCase === 'SMALL_CAPS' ? ['smcp']
+      : style.textCase === 'SMALL_CAPS_FORCED' ? ['smcp', 'c2sc'] : undefined,
   };
+}
+
+/** Figma letter case, baked into the string: Flutter has no text-transform style. */
+function applyTextCase(text: string, textCase?: string): string {
+  if (textCase === 'UPPER') return text.toUpperCase();
+  if (textCase === 'LOWER') return text.toLowerCase();
+  if (textCase === 'TITLE') return text.replace(/(^|\s)(\S)/g, (_, space: string, first: string) => space + first.toUpperCase());
+  return text;
+}
+
+/**
+ * Text-widget fields for a text node's content, TypeStyle and box height.
+ * Ending truncation gives maxLines + ellipsis; with no maxLines from Figma the count is
+ * floor(boxHeight / lineHeightPx), which research 03b marks as an inferred rule.
+ */
+export function convertTextWidget(content: string, style?: FigmaTextStyle, boxHeight?: number): TextWidgetFields {
+  const widget: TextWidgetFields = {text: applyTextCase(content, style?.textCase)};
+  const aligns: Record<string, TextWidgetFields['textAlign']> = {CENTER: 'center', RIGHT: 'right', JUSTIFIED: 'justify'};
+  if (style?.textAlignHorizontal) widget.textAlign = aligns[style.textAlignHorizontal];
+  if (style?.textTruncation === 'ENDING' || style?.textAutoResize === 'TRUNCATE') {
+    widget.ellipsis = true;
+    if (style.maxLines) {
+      widget.maxLines = style.maxLines;
+    } else if (boxHeight && style.lineHeightPx) {
+      widget.maxLines = Math.max(1, Math.floor(boxHeight / style.lineHeightPx));
+      widget.maxLinesInferred = true;
+    }
+  }
+  return widget;
+}
+
+/** A single-quoted Dart string literal: `'`, `\`, `$` and newlines escaped. */
+export function dartString(text: string): string {
+  return `'${text.replace(/[\\'$]/g, (c) => `\\${c}`).replace(/\n/g, '\\n')}'`;
+}
+
+/** Dart `Text(...)` for `widget`, with `styleCode` as its style when given. */
+export function textWidgetCode(widget: TextWidgetFields, styleCode?: string): string {
+  const args: string[] = [];
+  if (styleCode) args.push(`style: ${styleCode},`);
+  if (widget.textAlign) args.push(`textAlign: TextAlign.${widget.textAlign},`);
+  if (widget.maxLines) args.push(`maxLines: ${widget.maxLines},${widget.maxLinesInferred ? ' // inferred: floor(boxHeight / lineHeightPx)' : ''}`);
+  if (widget.ellipsis) args.push('overflow: TextOverflow.ellipsis,');
+  if (args.length === 0) return `Text(${dartString(widget.text)})`;
+  return `Text(\n  ${dartString(widget.text)},\n${args.map((arg) => `  ${arg}\n`).join('')})`;
 }
 
 /** `FontWeight.wN` on the 100-step grid, `FontWeight(n)` otherwise (variable fonts, 1-1000). */
@@ -78,5 +138,8 @@ export function textStyleCode(fields: TextStyleFields, colorCode?: string): stri
     parts.push(`height: ${fields.height}`, 'leadingDistribution: TextLeadingDistribution.even');
   }
   if (fields.decoration) parts.push(`decoration: TextDecoration.${fields.decoration}`);
+  if (fields.fontFeatures) {
+    parts.push(`fontFeatures: [${fields.fontFeatures.map((tag) => `FontFeature.enable('${tag}')`).join(', ')}] /* inferred */`);
+  }
   return parts.length > 0 ? `TextStyle(${parts.join(', ')})` : undefined;
 }

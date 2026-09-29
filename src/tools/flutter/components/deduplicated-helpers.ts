@@ -2,6 +2,7 @@
 
 import type { DeduplicatedComponentAnalysis } from '../../../extractors/components/deduplicated-extractor.js';
 import { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
+import { textWidgetCode } from '../../../extractors/flutter/text-style.js';
 import { generateComponentVisualContext } from '../visual-context.js';
 import type { ComponentAnalysis } from '../../../extractors/components/types.js';
 import { formatComponentProperties } from '../../../utils/component-properties.js';
@@ -125,9 +126,7 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
       } else if (child.type === 'TEXT' && child.textContent) {
         const textStyleId = child.styleRefs.find(id => styleLibrary.getStyle(id)?.category === 'text');
         const textStyleCode = textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined;
-        widgetCode = textStyleCode
-          ? `Text(\n  '${child.textContent}',\n  style: ${textStyleCode},\n)`
-          : `Text('${child.textContent}')`;
+        widgetCode = textWidgetCode(child.textWidget ?? {text: child.textContent}, textStyleCode);
       }
 
       if (widgetCode) {

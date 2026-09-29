@@ -157,6 +157,13 @@ export interface FigmaTextStyle {
     lineHeightPercentFontSize?: number;
     /** NONE, UNDERLINE or STRIKETHROUGH. */
     textDecoration?: string;
+    /** ORIGINAL, UPPER, LOWER, TITLE, SMALL_CAPS or SMALL_CAPS_FORCED. */
+    textCase?: string;
+    /** DISABLED or ENDING; maxLines applies only with ENDING. */
+    textTruncation?: string;
+    maxLines?: number;
+    /** NONE, HEIGHT, WIDTH_AND_HEIGHT or TRUNCATE. */
+    textAutoResize?: string;
 }
 
 export interface FigmaConstraints {

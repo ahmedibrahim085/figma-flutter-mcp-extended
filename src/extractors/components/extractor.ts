@@ -20,7 +20,7 @@ import { detectSemanticTypeAdvanced, generateSemanticContext } from '../../tools
 import {Logger} from '../../utils/logger.js';
 import {filterEffectivelyVisibleChildren} from '../../utils/visibility.js';
 import {extractComponentProperties} from '../../utils/component-properties.js';
-import {textStyleCode, convertTypeStyle, type TextStyleFields} from '../flutter/text-style.js';
+import {textStyleCode, textWidgetCode, convertTypeStyle, convertTextWidget, type TextStyleFields} from '../flutter/text-style.js';
 
 /**
  * Extract component metadata
@@ -502,6 +502,7 @@ export function extractTextInfo(node: FigmaNode, parent?: FigmaNode, siblings?: 
         fontWeight: node.style?.fontWeight,
         textAlign: node.style?.textAlignHorizontal,
         style: textStyleFields(node),
+        widget: convertTextWidget(textContent, node.style, node.absoluteBoundingBox?.height),
         textCase: detectTextCase(textContent),
         semanticType: detectSemanticType(textContent, node.name, node, parent, siblings),
         placeholder: isPlaceholder
@@ -855,6 +856,7 @@ export function generateFlutterTextWidget(textInfo: TextInfo): string {
     const customStyle = textInfo.style ? textStyleCode(textInfo.style) ?? null : null;
     // A semantic color replaces the design color: TextStyle cannot take `color:` twice.
     const withSemanticColor = (colorCode: string) => textStyleCode(textInfo.style ?? {}, colorCode)!;
+    const widget = textInfo.widget ?? {text: textInfo.content};
 
     switch (textInfo.semanticType) {
         case 'button':
@@ -865,36 +867,34 @@ export function generateFlutterTextWidget(textInfo: TextInfo): string {
 
         case 'heading':
             const headingStyle = customStyle || 'Theme.of(context).textTheme.headlineMedium';
-            return `Text(\n  '${escapedContent}',\n  style: ${headingStyle},\n)`;
+            return textWidgetCode(widget, headingStyle);
 
         case 'body':
             const bodyStyle = customStyle || 'Theme.of(context).textTheme.bodyMedium';
-            return `Text(\n  '${escapedContent}',\n  style: ${bodyStyle},\n)`;
+            return textWidgetCode(widget, bodyStyle);
 
         case 'caption':
             const captionStyle = customStyle || 'Theme.of(context).textTheme.bodySmall';
-            return `Text(\n  '${escapedContent}',\n  style: ${captionStyle},\n)`;
+            return textWidgetCode(widget, captionStyle);
 
         case 'label':
             const labelStyle = customStyle || 'Theme.of(context).textTheme.labelMedium';
-            return `Text(\n  '${escapedContent}',\n  style: ${labelStyle},\n)`;
+            return textWidgetCode(widget, labelStyle);
 
         case 'error':
             const errorStyle = withSemanticColor('Theme.of(context).colorScheme.error');
-            return `Text(\n  '${escapedContent}',\n  style: ${errorStyle},\n)`;
+            return textWidgetCode(widget, errorStyle);
 
         case 'success':
             const successStyle = withSemanticColor('Colors.green');
-            return `Text(\n  '${escapedContent}',\n  style: ${successStyle},\n)`;
+            return textWidgetCode(widget, successStyle);
 
         case 'warning':
             const warningStyle = withSemanticColor('Colors.orange');
-            return `Text(\n  '${escapedContent}',\n  style: ${warningStyle},\n)`;
+            return textWidgetCode(widget, warningStyle);
 
         default:
-            return customStyle ? 
-                `Text(\n  '${escapedContent}',\n  style: ${customStyle},\n)` :
-                `Text('${escapedContent}')`;
+            return textWidgetCode(widget, customStyle ?? undefined);
     }
 }
 

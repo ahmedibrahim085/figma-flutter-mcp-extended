@@ -129,3 +129,65 @@ test('generate_flutter_implementation prints the full TextStyle definition', asy
 
     assert.match(generated.text, /^final text\w+ = TextStyle\(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight\.w600, fontStyle: FontStyle\.italic, color: Color\(0xFF112233\), letterSpacing: 1, height: 1\.5, leadingDistribution: TextLeadingDistribution\.even\);$/m);
 });
+
+/**
+ * The generated `Text(...)` widget for `label` on each code path, with each line's
+ * indentation removed so the two paths compare directly.
+ */
+async function textWidgetOnBothPaths(node: {id: string}, label: string) {
+    const args = {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, generateFlutterCode: true};
+    const dedup = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', args);
+    const plain = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', {...args, useDeduplication: false});
+    const widget = (text: string) => {
+        const lines = text.split('\n').map((line) => line.trim());
+        const start = lines.findIndex((line, i) => line === 'Text(' && lines[i + 1] === `'${label}',`);
+        if (start < 0) return undefined;
+        const end = lines.findIndex((line, i) => i > start && /^\),?$/.test(line));
+        return lines.slice(start, end + 1).join('\n').replace(/,$/, '');
+    };
+    return {dedup: widget(dedup.text), plain: widget(plain.text)};
+}
+
+const PLAIN_STYLE = "style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF112233), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even),";
+
+// Text widget fields and letter case (research 03b): each expected widget is written by hand.
+for (const [name, characters, style, box, expected] of [
+    ['UPPER is baked into the string', 'order total', {textCase: 'UPPER'}, undefined,
+        `Text(\n'ORDER TOTAL',\n${PLAIN_STYLE}\n)`],
+    ['LOWER is baked into the string', 'Order Total', {textCase: 'LOWER'}, undefined,
+        `Text(\n'order total',\n${PLAIN_STYLE}\n)`],
+    ['TITLE capitalises each word', 'order total due', {textCase: 'TITLE'}, undefined,
+        `Text(\n'Order Total Due',\n${PLAIN_STYLE}\n)`],
+    ['CENTER gives textAlign center', 'Order total', {textAlignHorizontal: 'CENTER'}, undefined,
+        `Text(\n'Order total',\n${PLAIN_STYLE}\ntextAlign: TextAlign.center,\n)`],
+    ['JUSTIFIED gives textAlign justify', 'Order total', {textAlignHorizontal: 'JUSTIFIED'}, undefined,
+        `Text(\n'Order total',\n${PLAIN_STYLE}\ntextAlign: TextAlign.justify,\n)`],
+    ['ending truncation with maxLines gives maxLines and ellipsis', 'Order total', {textTruncation: 'ENDING', maxLines: 2}, undefined,
+        `Text(\n'Order total',\n${PLAIN_STYLE}\nmaxLines: 2,\noverflow: TextOverflow.ellipsis,\n)`],
+    // No maxLines on a fixed 60 px box with 24 px lines: floor(60 / 24) = 2, labelled inferred.
+    ['ending truncation without maxLines infers the line count from the box', 'Order total', {textTruncation: 'ENDING'}, 60,
+        `Text(\n'Order total',\n${PLAIN_STYLE}\nmaxLines: 2, // inferred: floor(boxHeight / lineHeightPx)\noverflow: TextOverflow.ellipsis,\n)`],
+] as const) {
+    test(`${name}, on both code paths`, async () => {
+        const node = frameWithText(characters, restStyle(16, 400, style));
+        if (box) Object.assign(node.children[0], {absoluteBoundingBox: {x: 0, y: 0, width: 200, height: box}});
+        // The label a widget is found by is the string as it appears in the code.
+        const label = expected.split('\n')[1].slice(1, -2);
+
+        assert.deepEqual(await textWidgetOnBothPaths(node, label), {dedup: expected, plain: expected});
+    });
+}
+
+test('SMALL_CAPS gives an smcp font feature, labelled inferred, on both code paths', async () => {
+    const styles = await textStyleOnBothPaths(frameWithText('Order total', restStyle(16, 400, {textCase: 'SMALL_CAPS'})), 'Order total');
+
+    const expected = "TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF112233), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even, fontFeatures: [FontFeature.enable('smcp')] /* inferred */)";
+    assert.deepEqual(styles, {dedup: expected, plain: expected});
+});
+
+test('quotes, backslashes and dollar signs are escaped in the Dart string, on both code paths', async () => {
+    const widgets = await textWidgetOnBothPaths(frameWithText("It's $5 \\ off", restStyle(16, 400)), "It\\'s \\$5 \\\\ off");
+
+    const expected = `Text(\n'It\\'s \\$5 \\\\ off',\n${PLAIN_STYLE}\n)`;
+    assert.deepEqual(widgets, {dedup: expected, plain: expected});
+});

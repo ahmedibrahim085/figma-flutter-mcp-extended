@@ -3,6 +3,7 @@
 import type { FigmaNode } from '../../types/figma.js';
 import type { FlutterStyleDefinition } from '../flutter/style-library.js';
 import { FlutterStyleLibrary } from '../flutter/style-library.js';
+import type { TextWidgetFields } from '../flutter/text-style.js';
 import { GlobalStyleManager } from '../flutter/global-vars.js';
 import { 
   extractStylingInfo, 
@@ -38,6 +39,8 @@ export interface DeduplicatedComponentChild {
   layout: LayoutInfo;
   semanticType?: string;
   textContent?: string;
+  /** Text-widget fields (letter case applied, alignment, truncation). */
+  textWidget?: TextWidgetFields;
 }
 
 export class DeduplicatedComponentExtractor {
@@ -117,10 +120,12 @@ export class DeduplicatedComponentExtractor {
       
       // Extract text styling for text nodes using enhanced global style manager
       let textContent: string | undefined;
+      let textWidget: TextWidgetFields | undefined;
       if (child.type === 'TEXT') {
         const textInfo = extractTextInfo(child);
         if (textInfo) {
           textContent = textInfo.content;
+          textWidget = textInfo.widget;
           
           // Add text style to library using enhanced deduplication
           if (textInfo.style) {
@@ -137,7 +142,8 @@ export class DeduplicatedComponentExtractor {
         styleRefs: childStyleRefs,
         layout: childLayout,
         semanticType: this.detectSemanticType(child),
-        textContent
+        textContent,
+        textWidget
       });
     }
     

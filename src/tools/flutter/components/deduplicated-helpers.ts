@@ -1,6 +1,6 @@
 // src/tools/flutter/components/deduplicated-helpers.mts
 
-import { MAX_CHILD_DEPTH, type DeduplicatedComponentAnalysis, type DeduplicatedComponentChild } from '../../../extractors/components/deduplicated-extractor.js';
+import { MAX_CHILD_DEPTH, NESTED_COMPONENT_TYPES, type DeduplicatedComponentAnalysis, type DeduplicatedComponentChild } from '../../../extractors/components/deduplicated-extractor.js';
 import { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
 import { dartString, indentTail, textWidgetCode } from '../../../extractors/flutter/text-style.js';
 import { generateComponentVisualContext } from '../visual-context.js';
@@ -124,7 +124,6 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
 }
 
 const SHAPE_TYPES = new Set(['RECTANGLE', 'ELLIPSE', 'VECTOR', 'LINE', 'STAR', 'POLYGON', 'BOOLEAN_OPERATION']);
-const NESTED_COMPONENT_TYPES = new Set(['INSTANCE', 'COMPONENT', 'COMPONENT_SET']);
 
 /** A Row or Column holding `children`, each rendered by childWidget. */
 function layoutWidget(
@@ -143,6 +142,8 @@ function layoutWidget(
 
 /** An approximation: a comment at the widget, and a line in the tool output's Approximations list. */
 function approximate(note: string, widget: string, approximations: string[]): string {
+  // Layer names can hold line breaks; one would end the Dart line comment early.
+  note = note.replace(/[\r\n]+/g, ' ');
   approximations.push(note);
   return `// approximate: ${note}\n${widget}`;
 }

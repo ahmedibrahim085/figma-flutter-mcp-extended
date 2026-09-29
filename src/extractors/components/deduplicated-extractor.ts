@@ -51,7 +51,7 @@ export interface DeduplicatedComponentChild {
 export const MAX_CHILD_DEPTH = 8;
 
 /** Types rendered as a placeholder and analysed separately, never inlined. */
-const NESTED_COMPONENT_TYPES = new Set(['INSTANCE', 'COMPONENT', 'COMPONENT_SET']);
+export const NESTED_COMPONENT_TYPES = new Set(['INSTANCE', 'COMPONENT', 'COMPONENT_SET']);
 
 export class DeduplicatedComponentExtractor {
   private styleLibrary = FlutterStyleLibrary.getInstance();

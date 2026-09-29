@@ -90,3 +90,63 @@ test('a nested component instance renders as a placeholder named for separate an
     assert.match(text, /\/\/ approximate: component "Avatar" is not inlined; analyze it separately\n\s*SizedBox\(width: 32, height: 32\)/);
     assert.match(text, /Approximations:\n(?:- [^\n]*\n)*- component "Avatar" is not inlined; analyze it separately/);
 });
+
+/** A root frame holding `levels` nested frames, the innermost carrying a 7 px rectangle. */
+function nestedFrames(levels: number) {
+    let node: any = {id: '46:99', name: 'Leaf', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(7, 7)};
+    for (let depth = levels; depth >= 1; depth--) {
+        node = {id: `46:${depth}`, name: `Level ${depth}`, type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(100, 100), children: [node]};
+    }
+    return {id: '46:0', name: 'Root', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(100, 100), children: [node]};
+}
+
+test('content eight levels below the component renders; the ninth level is an approximation', async () => {
+    const eight = await toolText(nestedFrames(7));
+    assert.match(eight, /width: 7,/);
+    assert.doesNotMatch(eight, /approximate:/);
+
+    const nine = await toolText(nestedFrames(8));
+    assert.doesNotMatch(nine, /width: 7,/);
+    assert.match(nine, /\/\/ approximate: "Level 8" is deeper than 8 levels; its children are not rendered/);
+});
+
+test('a layer name with a line break stays inside its approximation comment', async () => {
+    const text = await toolText({
+        id: '47:1', name: 'Card', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(200, 80),
+        children: [{id: '47:2', name: 'Line one\nLine two', type: 'INSTANCE', componentId: '9:9', fills: [], absoluteBoundingBox: box(32, 32), children: []}],
+    });
+
+    assert.match(text, /\/\/ approximate: component "Line one Line two" is not inlined; analyze it separately\n\s*SizedBox\(width: 32, height: 32\)/);
+    assert.match(text, /Approximations:\n- component "Line one Line two" is not inlined; analyze it separately\n/);
+});
+
+test('a frame at the depth limit whose children are all hidden is not named as an approximation', async () => {
+    const root = nestedFrames(8);
+    let level: any = root;
+    while (level.children[0].type === 'FRAME') level = level.children[0];
+    level.children[0].visible = false;
+
+    assert.doesNotMatch(await toolText(root), /approximate:/);
+});
+
+test('a nested frame keeps its own padding', async () => {
+    const code = await widgetCode({
+        id: '48:1', name: 'Outer', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(200, 80),
+        children: [{
+            id: '48:2', name: 'Padded', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(200, 40),
+            paddingTop: 4, paddingRight: 8, paddingBottom: 4, paddingLeft: 8,
+            children: [{id: '48:3', name: 'Dot', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(10, 10)}],
+        }],
+    });
+
+    assert.ok(dedent(code).includes(['Container(', 'padding: paddingID,', 'child: Row(', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
+});
+
+test('an empty frame without decoration keeps its space as a sized box', async () => {
+    const code = await widgetCode({
+        id: '49:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(100, 20),
+        children: [{id: '49:2', name: 'Spacer', type: 'FRAME', fills: [], absoluteBoundingBox: box(24, 8), children: []}],
+    });
+
+    assert.match(code, /children: \[\n\s+SizedBox\(width: 24, height: 8\),\n/);
+});

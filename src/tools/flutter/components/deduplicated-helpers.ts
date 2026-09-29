@@ -2,7 +2,7 @@
 
 import type { DeduplicatedComponentAnalysis } from '../../../extractors/components/deduplicated-extractor.js';
 import { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
-import { textWidgetCode } from '../../../extractors/flutter/text-style.js';
+import { dartString, textWidgetCode } from '../../../extractors/flutter/text-style.js';
 import { generateComponentVisualContext } from '../visual-context.js';
 import type { ComponentAnalysis } from '../../../extractors/components/types.js';
 import { formatComponentProperties } from '../../../utils/component-properties.js';
@@ -122,7 +122,7 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
       let widgetCode: string | undefined;
 
       if (child.semanticType === 'button' && child.textContent) {
-        widgetCode = `ElevatedButton(\n  onPressed: () {},\n  child: Text('${child.textContent}'),\n)`;
+        widgetCode = `ElevatedButton(\n  onPressed: () {},\n  child: Text(${dartString((child.textWidget ?? {text: child.textContent}).text)}),\n)`;
       } else if (child.type === 'TEXT' && child.textContent) {
         const textStyleId = child.styleRefs.find(id => styleLibrary.getStyle(id)?.category === 'text');
         const textStyleCode = textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined;

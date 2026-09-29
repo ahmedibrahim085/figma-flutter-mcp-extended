@@ -20,7 +20,7 @@ import { detectSemanticTypeAdvanced, generateSemanticContext } from '../../tools
 import {Logger} from '../../utils/logger.js';
 import {filterEffectivelyVisibleChildren} from '../../utils/visibility.js';
 import {extractComponentProperties} from '../../utils/component-properties.js';
-import {textStyleCode, textWidgetCode, convertTypeStyle, convertTextWidget, type TextStyleFields} from '../flutter/text-style.js';
+import {dartString, textStyleCode, textWidgetCode, convertTypeStyle, convertTextWidget, type TextStyleFields} from '../flutter/text-style.js';
 
 /**
  * Extract component metadata
@@ -846,24 +846,23 @@ function detectSemanticTypeLegacy(content: string, nodeName: string): 'heading' 
  * Generate Flutter widget suggestion based on semantic type and text info
  */
 export function generateFlutterTextWidget(textInfo: TextInfo): string {
-    // Escape single quotes in content for Dart strings
-    const escapedContent = textInfo.content.replace(/'/g, "\\'");
-    
+    const widget = textInfo.widget ?? {text: textInfo.content};
+    const label = dartString(widget.text);
+
     if (textInfo.isPlaceholder) {
-        return `Text('${escapedContent}') // TODO: Replace with actual content`;
+        return `Text(${label}) // TODO: Replace with actual content`;
     }
 
     const customStyle = textInfo.style ? textStyleCode(textInfo.style) ?? null : null;
     // A semantic color replaces the design color: TextStyle cannot take `color:` twice.
     const withSemanticColor = (colorCode: string) => textStyleCode(textInfo.style ?? {}, colorCode)!;
-    const widget = textInfo.widget ?? {text: textInfo.content};
 
     switch (textInfo.semanticType) {
         case 'button':
-            return `ElevatedButton(\n  onPressed: () {\n    // TODO: Implement button action\n  },\n  child: Text('${escapedContent}'),\n)`;
+            return `ElevatedButton(\n  onPressed: () {\n    // TODO: Implement button action\n  },\n  child: Text(${label}),\n)`;
 
         case 'link':
-            return `TextButton(\n  onPressed: () {\n    // TODO: Implement navigation\n  },\n  child: Text('${escapedContent}'),\n)`;
+            return `TextButton(\n  onPressed: () {\n    // TODO: Implement navigation\n  },\n  child: Text(${label}),\n)`;
 
         case 'heading':
             const headingStyle = customStyle || 'Theme.of(context).textTheme.headlineMedium';

@@ -158,6 +158,9 @@ for (const [name, characters, style, box, expected] of [
         `Text(\n'order total',\n${PLAIN_STYLE}\n)`],
     ['TITLE capitalises each word', 'order total due', {textCase: 'TITLE'}, undefined,
         `Text(\n'Order Total Due',\n${PLAIN_STYLE}\n)`],
+    // A word starts after any non-letter, not only after a space; the apostrophe stays inside the word.
+    ['TITLE capitalises a word after punctuation', "(order total) o'neil", {textCase: 'TITLE'}, undefined,
+        `Text(\n'(Order Total) O\\'neil',\n${PLAIN_STYLE}\n)`],
     ['CENTER gives textAlign center', 'Order total', {textAlignHorizontal: 'CENTER'}, undefined,
         `Text(\n'Order total',\n${PLAIN_STYLE}\ntextAlign: TextAlign.center,\n)`],
     ['JUSTIFIED gives textAlign justify', 'Order total', {textAlignHorizontal: 'JUSTIFIED'}, undefined,
@@ -167,6 +170,15 @@ for (const [name, characters, style, box, expected] of [
     // No maxLines on a fixed 60 px box with 24 px lines: floor(60 / 24) = 2, labelled inferred.
     ['ending truncation without maxLines infers the line count from the box', 'Order total', {textTruncation: 'ENDING'}, 60,
         `Text(\n'Order total',\n${PLAIN_STYLE}\nmaxLines: 2, // inferred: floor(boxHeight / lineHeightPx)\noverflow: TextOverflow.ellipsis,\n)`],
+    // A 10 px box is shorter than one 24 px line: still at least one line.
+    ['a box shorter than one line still gives one line', 'Order total', {textTruncation: 'ENDING'}, 10,
+        `Text(\n'Order total',\n${PLAIN_STYLE}\nmaxLines: 1, // inferred: floor(boxHeight / lineHeightPx)\noverflow: TextOverflow.ellipsis,\n)`],
+    // TRUNCATE (legacy auto-resize) ellipsises at the box; Figma's maxLines applies only to ENDING.
+    ['TRUNCATE takes the line count from the box, not maxLines', 'Order total', {textAutoResize: 'TRUNCATE', maxLines: 5}, 48,
+        `Text(\n'Order total',\n${PLAIN_STYLE}\nmaxLines: 2, // inferred: floor(boxHeight / lineHeightPx)\noverflow: TextOverflow.ellipsis,\n)`],
+    // No maxLines and no box: Flutter would drop every line after the first, so the gap is named.
+    ['truncation with no line count says so', 'Order total', {textTruncation: 'ENDING'}, undefined,
+        `Text(\n'Order total',\n${PLAIN_STYLE}\noverflow: TextOverflow.ellipsis, // maxLines unknown: Figma gave no line count or box height\n)`],
 ] as const) {
     test(`${name}, on both code paths`, async () => {
         const node = frameWithText(characters, restStyle(16, 400, style));
@@ -183,6 +195,32 @@ test('SMALL_CAPS gives an smcp font feature, labelled inferred, on both code pat
 
     const expected = "TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF112233), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even, fontFeatures: [FontFeature.enable('smcp')] /* inferred */)";
     assert.deepEqual(styles, {dedup: expected, plain: expected});
+});
+
+test('SMALL_CAPS_FORCED gives smcp and c2sc font features, on both code paths', async () => {
+    const styles = await textStyleOnBothPaths(frameWithText('Order total', restStyle(16, 400, {textCase: 'SMALL_CAPS_FORCED'})), 'Order total');
+
+    const expected = "TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF112233), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even, fontFeatures: [FontFeature.enable('smcp'), FontFeature.enable('c2sc')] /* inferred */)";
+    assert.deepEqual(styles, {dedup: expected, plain: expected});
+});
+
+test('a newline in the text is escaped in the Dart string, on both code paths', async () => {
+    const widgets = await textWidgetOnBothPaths(frameWithText('Line one\nLine two', restStyle(16, 400)), 'Line one\\nLine two');
+
+    const expected = `Text(\n'Line one\\nLine two',\n${PLAIN_STYLE}\n)`;
+    assert.deepEqual(widgets, {dedup: expected, plain: expected});
+});
+
+// A text detected as a button (the "submit" keyword) is emitted as ElevatedButton on both paths.
+test('a button label is escaped and letter-cased like any other text, on both code paths', async () => {
+    const node = frameWithText("submit $5 it's", restStyle(16, 400, {textCase: 'UPPER'}));
+    const args = {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, generateFlutterCode: true};
+    const dedup = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', args);
+    const plain = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', {...args, useDeduplication: false});
+
+    const label = "child: Text('SUBMIT \\$5 IT\\'S'),";
+    assert.ok(dedup.text.includes(label), dedup.text);
+    assert.ok(plain.text.includes(label), plain.text);
 });
 
 test('quotes, backslashes and dollar signs are escaped in the Dart string, on both code paths', async () => {

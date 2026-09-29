@@ -32,6 +32,8 @@ export interface TextWidgetFields {
   /** True when maxLines was derived from the box height, not given by Figma. */
   maxLinesInferred?: boolean;
   ellipsis?: boolean;
+  /** Truncated, but neither Figma nor the box gives a line count. */
+  maxLinesUnknown?: boolean;
 }
 
 /** `#AARRGGBB` of a solid fill: the color's alpha times the paint opacity. */
@@ -74,7 +76,8 @@ export function convertTypeStyle(style: FigmaTextStyle, fill?: FigmaFill): TextS
 function applyTextCase(text: string, textCase?: string): string {
   if (textCase === 'UPPER') return text.toUpperCase();
   if (textCase === 'LOWER') return text.toLowerCase();
-  if (textCase === 'TITLE') return text.replace(/(^|\s)(\S)/g, (_, space: string, first: string) => space + first.toUpperCase());
+  // A word starts after any character that is not a letter, digit or apostrophe.
+  if (textCase === 'TITLE') return text.replace(/(^|[^\p{L}\p{N}'\u2019])(\p{L})/gu, (_, before: string, first: string) => before + first.toUpperCase());
   return text;
 }
 
@@ -89,11 +92,14 @@ export function convertTextWidget(content: string, style?: FigmaTextStyle, boxHe
   if (style?.textAlignHorizontal) widget.textAlign = aligns[style.textAlignHorizontal];
   if (style?.textTruncation === 'ENDING' || style?.textAutoResize === 'TRUNCATE') {
     widget.ellipsis = true;
-    if (style.maxLines) {
+    // Figma: maxLines applies only when textTruncation is ENDING.
+    if (style.textTruncation === 'ENDING' && style.maxLines) {
       widget.maxLines = style.maxLines;
     } else if (boxHeight && style.lineHeightPx) {
       widget.maxLines = Math.max(1, Math.floor(boxHeight / style.lineHeightPx));
       widget.maxLinesInferred = true;
+    } else {
+      widget.maxLinesUnknown = true;
     }
   }
   return widget;
@@ -110,7 +116,8 @@ export function textWidgetCode(widget: TextWidgetFields, styleCode?: string): st
   if (styleCode) args.push(`style: ${styleCode},`);
   if (widget.textAlign) args.push(`textAlign: TextAlign.${widget.textAlign},`);
   if (widget.maxLines) args.push(`maxLines: ${widget.maxLines},${widget.maxLinesInferred ? ' // inferred: floor(boxHeight / lineHeightPx)' : ''}`);
-  if (widget.ellipsis) args.push('overflow: TextOverflow.ellipsis,');
+  // Without maxLines Flutter drops every line after the first overflowing one, so say so.
+  if (widget.ellipsis) args.push(`overflow: TextOverflow.ellipsis,${widget.maxLinesUnknown ? ' // maxLines unknown: Figma gave no line count or box height' : ''}`);
   if (args.length === 0) return `Text(${dartString(widget.text)})`;
   return `Text(\n  ${dartString(widget.text)},\n${args.map((arg) => `  ${arg}\n`).join('')})`;
 }
@@ -126,7 +133,7 @@ function fontWeightCode(weight: number): string {
  */
 export function textStyleCode(fields: TextStyleFields, colorCode?: string): string | undefined {
   const parts: string[] = [];
-  if (fields.fontFamily) parts.push(`fontFamily: '${fields.fontFamily}'`);
+  if (fields.fontFamily) parts.push(`fontFamily: ${dartString(fields.fontFamily)}`);
   if (fields.fontSize) parts.push(`fontSize: ${fields.fontSize}`);
   if (fields.fontWeight) parts.push(`fontWeight: ${fontWeightCode(fields.fontWeight)}`);
   if (fields.italic) parts.push('fontStyle: FontStyle.italic');

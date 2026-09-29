@@ -44,7 +44,7 @@ test('Text fixture: each TextStyle carries the Figma style fields', async () => 
     const code = await widgetCode(routes, '1:8');
 
     // Heights by hand: 40/32 = 1.25; 150 % = 1.5; Auto 16.9432/14 = 1.2102; 28/18 = 1.5556; Auto 19.3636/16 = 1.2102.
-    // The two color cases are pinned in the color test; these are the other nine texts.
+    // The two color cases are pinned in the color test and the bold run in the Text.rich test; these are the other eight texts.
     for (const [label, style] of [
         ["'Heading styled by text style'", "fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.w700, color: Color(0xFF000000), letterSpacing: -0.5, height: 1.25, leadingDistribution: TextLeadingDistribution.even"],
         ["'Body copy styled by text style, line height 150%.'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even"],
@@ -54,7 +54,6 @@ test('Text fixture: each TextStyle carries the Figma style fields', async () => 
         ["'Right aligned'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
         ["'Underlined link text'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even, decoration: TextDecoration.underline"],
         ["'This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
-        ["'Regular then bold run'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
     ]) {
         assert.ok(code.includes(`            ${label},\n            style: TextStyle(${style}),\n`), `${label}\n${code}`);
     }
@@ -75,11 +74,21 @@ test('Text fixture: alignment, truncation and upper case reach the Text widget',
     assert.ok(code.includes("            'TRACKED LABEL',\n"), code);
 });
 
-test('Text fixture: the bold run is flattened into one style (pins current behaviour, slice 1 replaces this)', async () => {
+test('Text fixture: the regular-then-bold run is a Text.rich whose bold span carries only its weight', async () => {
     const {routes} = fixture('text-frame.json', '1:8');
     const code = await widgetCode(routes, '1:8');
 
-    assert.doesNotMatch(code, /Text\.rich/);
+    // Characters 0-12 have override 0 (base); 13-20 have override 2 (fontWeight 700, fontFamily Inter = base).
+    assert.ok(code.includes([
+        '          Text.rich(',
+        '            TextSpan(children: [',
+        "              TextSpan(text: 'Regular then '),",
+        "              TextSpan(text: 'bold run', style: TextStyle(fontWeight: FontWeight.w700)),",
+        '            ]),',
+        "            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even),",
+        '            textAlign: TextAlign.left,',
+        '          ),',
+    ].join('\n')), code);
 });
 
 test('Text fixture: variable and paint-style colours become literals (pins current behaviour, slice 5 replaces this)', async () => {

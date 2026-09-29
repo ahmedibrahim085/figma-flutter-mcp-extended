@@ -502,7 +502,10 @@ export function extractTextInfo(node: FigmaNode, parent?: FigmaNode, siblings?: 
         fontWeight: node.style?.fontWeight,
         textAlign: node.style?.textAlignHorizontal,
         style: textStyleFields(node),
-        widget: convertTextWidget(textContent, node.style, node.absoluteBoundingBox?.height),
+        // Override indices address node.characters, so runs apply only when the content is exactly that.
+        widget: convertTextWidget(textContent, node.style, node.absoluteBoundingBox?.height, node.characters === textContent
+            ? {characterStyleOverrides: node.characterStyleOverrides, styleOverrideTable: node.styleOverrideTable, fill: node.fills?.[0]}
+            : undefined),
         textCase: detectTextCase(textContent),
         semanticType: detectSemanticType(textContent, node.name, node, parent, siblings),
         placeholder: isPlaceholder

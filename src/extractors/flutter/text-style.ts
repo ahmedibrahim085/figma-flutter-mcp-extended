@@ -34,6 +34,22 @@ export interface TextWidgetFields {
   ellipsis?: boolean;
   /** Truncated, but neither Figma nor the box gives a line count. */
   maxLinesUnknown?: boolean;
+  /** Mixed-style runs, when the text has character style overrides: emitted as Text.rich. */
+  runs?: TextRun[];
+}
+
+/** Consecutive characters that share one style override; `style` holds only what differs from the base. */
+export interface TextRun {
+  text: string;
+  style?: TextStyleFields;
+}
+
+/** A text's character style overrides, as Figma REST sends them on the TEXT node. */
+export interface TextOverrides {
+  characterStyleOverrides?: number[];
+  styleOverrideTable?: Record<string, Partial<FigmaTextStyle> & {fills?: FigmaFill[]}>;
+  /** The node's first fill, the base color a run overrides. */
+  fill?: FigmaFill;
 }
 
 /** `#AARRGGBB` of a solid fill: the color's alpha times the paint opacity. */
@@ -72,13 +88,50 @@ export function convertTypeStyle(style: FigmaTextStyle, fill?: FigmaFill): TextS
   };
 }
 
-/** Figma letter case, baked into the string: Flutter has no text-transform style. */
-function applyTextCase(text: string, textCase?: string): string {
+/**
+ * Figma letter case, baked into the string: Flutter has no text-transform style.
+ * `before` is the character preceding `text` (for a run inside a longer text), so TITLE
+ * does not capitalise a run that starts mid-word.
+ */
+function applyTextCase(text: string, textCase?: string, before = ''): string {
   if (textCase === 'UPPER') return text.toUpperCase();
   if (textCase === 'LOWER') return text.toLowerCase();
   // A word starts after any character that is not a letter, digit or apostrophe.
-  if (textCase === 'TITLE') return text.replace(/(^|[^\p{L}\p{N}'\u2019])(\p{L})/gu, (_, before: string, first: string) => before + first.toUpperCase());
+  if (textCase === 'TITLE') {
+    return (before + text).replace(/(^|[^\p{L}\p{N}'\u2019])(\p{L})/gu, (_, prev: string, first: string) => prev + first.toUpperCase()).slice(before.length);
+  }
   return text;
+}
+
+/** The fields of `run` whose value differs from `base`. */
+function overriddenFields(run: TextStyleFields, base: TextStyleFields): TextStyleFields | undefined {
+  const changed = Object.fromEntries(Object.entries(run)
+    .filter(([key, value]) => JSON.stringify(value) !== JSON.stringify(base[key as keyof TextStyleFields])));
+  return Object.keys(changed).length > 0 ? changed as TextStyleFields : undefined;
+}
+
+/**
+ * Runs of consecutive characters that share an override id. Id 0, and indices past the
+ * override array, use the base style (Figma REST TEXT node). Undefined when nothing is overridden.
+ */
+function textRuns(content: string, style: FigmaTextStyle, overrides: TextOverrides): TextRun[] | undefined {
+  const ids = overrides.characterStyleOverrides ?? [];
+  if (!ids.some((id) => id !== 0)) return undefined;
+  const base = convertTypeStyle(style, overrides.fill);
+  const runs: TextRun[] = [];
+  let start = 0;
+  for (let i = 1; i <= content.length; i++) {
+    const id = ids[start] ?? 0;
+    if (i < content.length && (ids[i] ?? 0) === id) continue;
+    const entry = id === 0 ? undefined : overrides.styleOverrideTable?.[String(id)];
+    const merged = {...style, ...entry} as FigmaTextStyle;
+    runs.push({
+      text: applyTextCase(content.slice(start, i), merged.textCase, content.slice(Math.max(0, start - 1), start)),
+      style: entry ? overriddenFields(convertTypeStyle(merged, entry.fills?.[0] ?? overrides.fill), base) : undefined,
+    });
+    start = i;
+  }
+  return runs;
 }
 
 /**
@@ -86,8 +139,10 @@ function applyTextCase(text: string, textCase?: string): string {
  * Ending truncation gives maxLines + ellipsis; with no maxLines from Figma the count is
  * floor(boxHeight / lineHeightPx), which research 03b marks as an inferred rule.
  */
-export function convertTextWidget(content: string, style?: FigmaTextStyle, boxHeight?: number): TextWidgetFields {
+export function convertTextWidget(content: string, style?: FigmaTextStyle, boxHeight?: number, overrides?: TextOverrides): TextWidgetFields {
   const widget: TextWidgetFields = {text: applyTextCase(content, style?.textCase)};
+  const runs = style && overrides ? textRuns(content, style, overrides) : undefined;
+  if (runs) widget.runs = runs;
   // LEFT is explicit: Flutter's default `start` is right-aligned in RTL text.
   const aligns: Record<string, TextWidgetFields['textAlign']> = {LEFT: 'left', CENTER: 'center', RIGHT: 'right', JUSTIFIED: 'justify'};
   if (style?.textAlignHorizontal) widget.textAlign = aligns[style.textAlignHorizontal];
@@ -119,8 +174,16 @@ export function textWidgetCode(widget: TextWidgetFields, styleCode?: string): st
   if (widget.maxLines) args.push(`maxLines: ${widget.maxLines},${widget.maxLinesInferred ? ' // inferred: floor(boxHeight / lineHeightPx)' : ''}`);
   // Without maxLines Flutter drops every line after the first overflowing one, so say so.
   if (widget.ellipsis) args.push(`overflow: TextOverflow.ellipsis,${widget.maxLinesUnknown ? ' // maxLines unknown: Figma gave no line count or box height' : ''}`);
+  const lines = args.map((arg) => `  ${arg}\n`).join('');
+  if (widget.runs) {
+    const spans = widget.runs.map((run) => {
+      const style = run.style && textStyleCode(run.style);
+      return `    TextSpan(text: ${dartString(run.text)}${style ? `, style: ${style}` : ''}),\n`;
+    }).join('');
+    return `Text.rich(\n  TextSpan(children: [\n${spans}  ]),\n${lines})`;
+  }
   if (args.length === 0) return `Text(${dartString(widget.text)})`;
-  return `Text(\n  ${dartString(widget.text)},\n${args.map((arg) => `  ${arg}\n`).join('')})`;
+  return `Text(\n  ${dartString(widget.text)},\n${lines})`;
 }
 
 /** `FontWeight.wN` on the 100-step grid, `FontWeight(n)` otherwise (variable fonts, 1-1000). */

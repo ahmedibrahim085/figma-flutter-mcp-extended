@@ -232,3 +232,66 @@ test('quotes, backslashes and dollar signs are escaped in the Dart string, on bo
     const expected = `Text(\n'It\\'s \\$5 \\\\ off',\n${PLAIN_STYLE}\n)`;
     assert.deepEqual(widgets, {dedup: expected, plain: expected});
 });
+
+/** The generated `Text.rich(...)` widget whose first span line matches `firstSpan`, on each path, dedented. */
+async function richTextOnBothPaths(node: {id: string}, firstSpan: string) {
+    const args = {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, generateFlutterCode: true};
+    const dedup = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', args);
+    const plain = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', {...args, useDeduplication: false});
+    const widget = (text: string) => {
+        const lines = text.split('\n').map((line) => line.trim());
+        const start = lines.findIndex((line, i) => line === 'Text.rich(' && lines[i + 2] === firstSpan);
+        if (start < 0) return undefined;
+        const end = lines.findIndex((line, i) => i > start && /^\),?$/.test(line));
+        return lines.slice(start, end + 1).join('\n').replace(/,$/, '');
+    };
+    return {dedup: widget(dedup.text), plain: widget(plain.text)};
+}
+
+// Figma character style overrides: id 0 is the base style; each other id indexes styleOverrideTable.
+const withRuns = (characters: string, overrides: number[], table: object) => {
+    const node = frameWithText(characters, restStyle(16, 400));
+    Object.assign(node.children[0], {characterStyleOverrides: overrides, styleOverrideTable: table});
+    return node;
+};
+
+test('override runs become Text.rich spans that carry only what they override, on both code paths', async () => {
+    // "Pay " base, "now" bold italic (fontFamily repeats the base, so it is not emitted), " or later" base.
+    const node = withRuns('Pay now or later', [0, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+        {1: {fontFamily: 'Inter', fontWeight: 700, italic: true}});
+
+    const expected = [
+        'Text.rich(',
+        'TextSpan(children: [',
+        "TextSpan(text: 'Pay '),",
+        "TextSpan(text: 'now', style: TextStyle(fontWeight: FontWeight.w700, fontStyle: FontStyle.italic)),",
+        "TextSpan(text: ' or later'),",
+        ']),',
+        PLAIN_STYLE,
+        ')',
+    ].join('\n');
+    assert.deepEqual(await richTextOnBothPaths(node, "TextSpan(text: 'Pay '),"), {dedup: expected, plain: expected});
+});
+
+test('a run with its own fill gets its own color, and indices past the override array use the base', async () => {
+    // The override array is shorter than the text: "Sale" red, then "!!" past the end is base.
+    const node = withRuns('Sale!!', [3, 3, 3, 3], {3: {fills: [{type: 'SOLID', color: {r: 1, g: 0, b: 0, a: 1}}]}});
+
+    const expected = [
+        'Text.rich(',
+        'TextSpan(children: [',
+        "TextSpan(text: 'Sale', style: TextStyle(color: Color(0xFFFF0000))),",
+        "TextSpan(text: '!!'),",
+        ']),',
+        PLAIN_STYLE,
+        ')',
+    ].join('\n');
+    assert.deepEqual(await richTextOnBothPaths(node, "TextSpan(text: 'Sale', style: TextStyle(color: Color(0xFFFF0000))),"), {dedup: expected, plain: expected});
+});
+
+test('an override array of only zeros stays a plain Text, on both code paths', async () => {
+    const node = withRuns('Order total', [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0], {});
+
+    const expected = `Text(\n'Order total',\n${PLAIN_STYLE}\n)`;
+    assert.deepEqual(await textWidgetOnBothPaths(node, 'Order total'), {dedup: expected, plain: expected});
+});

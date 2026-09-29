@@ -38,6 +38,13 @@ export interface TextWidgetFields {
   maxLinesUnknown?: boolean;
   /** Mixed-style runs, when the text has character style overrides: emitted as Text.rich. */
   runs?: TextRun[];
+  /** Flutter `Alignment` name, for vertical alignment inside a fixed-height box (INFERRED rule). */
+  boxAlignment?: string;
+  boxHeight?: number;
+  /** Paragraphs and the gap between them, when Figma sets paragraph spacing (INFERRED rule). */
+  paragraphs?: {texts: string[]; spacing: number};
+  /** Figma text properties with no Flutter equivalent, named in a comment. */
+  notConverted?: string[];
 }
 
 /** Consecutive characters that share one style override; `style` holds only what differs from the base. */
@@ -154,6 +161,23 @@ export function convertTextWidget(content: string, style?: FigmaTextStyle, boxHe
   const widget: TextWidgetFields = {text: applyTextCase(content, style?.textCase)};
   const runs = style && overrides ? textRuns(content, style, overrides) : undefined;
   if (runs) widget.runs = runs;
+  // Vertical alignment only matters when the box is taller than its text: a fixed-height box.
+  const fixedHeight = style?.textAutoResize === 'NONE' || style?.textAutoResize === 'TRUNCATE';
+  if (fixedHeight && boxHeight && (style.textAlignVertical === 'CENTER' || style.textAlignVertical === 'BOTTOM')) {
+    const vertical = style.textAlignVertical === 'CENTER' ? 'center' : 'bottom';
+    const horizontal = {CENTER: 'Center', RIGHT: 'Right'}[style.textAlignHorizontal] ?? 'Left';
+    widget.boxAlignment = vertical === 'center' && horizontal === 'Center' ? 'center' : vertical + horizontal;
+    widget.boxHeight = boxHeight;
+  }
+  if (style?.paragraphSpacing && !runs && widget.text.includes('\n')) {
+    widget.paragraphs = {texts: widget.text.split('\n'), spacing: style.paragraphSpacing};
+  }
+  const notConverted = [
+    style?.paragraphIndent ? `paragraphIndent ${style.paragraphIndent}` : undefined,
+    style?.listSpacing ? `listSpacing ${style.listSpacing}` : undefined,
+    style?.leadingTrim && style.leadingTrim !== 'NONE' ? `leadingTrim ${style.leadingTrim}` : undefined,
+  ].filter((item): item is string => item !== undefined);
+  if (notConverted.length > 0) widget.notConverted = notConverted;
   // LEFT is explicit: Flutter's default `start` is right-aligned in RTL text.
   const aligns: Record<string, TextWidgetFields['textAlign']> = {LEFT: 'left', CENTER: 'center', RIGHT: 'right', JUSTIFIED: 'justify'};
   if (style?.textAlignHorizontal) widget.textAlign = aligns[style.textAlignHorizontal];
@@ -177,8 +201,36 @@ export function dartString(text: string): string {
   return `'${text.replace(/[\\'$]/g, (c) => `\\${c}`).replace(/\n/g, '\\n')}'`;
 }
 
-/** Dart `Text(...)` for `widget`, with `styleCode` as its style when given. */
+/** Every line after the first indented by `spaces`, for nesting a multi-line widget. */
+function indentTail(code: string, spaces: number): string {
+  return code.replace(/\n/g, `\n${' '.repeat(spaces)}`);
+}
+
+/**
+ * Dart for `widget`, with `styleCode` as its style when given: a Text or Text.rich, split into
+ * paragraphs and wrapped for vertical alignment when Figma asks for it.
+ */
 export function textWidgetCode(widget: TextWidgetFields, styleCode?: string): string {
+  let code = widget.paragraphs
+    ? paragraphsCode(widget, widget.paragraphs, styleCode)
+    : singleTextCode(widget, widget.text, styleCode);
+  if (widget.boxAlignment) {
+    code = `SizedBox(\n  height: ${widget.boxHeight},\n  child: Align(\n`
+      + `    alignment: Alignment.${widget.boxAlignment}, // inferred: vertical alignment inside the fixed-height box\n`
+      + `    child: ${indentTail(code, 4)},\n  ),\n)`;
+  }
+  return widget.notConverted ? `// not converted: ${widget.notConverted.join(', ')}\n${code}` : code;
+}
+
+function paragraphsCode(widget: TextWidgetFields, paragraphs: {texts: string[]; spacing: number}, styleCode?: string): string {
+  const children = paragraphs.texts
+    .map((text) => `    ${indentTail(singleTextCode(widget, text, styleCode), 4)},\n`)
+    .join(`    SizedBox(height: ${paragraphs.spacing}),\n`);
+  return `Column(\n  crossAxisAlignment: CrossAxisAlignment.start, // inferred: paragraph spacing as separate Texts\n  children: [\n${children}  ],\n)`;
+}
+
+/** Dart `Text(...)` (or `Text.rich`) for one string of `widget`. */
+function singleTextCode(widget: TextWidgetFields, text: string, styleCode?: string): string {
   const args: string[] = [];
   if (styleCode) args.push(`style: ${styleCode},`);
   if (widget.textAlign) args.push(`textAlign: TextAlign.${widget.textAlign},`);
@@ -193,8 +245,8 @@ export function textWidgetCode(widget: TextWidgetFields, styleCode?: string): st
     }).join('');
     return `Text.rich(\n  TextSpan(children: [\n${spans}  ]),\n${lines})`;
   }
-  if (args.length === 0) return `Text(${dartString(widget.text)})`;
-  return `Text(\n  ${dartString(widget.text)},\n${lines})`;
+  if (args.length === 0) return `Text(${dartString(text)})`;
+  return `Text(\n  ${dartString(text)},\n${lines})`;
 }
 
 /** `FontWeight.wN` on the 100-step grid, `FontWeight(n)` otherwise (variable fonts, 1-1000). */

@@ -164,6 +164,12 @@ export interface FigmaTextStyle {
     maxLines?: number;
     /** NONE, HEIGHT, WIDTH_AND_HEIGHT or TRUNCATE. */
     textAutoResize?: string;
+    /** Space between paragraphs, px. */
+    paragraphSpacing?: number;
+    paragraphIndent?: number;
+    listSpacing?: number;
+    /** NONE or CAP_HEIGHT (Figma's vertical trim). */
+    leadingTrim?: string;
 }
 
 export interface FigmaConstraints {

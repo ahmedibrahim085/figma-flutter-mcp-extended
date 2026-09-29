@@ -185,3 +185,16 @@ test('a nested frame with nothing but children renders its Row or Column directl
 
     assert.ok(dedent(code).includes(['child: Column(', 'children: [', 'Row(', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
 });
+
+test('a shape without a fill keeps its space as a sized box', async () => {
+    const text = await toolText({
+        id: '58:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(100, 20),
+        children: [
+            {id: '58:2', name: 'Gap', type: 'RECTANGLE', fills: [], absoluteBoundingBox: box(7, 7)},
+            {id: '58:3', name: 'Cut', type: 'BOOLEAN_OPERATION', fills: [], absoluteBoundingBox: box(9, 9), children: []},
+        ],
+    });
+
+    assert.match(text, /children: \[\n\s+SizedBox\(width: 7, height: 7\),\n/);
+    assert.match(text, /\/\/ approximate: "Cut" \(BOOLEAN_OPERATION\) is drawn as its bounding box\n\s*SizedBox\(width: 9, height: 9\),/);
+});

@@ -127,7 +127,10 @@ export class DeduplicatedComponentExtractor {
         }, 'decoration');
         childStyleRefs.push(decorationRef);
       }
-      if (child.type !== 'TEXT' && !NESTED_COMPONENT_TYPES.has(child.type) && childLayout.padding) {
+      // Frames and groups render their own children inline, down to MAX_CHILD_DEPTH. Text, nested components
+      // and boolean operations (whose children are operands, not layout) do not.
+      const rendersOwnChildren = child.type !== 'TEXT' && child.type !== 'BOOLEAN_OPERATION' && !NESTED_COMPONENT_TYPES.has(child.type);
+      if (rendersOwnChildren && childLayout.padding) {
         childStyleRefs.push(this.globalStyleManager.addStyle({ padding: childLayout.padding }, 'padding'));
       }
       
@@ -148,9 +151,7 @@ export class DeduplicatedComponentExtractor {
         }
       }
       
-      // Frames and groups render their own children inline, down to MAX_CHILD_DEPTH.
-      const hasVisibleChildren = child.type !== 'TEXT' && !NESTED_COMPONENT_TYPES.has(child.type)
-        && (child.children ?? []).some(grandchild => isEffectivelyVisible(grandchild));
+      const hasVisibleChildren = rendersOwnChildren && (child.children ?? []).some(grandchild => isEffectivelyVisible(grandchild));
       const truncated = hasVisibleChildren && depth >= MAX_CHILD_DEPTH;
       const grandchildren = hasVisibleChildren && !truncated ? await this.analyzeChildren(child, depth + 1) : undefined;
 

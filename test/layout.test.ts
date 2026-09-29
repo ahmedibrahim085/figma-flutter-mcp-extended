@@ -70,11 +70,7 @@ test('a hidden child renders nothing', async () => {
 
 test('frames deeper than the depth limit are named as approximations, in the code and in the tool output', async () => {
     // Twelve nested frames; the innermost carries a 7 px rectangle that the depth limit cuts off.
-    let node: any = {id: '44:99', name: 'Leaf', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(7, 7)};
-    for (let depth = 12; depth >= 1; depth--) {
-        node = {id: `44:${depth}`, name: `Level ${depth}`, type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(100, 100), children: [node]};
-    }
-    const text = await toolText(node);
+    const text = await toolText(nestedFrames(11));
 
     assert.match(text, /\/\/ approximate: "Level \d+" is deeper than 8 levels; its children are not rendered/);
     assert.match(text, /Approximations:\n(?:- [^\n]*\n)*- "Level \d+" is deeper than 8 levels; its children are not rendered/);
@@ -151,4 +147,31 @@ test('an empty frame without decoration keeps its space as a sized box', async (
     });
 
     assert.match(code, /children: \[\n\s+SizedBox\(width: 24, height: 8\),\n/);
+});
+
+test('a boolean operation renders as its bounding box, named as an approximation, its operands not rendered', async () => {
+    const text = await toolText({
+        id: '56:1', name: 'Icons', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(100, 30),
+        children: [
+            {id: '56:2', name: 'Union', type: 'BOOLEAN_OPERATION', fills: [RED], absoluteBoundingBox: box(30, 30), children: [
+                {id: '56:3', name: 'a', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(20, 20)},
+                {id: '56:4', name: 'b', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(20, 20)},
+            ]},
+            {id: '56:5', name: 'Badge', type: 'STAR', fills: [RED], absoluteBoundingBox: box(12, 12)},
+        ],
+    });
+
+    assert.match(text, /\/\/ approximate: "Union" \(BOOLEAN_OPERATION\) is drawn as its bounding box\n\s*Container\(\n\s*width: 30,\n\s*height: 30,\n\s*decoration: decorationID,/);
+    assert.match(text, /\/\/ approximate: "Badge" \(STAR\) is drawn as its bounding box\n\s*Container\(\n\s*width: 12,/);
+    assert.doesNotMatch(text, /width: 20,/);
+    assert.match(text, /Approximations:\n- "Union" \(BOOLEAN_OPERATION\) is drawn as its bounding box\n- "Badge" \(STAR\) is drawn as its bounding box\n/);
+});
+
+test('a frame cut off at the depth limit keeps its own size and decoration', async () => {
+    const root = nestedFrames(9);
+    let level: any = root;
+    while (level.name !== 'Level 8') level = level.children[0];
+    level.fills = [RED];
+
+    assert.match(await toolText(root), /\/\/ approximate: "Level 8" is deeper than 8 levels; its children are not rendered\n\s*Container\(\n\s*width: 100,\n\s*height: 100,\n\s*decoration: decorationID,\n\s*\)/);
 });

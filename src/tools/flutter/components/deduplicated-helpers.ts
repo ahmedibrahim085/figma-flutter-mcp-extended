@@ -124,6 +124,8 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
 }
 
 const SHAPE_TYPES = new Set(['RECTANGLE', 'ELLIPSE', 'VECTOR', 'LINE', 'STAR', 'POLYGON', 'BOOLEAN_OPERATION']);
+/** Shapes whose outline a BoxDecoration cannot draw; they render as their bounding box. */
+const BOUNDING_BOX_TYPES = new Set(['LINE', 'STAR', 'POLYGON', 'BOOLEAN_OPERATION']);
 
 /** A Row or Column holding `children`, each rendered by childWidget. */
 function layoutWidget(
@@ -143,9 +145,9 @@ function layoutWidget(
 /** An approximation: a comment at the widget, and a line in the tool output's Approximations list. */
 function approximate(note: string, widget: string, approximations: string[]): string {
   // Layer names can hold line breaks; one would end the Dart line comment early.
-  note = note.replace(/[\r\n]+/g, ' ');
-  approximations.push(note);
-  return `// approximate: ${note}\n${widget}`;
+  const line = note.replace(/[\r\n]+/g, ' ');
+  approximations.push(line);
+  return `// approximate: ${line}\n${widget}`;
 }
 
 /** Dart for one analysed child: text, button, shape, frame (recursively) or a nested-component placeholder. */
@@ -165,10 +167,12 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
   if (NESTED_COMPONENT_TYPES.has(child.type)) {
     return approximate(`component "${child.name}" is not inlined; analyze it separately`, placeholder, approximations);
   }
-  if (child.truncated) {
-    return approximate(`"${child.name}" is deeper than ${MAX_CHILD_DEPTH} levels; its children are not rendered`, placeholder, approximations);
-  }
   const decoration = styleOf('decoration');
+  const container = (props: string[]) => `Container(\n${props.map(prop => `  ${prop}\n`).join('')})`;
+  if (child.truncated) {
+    const widget = decoration ? container([`width: ${width},`, `height: ${height},`, `decoration: ${decoration},`]) : placeholder;
+    return approximate(`"${child.name}" is deeper than ${MAX_CHILD_DEPTH} levels; its children are not rendered`, widget, approximations);
+  }
   const props: string[] = [];
   if (SHAPE_TYPES.has(child.type)) props.push(`width: ${width},`, `height: ${height},`);
   if (decoration) props.push(`decoration: ${decoration},`);
@@ -178,7 +182,10 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
     props.push(`child: ${indentTail(layoutWidget(child.children, child.layout.direction, styleLibrary, approximations), 2)},`);
   }
   if (props.length === 0) return placeholder;
-  return `Container(\n${props.map(prop => `  ${prop}\n`).join('')})`;
+  if (BOUNDING_BOX_TYPES.has(child.type)) {
+    return approximate(`"${child.name}" (${child.type}) is drawn as its bounding box`, container(props), approximations);
+  }
+  return container(props);
 }
 
 /**

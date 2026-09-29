@@ -125,6 +125,8 @@ test('a frame at the depth limit whose children are all hidden is not named as a
     let level: any = root;
     while (level.children[0].type === 'FRAME') level = level.children[0];
     level.children[0].visible = false;
+    // Its own fill keeps the frame visible; without one, a frame of hidden children is skipped as invisible.
+    level.fills = [RED];
 
     assert.doesNotMatch(await toolText(root), /approximate:/);
 });

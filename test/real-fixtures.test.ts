@@ -39,26 +39,33 @@ async function childDecorations(routes: object, nodeId: string): Promise<Map<str
     return decorations;
 }
 
-test('Text fixture: every TextStyle keeps only family, size, weight and colour (pins current behaviour, slice 1 replaces this)', async () => {
+test('Text fixture: each TextStyle carries the Figma style fields', async () => {
     const {routes} = fixture('text-frame.json', '1:8');
     const code = await widgetCode(routes, '1:8');
 
-    // Line height, letter spacing, upper case, alignment, underline, maxLines and the bold run are all dropped.
-    // The two colour cases are pinned in the next test; these are the other nine texts.
+    // Heights by hand: 40/32 = 1.25; 150 % = 1.5; Auto 16.943/14 = 1.2102; 28/18 = 1.5556; Auto 19.364/16 = 1.2102.
+    // The two colour cases are pinned in the colour test; these are the other nine texts.
     for (const [label, style] of [
-        ['Heading styled by text style', "fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF000000)"],
-        ['Body copy styled by text style, line height 150%.', "fontFamily: 'Inter', fontSize: 16, color: Color(0xFF000000)"],
-        ['Tracked label', "fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF000000)"],
-        ['Raw line height 28px without a style', "fontFamily: 'Inter', fontSize: 18, color: Color(0xFF000000)"],
-        ['Centered in a fixed 320px box', "fontFamily: 'Inter', fontSize: 16, color: Color(0xFF000000)"],
-        ['Right aligned', "fontFamily: 'Inter', fontSize: 16, color: Color(0xFF000000)"],
-        ['Underlined link text', "fontFamily: 'Inter', fontSize: 16, color: Color(0xFF000000)"],
-        ['This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.', "fontFamily: 'Inter', fontSize: 16, color: Color(0xFF000000)"],
-        ['Regular then bold run', "fontFamily: 'Inter', fontSize: 16, color: Color(0xFF000000)"],
+        ['Heading styled by text style', "fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.w700, color: Color(0xFF000000), letterSpacing: -0.5, height: 1.25, leadingDistribution: TextLeadingDistribution.even"],
+        ['Body copy styled by text style, line height 150%.', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even"],
+        ['Tracked label', "fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF000000), letterSpacing: 2, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
+        ['Raw line height 28px without a style', "fontFamily: 'Inter', fontSize: 18, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.5556, leadingDistribution: TextLeadingDistribution.even"],
+        ['Centered in a fixed 320px box', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
+        ['Right aligned', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
+        ['Underlined link text', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even, decoration: TextDecoration.underline"],
+        ['This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
+        ['Regular then bold run', "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
     ]) {
         assert.ok(code.includes(`            '${label}',\n            style: TextStyle(${style}),\n          ),`), `${label}\n${code}`);
     }
-    assert.doesNotMatch(code, /maxLines: \d|overflow: TextOverflow|textAlign: TextAlign/);
+});
+
+test('Text fixture: alignment, truncation, upper case and the bold run are dropped (pins current behaviour, slice 1 replaces this)', async () => {
+    const {routes} = fixture('text-frame.json', '1:8');
+    const code = await widgetCode(routes, '1:8');
+
+    assert.doesNotMatch(code, /maxLines: \d|overflow: TextOverflow|textAlign: TextAlign|Text\.rich/);
+    assert.ok(code.includes("            'Tracked label',\n"), code);
 });
 
 test('Text fixture: variable and paint-style colours become literals (pins current behaviour, slice 5 replaces this)', async () => {
@@ -69,8 +76,8 @@ test('Text fixture: variable and paint-style colours become literals (pins curre
     assert.ok(byName('Colour from paint style').styles.fill);
 
     const code = await widgetCode(routes, '1:8');
-    assert.ok(code.includes("'Colour from variable',\n            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF0066E5)),"), code);
-    assert.ok(code.includes("'Colour from paint style',\n            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFFD93359)),"), code);
+    assert.ok(code.includes("'Colour from variable',\n            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF0066E5), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even),"), code);
+    assert.ok(code.includes("'Colour from paint style',\n            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFFD93359), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even),"), code);
 });
 
 test('Text fixture: the frame\'s variable-bound item spacing is dropped (pins current behaviour, slice 2 replaces this)', async () => {

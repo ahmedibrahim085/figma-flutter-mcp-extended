@@ -157,15 +157,15 @@ test('each text keeps its own TextStyle (a later text never reuses the first one
         textNode('9:2', 'Title', 32, 700),
         textNode('9:3', 'Body', 14, 400),
     ])), '9:1');
-    assert.equal(textStyleOf(code, 'Title'), "TextStyle(fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF000000))");
-    assert.equal(textStyleOf(code, 'Body'), "TextStyle(fontFamily: 'Inter', fontSize: 14, color: Color(0xFF000000))");
+    assert.equal(textStyleOf(code, 'Title'), "TextStyle(fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.w700, color: Color(0xFF000000), letterSpacing: 0)");
+    assert.equal(textStyleOf(code, 'Body'), "TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0)");
 });
 
 test('text under a gradient parent keeps its TextStyle', async () => {
     const code = await analyze(nodeRoute('9:1', frame('9:1', [linear([1, 0, 0], [0, 0, 1])], [
         textNode('9:2', 'Hello', 32, 700),
     ])), '9:1');
-    assert.equal(textStyleOf(code, 'Hello'), "TextStyle(fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.bold, color: Color(0xFF000000))");
+    assert.equal(textStyleOf(code, 'Hello'), "TextStyle(fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.w700, color: Color(0xFF000000), letterSpacing: 0)");
 });
 
 // Style dedup: pairs of sibling nodes that must share one style (merge) or get

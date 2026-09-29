@@ -30,20 +30,27 @@ async function styleDefinitions(node: {id: string}): Promise<string> {
     return normalizeStyleIds(generated.text);
 }
 
-test('TextStyle keeps only family, size, weight and colour (pins current behaviour, slice 1 replaces this)', async () => {
-    const code = await widgetCode({
-        id: '11:1', name: 'Text Frame', type: 'FRAME', layoutMode: 'VERTICAL', fills: [],
-        children: [textNode('11:2', 'Heading', {
-            fontFamily: 'Inter', fontWeight: 600, fontSize: 16, lineHeightPx: 24, lineHeightUnit: 'PIXELS',
-            letterSpacing: 0.5, textCase: 'UPPER', textDecoration: 'UNDERLINE', italic: true, textAlignHorizontal: 'CENTER',
-        })],
-    });
+const STYLED_HEADING = {
+    id: '11:1', name: 'Text Frame', type: 'FRAME', layoutMode: 'VERTICAL', fills: [],
+    children: [textNode('11:2', 'Heading', {
+        fontFamily: 'Inter', fontWeight: 600, fontSize: 16, lineHeightPx: 24, lineHeightUnit: 'PIXELS',
+        letterSpacing: 0.5, textCase: 'UPPER', textDecoration: 'UNDERLINE', italic: true, textAlignHorizontal: 'CENTER',
+    })],
+};
 
-    // Line height, letter spacing, italic, underline, upper case and centring are all dropped.
-    // The component extractor never reads letterSpacing, so the fix spans extractor and generator.
-    assert.ok(code.includes(`            'Heading',
-            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600, color: Color(0xFF000000)),
-          ),`), code);
+test('TextStyle carries every Figma text style field', async () => {
+    const code = await widgetCode(STYLED_HEADING);
+
+    // 24 px line height on 16 px text is height 1.5.
+    assert.ok(code.includes("style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w600, fontStyle: FontStyle.italic, "
+        + "color: Color(0xFF000000), letterSpacing: 0.5, height: 1.5, leadingDistribution: TextLeadingDistribution.even, decoration: TextDecoration.underline),"), code);
+});
+
+test('upper case and centring are dropped (pins current behaviour, slice 1 replaces this)', async () => {
+    const code = await widgetCode(STYLED_HEADING);
+
+    assert.ok(code.includes("            'Heading',\n            style: TextStyle("), code);
+    assert.doesNotMatch(code, /textAlign: TextAlign/);
 });
 
 test('auto-layout Row has no alignment, spacing or fixed size (pins current behaviour, slice 2 replaces this)', async () => {
@@ -62,7 +69,7 @@ test('auto-layout Row has no alignment, spacing or fixed size (pins current beha
         children: [
           Text(
             'Left',
-            style: TextStyle(fontFamily: 'Inter', fontSize: 14, color: Color(0xFF000000)),
+            style: TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0),
           ),
           Text(
             'Right',`), code);

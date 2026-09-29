@@ -123,6 +123,8 @@ export interface FigmaFill {
         position: number;
     }>;
     visible?: boolean;
+    /** Paint opacity, 0-1 (Figma REST Paint.opacity; absent means 1). */
+    opacity?: number;
 }
 
 export interface FigmaStroke {

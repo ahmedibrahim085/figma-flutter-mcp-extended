@@ -20,7 +20,7 @@ import { detectSemanticTypeAdvanced, generateSemanticContext } from '../../tools
 import {Logger} from '../../utils/logger.js';
 import {filterEffectivelyVisibleChildren} from '../../utils/visibility.js';
 import {extractComponentProperties} from '../../utils/component-properties.js';
-import {textStyleCode, type TextStyleFields} from '../flutter/text-style.js';
+import {textStyleCode, toTextStyleFields, type TextStyleFields} from '../flutter/text-style.js';
 
 /**
  * Extract component metadata
@@ -484,12 +484,13 @@ export function extractBasicStyling(node: FigmaNode): Partial<StylingInfo> {
 export function textStyleFields(node: FigmaNode): TextStyleFields | undefined {
     if (!node.style) return undefined;
     const firstFill = node.fills?.[0];
-    return {
-        fontFamily: node.style.fontFamily,
-        fontSize: node.style.fontSize,
-        fontWeight: node.style.fontWeight,
-        color: firstFill?.color ? rgbaToHex(firstFill.color) : undefined,
-    };
+    let color: string | undefined;
+    if (firstFill?.color) {
+        // Color alpha times paint opacity, as the `AA` of `#AARRGGBB`.
+        const alpha = Math.round((firstFill.color.a ?? 1) * (firstFill.opacity ?? 1) * 255);
+        color = `#${alpha.toString(16).padStart(2, '0').toUpperCase()}${rgbaToHex(firstFill.color).substring(1)}`;
+    }
+    return toTextStyleFields(node.style, color);
 }
 
 /**

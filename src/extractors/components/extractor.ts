@@ -67,8 +67,8 @@ export function extractLayoutInfo(node: FigmaNode): LayoutInfo {
         layoutGrow: node.layoutGrow
     };
 
-    // Auto-layout specific properties
-    if (node.layoutMode) {
+    // Auto-layout specific properties; REST can send layoutMode NONE for a frame without auto layout.
+    if (node.layoutMode && node.layoutMode !== 'NONE') {
         layout.direction = node.layoutMode === 'HORIZONTAL' ? 'horizontal' : 'vertical';
         layout.spacing = node.itemSpacing || 0;
 

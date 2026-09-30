@@ -169,8 +169,9 @@ function layoutWidget(
   const primary = frame.mainAxisAlignment ?? 'MIN';
   let gap = 0;
   if (frame.direction) {
+    // A HUG main axis leaves no free space, so main-axis alignment has no visible effect (in Figma or in Flutter).
     if (!(primary in MAIN_AXIS_ALIGNMENT)) notes.push(`"${name}" has primary-axis alignment ${primary}; start is used`);
-    else if (MAIN_AXIS_ALIGNMENT[primary]) args.push(`mainAxisAlignment: MainAxisAlignment.${MAIN_AXIS_ALIGNMENT[primary]},`);
+    else if (MAIN_AXIS_ALIGNMENT[primary] && mainAxisSizing !== 'HUG') args.push(`mainAxisAlignment: MainAxisAlignment.${MAIN_AXIS_ALIGNMENT[primary]},`);
     const counter = frame.crossAxisAlignment ?? 'MIN';
     if (!(counter in CROSS_AXIS_ALIGNMENT)) {
       notes.push(`"${name}" has counter-axis alignment ${counter}; center is used`);
@@ -183,8 +184,10 @@ function layoutWidget(
     }
     // Under SPACE_* Figma ignores the gap (a HUG frame's children touch); a negative gap overlaps, which both Flutter gap forms reject.
     const spacing = frame.spacing ?? 0;
-    if (spacing < 0) notes.push(`"${name}" has a negative gap (${spacing}); the overlap is not reproduced`);
-    else if (!primary.startsWith('SPACE_')) gap = spacing;
+    if (!primary.startsWith('SPACE_')) {
+      if (spacing < 0) notes.push(`"${name}" has a negative gap (${spacing}); the overlap is not reproduced`);
+      else gap = spacing;
+    }
   }
   const items = children
     .map(child => childWidget(child, styleLibrary, approximations))

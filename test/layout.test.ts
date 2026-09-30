@@ -399,9 +399,8 @@ test('SPACE_* alignment from a real file maps to Flutter and drops the gap', asy
     assert.match(around, /mainAxisAlignment: MainAxisAlignment\.spaceAround,/);
     assert.match(await widgetCode(alignmentFrame('Probe / evenly fixed')), /mainAxisAlignment: MainAxisAlignment\.spaceEvenly,/);
     const hug = await widgetCode(alignmentFrame('Probe / between hug'));
-    // Figma lays out a HUG + SPACE_BETWEEN frame with touching children (width 150 = 3 × 50, gap ignored); Flutter's
-    // MainAxisSize.min + spaceBetween does the same, so no note is needed.
-    assert.match(hug, /mainAxisSize: MainAxisSize\.min,\n\s+mainAxisAlignment: MainAxisAlignment\.spaceBetween,/);
+    // Figma lays out a HUG + SPACE_BETWEEN frame with touching children (width 150 = 3 × 50, gap ignored); a shrunk Row
+    // does the same, so no note is needed (and no alignment: see the HUG test below).
     for (const code of [around, hug]) assert.doesNotMatch(code, /SizedBox\(width: 12\)/);
 });
 
@@ -443,4 +442,26 @@ test('a frame without auto layout gets no alignment arguments', async () => {
 
     assert.match(code, /child: Column\(\n\s+children: \[/);
     assert.doesNotMatch(code, /AxisAlignment|SizedBox\(height: 10\)/);
+});
+
+test('a HUG main axis emits no main-axis alignment: there is no free space for it to move', async () => {
+    const hug = await widgetCode(alignmentFrame('Probe / between hug'));
+    assert.match(hug, /child: Row\(\n\s+mainAxisSize: MainAxisSize\.min,\n\s+crossAxisAlignment: CrossAxisAlignment\.start,\n\s+children: \[/);
+    assert.doesNotMatch(hug, /mainAxisAlignment:/);
+});
+
+test('layoutMode NONE is not auto layout', async () => {
+    const code = await widgetCode({
+        id: '76:1', name: 'Plain', type: 'FRAME', layoutMode: 'NONE', itemSpacing: 12, fills: [], absoluteBoundingBox: box(200, 100), ...sized('FIXED', 'FIXED'),
+        children: [dot('76:2'), dot('76:3')],
+    });
+    assert.doesNotMatch(code, /AxisAlignment|SizedBox\(height: 12\)/);
+});
+
+test('a negative gap under SPACE_* is not named: Figma ignores the gap there too', async () => {
+    const out = await toolText({
+        id: '77:1', name: 'Spread', type: 'FRAME', layoutMode: 'HORIZONTAL', primaryAxisAlignItems: 'SPACE_BETWEEN', itemSpacing: -6, fills: [],
+        absoluteBoundingBox: box(200, 20), ...sized('FIXED', 'FIXED'), children: [dot('77:2'), dot('77:3')],
+    });
+    assert.doesNotMatch(out, /negative gap/);
 });

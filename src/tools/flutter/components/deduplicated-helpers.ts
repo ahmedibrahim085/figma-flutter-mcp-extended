@@ -178,38 +178,48 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
     const textStyleId = styleOf('text');
     return textWidgetCode(child.textWidget ?? {text: child.textContent}, textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined);
   }
-  const width = Math.round(child.layout.dimensions.width);
-  const height = Math.round(child.layout.dimensions.height);
-  const placeholder = `SizedBox(width: ${width}, height: ${height})`;
+  // A placeholder stands in for content that is not rendered, so it keeps the measured size except on a FILL axis.
+  const w = child.layout.sizingHorizontal === 'FILL' ? undefined : Math.round(child.layout.dimensions.width);
+  const h = child.layout.sizingVertical === 'FILL' ? undefined : Math.round(child.layout.dimensions.height);
+  const placeholderSize = [w === undefined ? '' : `width: ${w},`, h === undefined ? '' : `height: ${h},`].filter(Boolean);
+  const placeholder = sizedBox(placeholderSize);
   if (NESTED_COMPONENT_TYPES.has(child.type)) {
     return approximate(`component "${child.name}" is not inlined; analyze it separately`, placeholder, approximations);
   }
   const decoration = styleOf('decoration');
-  const container = (props: string[]) => `Container(\n${props.map(prop => `  ${prop}\n`).join('')})`;
   if (child.truncated) {
-    const widget = decoration ? container([`width: ${width},`, `height: ${height},`, `decoration: ${decoration},`]) : placeholder;
+    const widget = decoration ? box('Container', [...placeholderSize, `decoration: ${decoration},`]) : placeholder;
     return approximate(`"${child.name}" is deeper than ${MAX_CHILD_DEPTH} levels; its children are not rendered`, widget, approximations);
   }
   const props = fixedSizeProps(child.layout);
   if (decoration) props.push(`decoration: ${decoration},`);
   const padding = styleOf('padding');
   if (padding) props.push(`padding: ${padding},`);
+  let widget: string;
   if (child.children?.length) {
     const layout = layoutWidget(child.children, child.layout, styleLibrary, approximations);
     // A Container holding only a child adds nothing (avoid_unnecessary_containers).
     if (props.length === 0) return layout;
     props.push(`child: ${indentTail(layout, 2)},`);
+    // Nothing drawn: a SizedBox holds the size and the child (sized_box_for_whitespace).
+    widget = box(decoration || padding ? 'Container' : 'SizedBox', props);
+  } else {
+    widget = decoration || padding ? box('Container', props) : sizedBox(props);
   }
-  // Nothing drawn: a SizedBox holds the size and any child (sized_box_for_whitespace).
-  const widget = decoration || padding
-    ? container(props)
-    : child.children?.length
-      ? `SizedBox(\n${props.map(prop => `  ${prop}\n`).join('')})`
-      : `SizedBox(${props.map(prop => prop.slice(0, -1)).join(', ')})`;
   if (BOUNDING_BOX_TYPES.has(child.type)) {
     return approximate(`"${child.name}" (${child.type}) is drawn as its bounding box`, widget, approximations);
   }
   return widget;
+}
+
+/** A multi-line widget call, one property per line. */
+function box(name: string, props: string[]): string {
+  return `${name}(\n${props.map(prop => `  ${prop}\n`).join('')})`;
+}
+
+/** A one-line SizedBox holding only its size, e.g. `SizedBox(width: 7, height: 7)`. */
+function sizedBox(sizeProps: string[]): string {
+  return `SizedBox(${sizeProps.map(prop => prop.replace(/,$/, '')).join(', ')})`;
 }
 
 /**

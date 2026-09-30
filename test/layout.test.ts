@@ -301,3 +301,17 @@ test('a FIXED size is rounded to whole pixels, and a node without a bounding box
     assert.doesNotMatch(code, /width: 0,|height: 0,/);
     assert.ok(dedent(code).includes(['Container(', 'width: 41,', 'height: 19,', 'decoration: decorationID,'].join('\n')), code);
 });
+
+test('a placeholder drops its pixels on a FILL axis but keeps its measured size on a HUG axis', async () => {
+    const text = await toolText({
+        id: '63:1', name: 'Bar', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(300, 40), ...sized('FIXED', 'FIXED'),
+        children: [
+            {id: '63:2', name: 'Search', type: 'INSTANCE', componentId: '9:9', fills: [], absoluteBoundingBox: box(220, 32), ...sized('FILL', 'HUG'), children: []},
+            {id: '63:3', name: 'Avatar', type: 'INSTANCE', componentId: '9:8', fills: [], absoluteBoundingBox: box(32, 32), ...sized('HUG', 'HUG'), children: []},
+        ],
+    });
+
+    assert.match(text, /Expanded\(\n\s*child: \/\/ approximate: component "Search" is not inlined; analyze it separately\n\s*SizedBox\(height: 32\),/);
+    assert.match(text, /\/\/ approximate: component "Avatar" is not inlined; analyze it separately\n\s*SizedBox\(width: 32, height: 32\),/);
+    assert.doesNotMatch(text, /width: 220/);
+});

@@ -217,12 +217,15 @@ export function indentTail(code: string, spaces: number): string {
  * Dart for `widget`, with `styleCode` as its style when given: a Text or Text.rich, split into
  * paragraphs and wrapped for vertical alignment when Figma asks for it.
  */
-export function textWidgetCode(widget: TextWidgetFields, styleCode?: string): string {
+export function textWidgetCode(widget: TextWidgetFields, styleCode?: string, width?: number): string {
   let code = widget.paragraphs ? paragraphsCode(widget, widget.paragraphs, styleCode) : singleTextCode(widget, widget.text, styleCode);
+  const widthLine = width === undefined ? '' : `  width: ${width},\n`;
   if (widget.box) {
-    code = `SizedBox(\n  height: ${widget.box.height},\n  child: Align(\n`
+    code = `SizedBox(\n${widthLine}  height: ${widget.box.height},\n  child: Align(\n`
       + `    alignment: Alignment.${widget.box.alignment}, // inferred: vertical alignment inside the fixed-height box\n`
       + `    child: ${indentTail(code, 4)},\n  ),\n)`;
+  } else if (widthLine) {
+    code = `SizedBox(\n${widthLine}  child: ${indentTail(code, 2)},\n)`;
   }
   return widget.notConverted ? `// not converted: ${widget.notConverted.join(', ')}\n${code}` : code;
 }

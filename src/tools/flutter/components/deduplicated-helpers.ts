@@ -176,7 +176,9 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
   if (child.type === 'TEXT') {
     if (!child.textContent) return undefined;
     const textStyleId = styleOf('text');
-    return textWidgetCode(child.textWidget ?? {text: child.textContent}, textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined);
+    // Only an explicit FIXED width is emitted: a text node sizes itself by textAutoResize otherwise.
+    const width = child.layout.sizingHorizontal === 'FIXED' ? Math.round(child.layout.dimensions.width) : undefined;
+    return textWidgetCode(child.textWidget ?? {text: child.textContent}, textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined, width);
   }
   // A placeholder stands in for content that is not rendered, so it keeps the measured size except on a FILL axis.
   const w = child.layout.sizingHorizontal === 'FILL' ? undefined : Math.round(child.layout.dimensions.width);

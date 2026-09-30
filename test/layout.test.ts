@@ -315,3 +315,36 @@ test('a placeholder drops its pixels on a FILL axis but keeps its measured size 
     assert.match(text, /\/\/ approximate: component "Avatar" is not inlined; analyze it separately\n\s*SizedBox\(width: 32, height: 32\),/);
     assert.doesNotMatch(text, /width: 220/);
 });
+
+const inter = (extra: object = {}) => ({fontFamily: 'Inter', fontSize: 14, fontWeight: 400, lineHeightPx: 20, lineHeightUnit: 'PIXELS', ...extra});
+
+test('a FIXED-width text block carries its width, so it wraps where Figma wraps it', async () => {
+    const code = await widgetCode({
+        id: '64:1', name: 'Card', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(300, 100), ...sized('FIXED', 'HUG'),
+        children: [{id: '64:2', name: 'Body', type: 'TEXT', characters: 'Wraps at 150', fills: [], absoluteBoundingBox: box(150, 40), ...sized('FIXED', 'HUG'),
+            style: inter({textAutoResize: 'HEIGHT'})}],
+    });
+
+    assert.ok(dedent(code).includes(['SizedBox(', 'width: 150,', 'child: Text(', "'Wraps at 150',"].join('\n')), code);
+});
+
+test('a FIXED-width, fixed-height centred text puts both sizes on one SizedBox', async () => {
+    const code = await widgetCode({
+        id: '65:1', name: 'Card', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(300, 100), ...sized('FIXED', 'HUG'),
+        children: [{id: '65:2', name: 'Title', type: 'TEXT', characters: 'Centred', fills: [], absoluteBoundingBox: box(150, 48), ...sized('FIXED', 'FIXED'),
+            style: inter({textAutoResize: 'NONE', textAlignVertical: 'CENTER'})}],
+    });
+
+    assert.ok(dedent(code).includes(['SizedBox(', 'width: 150,', 'height: 48,', 'child: Align('].join('\n')), code);
+    assert.equal(code.match(/SizedBox\(/g)?.length, 1, code);
+});
+
+test('a placeholder that fills a column drops its height', async () => {
+    const text = await toolText({
+        id: '66:1', name: 'Page', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(300, 600), ...sized('FIXED', 'FIXED'),
+        children: [{id: '66:2', name: 'Feed', type: 'INSTANCE', componentId: '9:7', fills: [], absoluteBoundingBox: box(300, 540), ...sized('FIXED', 'FILL'), children: []}],
+    });
+
+    assert.match(text, /Expanded\(\n\s*child: \/\/ approximate: component "Feed" is not inlined; analyze it separately\n\s*SizedBox\(width: 300\),/);
+    assert.doesNotMatch(text, /height: 540/);
+});

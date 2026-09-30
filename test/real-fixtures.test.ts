@@ -16,6 +16,9 @@ function fixture(file: string, nodeId: string) {
 const ANALYZE_ARGS = {exportAssets: false, userDefinedComponent: true};
 
 /** Generated widget class for `nodeId`. */
+/** Each line trimmed, so nesting depth does not change the comparison. */
+const dedent = (code: string) => code.split('\n').map((line) => line.trim()).join('\n');
+
 async function widgetCode(routes: object, nodeId: string): Promise<string> {
     const {text} = await callToolOffline(routes, 'analyze_figma_component', {input: FILE_KEY, nodeId, ...ANALYZE_ARGS, generateFlutterCode: true});
     const start = text.indexOf('class ');
@@ -55,7 +58,7 @@ test('Text fixture: each TextStyle carries the Figma style fields', async () => 
         ["'Underlined link text'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even, decoration: TextDecoration.underline"],
         ["'This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
     ]) {
-        assert.ok(code.includes(`            ${label},\n            style: TextStyle(${style}),\n`), `${label}\n${code}`);
+        assert.ok(dedent(code).includes(`${label},\nstyle: TextStyle(${style}),\n`), `${label}\n${code}`);
     }
 });
 
@@ -63,14 +66,22 @@ test('Text fixture: alignment, truncation and upper case reach the Text widget',
     const {routes} = fixture('text-frame.json', '1:8');
     const code = await widgetCode(routes, '1:8');
 
-    // Each Text's arguments after its style line, as written by hand from the fixture.
-    const argsAfterStyle = (literal: string, lines = 3) => code.slice(code.indexOf(`            ${literal},\n`)).split('\n').slice(2, 2 + lines).join('\n');
-    assert.equal(argsAfterStyle("'Centered in a fixed 320px box'"), '            textAlign: TextAlign.center,\n          ),\n          Text(');
-    assert.equal(argsAfterStyle("'Right aligned'"), '            textAlign: TextAlign.right,\n          ),\n          Text(');
+    // Each Text's arguments after its style line, trimmed, as written by hand from the fixture.
+    const lines = dedent(code);
+    const argsAfterStyle = (literal: string, count = 3) => lines.slice(lines.indexOf(`${literal},\n`)).split('\n').slice(2, 2 + count).join('\n');
+    // The two 320 px texts and the 220 px paragraph are FIXED width (textAutoResize HEIGHT), so each sits in a
+    // SizedBox of that width: the alignment and the wrap happen inside the Figma box, not around the text's own width.
+    for (const [literal, width] of [["'Centered in a fixed 320px box'", 320], ["'Right aligned'", 320],
+        ["'This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.'", 220]] as const) {
+        assert.ok(lines.includes(`SizedBox(\nwidth: ${width},\nchild: Text(\n${literal},\n`), `${literal}\n${code}`);
+    }
+    assert.equal(argsAfterStyle("'Centered in a fixed 320px box'"), 'textAlign: TextAlign.center,\n),\n),');
+    assert.equal(argsAfterStyle("'Right aligned'"), 'textAlign: TextAlign.right,\n),\n),');
     // The paragraph is LEFT-aligned and truncated at 2 lines.
-    assert.equal(argsAfterStyle("'This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.'", 4),
-        '            textAlign: TextAlign.left,\n            maxLines: 2,\n            overflow: TextOverflow.ellipsis,\n          ),');
-    assert.equal(argsAfterStyle("'Heading styled by text style'"), '            textAlign: TextAlign.left,\n          ),\n          Text(');
+    assert.equal(argsAfterStyle("'This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.'", 5),
+        'textAlign: TextAlign.left,\nmaxLines: 2,\noverflow: TextOverflow.ellipsis,\n),\n),');
+    // The heading hugs its text: no SizedBox.
+    assert.equal(argsAfterStyle("'Heading styled by text style'"), 'textAlign: TextAlign.left,\n),\nText(');
     assert.ok(code.includes("            'TRACKED LABEL',\n"), code);
 });
 

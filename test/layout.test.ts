@@ -354,9 +354,12 @@ test('a placeholder that fills a column drops its height', async () => {
 
 // Ticket 03: alignment and gaps. Figma omits MIN alignment in REST, and Flutter's Row/Column default the counter axis to center,
 // so a frame with no counterAxisAlignItems (MIN) emits CrossAxisAlignment.start.
-const text = (id: string, characters: string, fontSize = 14) =>
+const textNode = (id: string, characters: string, fontSize = 14) =>
     ({id, name: characters, type: 'TEXT', characters, fills: [], absoluteBoundingBox: box(40, fontSize), style: inter({fontSize})});
 const dot = (id: string) => ({id, name: 'Dot', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(10, 10), ...sized('FIXED', 'FIXED')});
+/** A probe frame from the alignment fixture: a REST read of frames created in Figma for this ticket. */
+const alignmentFrame = (name: string) => JSON.parse(readFileSync(new URL('./fixtures/alignment-frame.json', import.meta.url), 'utf-8'))
+    .nodes['2:14'].document.children.find((child: any) => child.name === name);
 
 test('the item gap becomes a SizedBox between children, none at either end', async () => {
     const row = dedent(await widgetCode({
@@ -392,12 +395,10 @@ test('primary and counter alignment map to Flutter, and only non-default values 
 });
 
 test('SPACE_* alignment from a real file maps to Flutter and drops the gap', async () => {
-    const j = JSON.parse(readFileSync(new URL('./fixtures/alignment-frame.json', import.meta.url), 'utf-8'));
-    const frame = (name: string) => j.nodes['2:14'].document.children.find((c: any) => c.name === name);
-    const around = await widgetCode(frame('Probe / around fixed'));
+    const around = await widgetCode(alignmentFrame('Probe / around fixed'));
     assert.match(around, /mainAxisAlignment: MainAxisAlignment\.spaceAround,/);
-    assert.match(await widgetCode(frame('Probe / evenly fixed')), /mainAxisAlignment: MainAxisAlignment\.spaceEvenly,/);
-    const hug = await widgetCode(frame('Probe / between hug'));
+    assert.match(await widgetCode(alignmentFrame('Probe / evenly fixed')), /mainAxisAlignment: MainAxisAlignment\.spaceEvenly,/);
+    const hug = await widgetCode(alignmentFrame('Probe / between hug'));
     // Figma lays out a HUG + SPACE_BETWEEN frame with touching children (width 150 = 3 × 50, gap ignored); Flutter's
     // MainAxisSize.min + spaceBetween does the same, so no note is needed.
     assert.match(hug, /mainAxisSize: MainAxisSize\.min,\n\s+mainAxisAlignment: MainAxisAlignment\.spaceBetween,/);
@@ -405,9 +406,7 @@ test('SPACE_* alignment from a real file maps to Flutter and drops the gap', asy
 });
 
 test('a negative gap from a real file is dropped and named as an approximation', async () => {
-    const j = JSON.parse(readFileSync(new URL('./fixtures/alignment-frame.json', import.meta.url), 'utf-8'));
-    const node = j.nodes['2:14'].document.children.find((c: any) => c.name === 'Probe / negative gap');
-    const out = await toolText(node);
+    const out = await toolText(alignmentFrame('Probe / negative gap'));
     assert.match(out, /\/\/ approximate: "Probe \/ negative gap" has a negative gap \(-10\); the overlap is not reproduced\n\s*Row\(/);
     assert.match(out, /Approximations:\n(?:- [^\n]*\n)*- "Probe \/ negative gap" has a negative gap \(-10\); the overlap is not reproduced/);
     assert.doesNotMatch(out, /SizedBox\(width: -10\)/);
@@ -418,11 +417,11 @@ test('BASELINE emits textBaseline, and names non-text children as an approximati
         id: '73:1', name: 'Price', type: 'FRAME', layoutMode: 'HORIZONTAL', counterAxisAlignItems: 'BASELINE', fills: [],
         absoluteBoundingBox: box(200, 40), ...sized('HUG', 'HUG'), children,
     });
-    const textsOnly = await toolText(node([text('73:2', '$', 12), text('73:3', '42', 32)]));
+    const textsOnly = await toolText(node([textNode('73:2', '$', 12), textNode('73:3', '42', 32)]));
     assert.match(textsOnly, /crossAxisAlignment: CrossAxisAlignment\.baseline,\n\s+textBaseline: TextBaseline\.alphabetic,/);
     assert.doesNotMatch(textsOnly, /approximate:/);
 
-    const mixed = await toolText(node([text('73:4', '42', 32), dot('73:5')]));
+    const mixed = await toolText(node([textNode('73:4', '42', 32), dot('73:5')]));
     assert.match(mixed, /\/\/ approximate: "Price" aligns to the text baseline; its non-text children sit at the top/);
 });
 
@@ -433,4 +432,15 @@ test('an unknown primary alignment is named as an approximation and left at star
     });
     assert.match(out, /\/\/ approximate: "Odd" has primary-axis alignment SPACE_SIDEWAYS; start is used/);
     assert.doesNotMatch(out, /mainAxisAlignment:/);
+});
+
+test('a frame without auto layout gets no alignment arguments', async () => {
+    const code = await widgetCode({
+        id: '75:1', name: 'Canvas', type: 'FRAME', fills: [], absoluteBoundingBox: box(200, 100), ...sized('FIXED', 'FIXED'),
+        primaryAxisAlignItems: 'CENTER', counterAxisAlignItems: 'CENTER', itemSpacing: 10,
+        children: [dot('75:2'), dot('75:3')],
+    });
+
+    assert.match(code, /child: Column\(\n\s+children: \[/);
+    assert.doesNotMatch(code, /AxisAlignment|SizedBox\(height: 10\)/);
 });

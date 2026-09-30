@@ -280,3 +280,12 @@ test('a FIXED frame without decoration keeps its size and its children', async (
 
     assert.ok(dedent(code).includes(['Container(', 'width: 150,', 'height: 50,', 'child: Row(', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
 });
+
+test('a childless FIXED frame with a fill (a divider) carries its size', async () => {
+    const code = await widgetCode({
+        id: '61:1', name: 'List', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(200, 50), ...sized('FIXED', 'HUG'),
+        children: [{id: '61:2', name: 'Divider', type: 'FRAME', fills: [RED], absoluteBoundingBox: box(200, 1), ...sized('FIXED', 'FIXED'), children: []}],
+    });
+
+    assert.ok(dedent(code).includes(['Container(', 'width: 200,', 'height: 1,', 'decoration: decorationID,', ')'].join('\n')), code);
+});

@@ -185,11 +185,11 @@ test('a nested frame with nothing but children renders its Row or Column directl
     const code = await widgetCode({
         id: '57:1', name: 'Outer', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(200, 80),
         children: [{id: '57:2', name: 'Bare', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(200, 40),
-            layoutSizingHorizontal: 'FILL', layoutSizingVertical: 'HUG',
+            layoutSizingHorizontal: 'HUG', layoutSizingVertical: 'HUG',
             children: [{id: '57:3', name: 'Dot', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(10, 10)}]}],
     });
 
-    assert.ok(dedent(code).includes(['child: Column(', 'crossAxisAlignment: CrossAxisAlignment.start,', 'children: [', 'Row(', 'crossAxisAlignment: CrossAxisAlignment.start,', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
+    assert.ok(dedent(code).includes(['child: Column(', 'crossAxisAlignment: CrossAxisAlignment.start,', 'children: [', 'Row(', 'mainAxisSize: MainAxisSize.min,', 'crossAxisAlignment: CrossAxisAlignment.start,', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
 });
 
 test('a shape without a fill keeps its space as a sized box', async () => {
@@ -472,4 +472,59 @@ test('an unknown primary alignment on a HUG axis is not named: it would have no 
         absoluteBoundingBox: box(40, 10), ...sized('HUG', 'HUG'), children: [dot('78:2'), dot('78:3')],
     });
     assert.doesNotMatch(out, /primary-axis alignment/);
+});
+
+// Ticket 04: FILL and stretch. Owner decisions 2026-09-30: FILL in a HUG main axis keeps its measured size; a FILL root gets
+// LimitedBox; cross-axis FILL is a per-child SizedBox(double.infinity); a HUG cross axis with FILL children gets Intrinsic*.
+const layoutCase = (name: string) => JSON.parse(readFileSync(new URL('./fixtures/layout-frame.json', import.meta.url), 'utf-8'))
+    .nodes['1:34'].document.children.find((child: any) => child.name === name);
+
+test('real fixture: a main-axis FILL child is Expanded without pixels on its FILL axis; two FILL siblings are both Expanded', async () => {
+    const one = dedent(await widgetCode(layoutCase('Layout / main-axis FILL')));
+    assert.ok(one.includes(['Expanded(', 'child: Container(', 'height: 40,', 'decoration: decorationID,', '),', '),'].join('\n')), one);
+    assert.doesNotMatch(one, /width: 268/);
+    const two = dedent(await widgetCode(layoutCase('Layout / two FILL siblings')));
+    assert.equal(two.match(/Expanded\(\nchild: Container\(\nheight: 40,/g)?.length, 2, two);
+});
+
+test('real fixture: a cross-axis FILL child fills the cross axis in its own SizedBox; its FIXED sibling is untouched', async () => {
+    const code = dedent(await widgetCode(layoutCase('Layout / cross-axis FILL')));
+    assert.ok(code.includes(['SizedBox(', 'height: double.infinity,', 'child: Container(', 'width: 80,', 'decoration: decorationID,'].join('\n')), code);
+    assert.ok(code.includes(['Container(', 'width: 80,', 'height: 40,'].join('\n')), code);
+    assert.doesNotMatch(code, /CrossAxisAlignment\.stretch|IntrinsicHeight/);
+});
+
+test('a FILL child in a HUG main axis keeps its measured size, like Figma', async () => {
+    const code = dedent(await widgetCode({
+        id: '90:1', name: 'Chips', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(130, 20), ...sized('HUG', 'HUG'),
+        children: [dot('90:2'), {id: '90:3', name: 'Grow', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(80, 20), layoutGrow: 1, ...sized('FILL', 'FIXED')}],
+    }));
+    assert.doesNotMatch(code, /Expanded|Flexible/);
+    assert.ok(code.includes(['Container(', 'width: 80,', 'height: 20,', 'decoration: decorationID,'].join('\n')), code);
+});
+
+test('a HUG cross axis with a cross-axis FILL child is wrapped in IntrinsicHeight / IntrinsicWidth', async () => {
+    const row = dedent(await widgetCode({
+        id: '91:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(200, 40), ...sized('FIXED', 'HUG'),
+        children: [{id: '91:2', name: 'Tall', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(20, 40), ...sized('FIXED', 'FIXED')},
+            {id: '91:3', name: 'Bar', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(20, 20), ...sized('FIXED', 'FILL')}],
+    }));
+    assert.ok(row.includes(['child: IntrinsicHeight(', 'child: Row('].join('\n')), row);
+    assert.ok(row.includes(['SizedBox(', 'height: double.infinity,', 'child: Container(', 'width: 20,'].join('\n')), row);
+
+    const column = dedent(await widgetCode({
+        id: '92:1', name: 'Col', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(40, 200), ...sized('HUG', 'FIXED'),
+        children: [{id: '92:2', name: 'Wide', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(40, 20), ...sized('FIXED', 'FIXED')},
+            {id: '92:3', name: 'Line', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(20, 2), ...sized('FILL', 'FIXED')}],
+    }));
+    assert.ok(column.includes(['child: IntrinsicWidth(', 'child: Column('].join('\n')), column);
+    assert.ok(column.includes(['SizedBox(', 'width: double.infinity,', 'child: Container(', 'height: 2,'].join('\n')), column);
+});
+
+test('a component root with a FILL axis falls back to its Figma size in an unbounded host (LimitedBox)', async () => {
+    const code = await widgetCode({
+        id: '93:1', name: 'Banner', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [RED], absoluteBoundingBox: box(360, 48), ...sized('FILL', 'FIXED'),
+        children: [{id: '93:2', name: 'Grow', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(300, 20), layoutGrow: 1, ...sized('FILL', 'FIXED')}],
+    });
+    assert.match(code, /    return LimitedBox\(\n      maxWidth: 360,\n      child: Container\(\n        height: 48,\n        decoration: decorationID,\n/);
 });

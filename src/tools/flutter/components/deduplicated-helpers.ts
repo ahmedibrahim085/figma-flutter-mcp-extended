@@ -94,27 +94,22 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   implementation += `  const ${widgetName}({Key? key}) : super(key: key);\n\n`;
   implementation += `  @override\n`;
   implementation += `  Widget build(BuildContext context) {\n`;
-  implementation += `    return Container(\n`;
-  implementation += fixedSizeProps(analysis.layout).map(prop => `      ${prop}\n`).join('');
-  
-  // Apply decoration if exists
-  if (analysis.styleRefs.decoration) {
-    implementation += `      decoration: ${analysis.styleRefs.decoration},\n`;
-  }
-  
-  // Apply padding if exists
-  if (analysis.styleRefs.padding) {
-    implementation += `      padding: ${analysis.styleRefs.padding},\n`;
-  }
-  
-  // Add child widget structure
+  const rootProps = fixedSizeProps(analysis.layout);
+  if (analysis.styleRefs.decoration) rootProps.push(`decoration: ${analysis.styleRefs.decoration},`);
+  if (analysis.styleRefs.padding) rootProps.push(`padding: ${analysis.styleRefs.padding},`);
   const approximations: string[] = [];
   if (analysis.children.length > 0) {
     const layout = layoutWidget(analysis.children, analysis.layout, analysis.metadata.name, styleLibrary, approximations);
-    implementation += `      child: ${indentTail(layout, 6)},\n`;
+    rootProps.push(`child: ${indentTail(layout, 2)},`);
   }
-  
-  implementation += `    );\n`;
+  let root = box('Container', rootProps);
+  // A FILL axis takes the host's size; in an unbounded host (a scroll view, a Row) it falls back to the Figma size instead of throwing.
+  const limits = [
+    analysis.layout.sizingHorizontal === 'FILL' ? `maxWidth: ${Math.round(analysis.layout.dimensions.width)},` : '',
+    analysis.layout.sizingVertical === 'FILL' ? `maxHeight: ${Math.round(analysis.layout.dimensions.height)},` : '',
+  ].filter(Boolean);
+  if (limits.length > 0) root = box('LimitedBox', [...limits, `child: ${indentTail(root, 2)},`]);
+  implementation += `    return ${indentTail(root, 4)};\n`;
   implementation += `  }\n`;
   implementation += `}\n`;
   if (approximations.length > 0) {
@@ -191,13 +186,29 @@ function layoutWidget(
       else gap = spacing;
     }
   }
-  const items = children
+  const mainKey = axis === 'horizontal' ? 'sizingHorizontal' : 'sizingVertical';
+  const crossKey = axis === 'horizontal' ? 'sizingVertical' : 'sizingHorizontal';
+  // A HUG main axis has no space to share: Figma keeps a FILL child at its own size, so it renders as FIXED there.
+  const rendered = children.map(child => mainAxisSizing === 'HUG' && child.layout[mainKey] === 'FILL'
+    ? {...child, layout: {...child.layout, [mainKey]: 'FIXED' as const}} : child);
+  const items = rendered
     .map(child => childWidget(child, styleLibrary, approximations))
-    .map((code, i) => code && `${indentAll(wrapForMainAxisSizing(code, children[i].layout, axis), 4)},\n`)
+    .map((code, i) => code && `${indentAll(wrapForMainAxisSizing(fillCrossAxis(code, rendered[i].layout[crossKey], axis), rendered[i].layout, axis), 4)},\n`)
     .filter(Boolean)
     .join(gap ? `    SizedBox(${axis === 'horizontal' ? 'width' : 'height'}: ${gap}),\n` : '');
   const comments = notes.map(note => approximate(note, '', approximations)).join('');
-  return `${comments}${axis === 'horizontal' ? 'Row' : 'Column'}(\n${args.map(arg => `  ${arg}\n`).join('')}  children: [\n${items}  ],\n)`;
+  let flex = `${axis === 'horizontal' ? 'Row' : 'Column'}(\n${args.map(arg => `  ${arg}\n`).join('')}  children: [\n${items}  ],\n)`;
+  // A cross-axis FILL child needs a bounded cross axis: a HUG one is bounded by the tallest (widest) sibling, as in Figma.
+  if (frame[crossKey] === 'HUG' && rendered.some(child => child.layout[crossKey] === 'FILL')) {
+    flex = box(axis === 'horizontal' ? 'IntrinsicHeight' : 'IntrinsicWidth', [`child: ${indentTail(flex, 2)},`]);
+  }
+  return `${comments}${flex}`;
+}
+
+/** A cross-axis FILL child fills its parent's cross axis; per child, so FIXED siblings keep their size (unlike stretch). */
+function fillCrossAxis(code: string, crossSizing: string | undefined, axis: 'horizontal' | 'vertical'): string {
+  if (crossSizing !== 'FILL') return code;
+  return box('SizedBox', [`${axis === 'horizontal' ? 'height' : 'width'}: double.infinity,`, `child: ${indentTail(code, 2)},`]);
 }
 
 /** An approximation: a comment at the widget, and a line in the tool output's Approximations list. */

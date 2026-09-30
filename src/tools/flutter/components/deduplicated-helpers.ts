@@ -110,7 +110,7 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   // Add child widget structure
   const approximations: string[] = [];
   if (analysis.children.length > 0) {
-    const layout = layoutWidget(analysis.children, analysis.layout, styleLibrary, approximations);
+    const layout = layoutWidget(analysis.children, analysis.layout, analysis.metadata.name, styleLibrary, approximations);
     implementation += `      child: ${indentTail(layout, 6)},\n`;
   }
   
@@ -142,21 +142,57 @@ function fixedSizeProps(layout: LayoutInfo): string[] {
   return props;
 }
 
-/** The Row or Column for a frame's `children`, each rendered by childWidget; a HUG main axis shrinks to them. */
+/** Figma primaryAxisAlignItems → MainAxisAlignment; MIN is Flutter's default start, so it emits nothing. */
+const MAIN_AXIS_ALIGNMENT: Record<string, string | undefined> = {
+  MIN: undefined, CENTER: 'center', MAX: 'end', SPACE_BETWEEN: 'spaceBetween', SPACE_AROUND: 'spaceAround', SPACE_EVENLY: 'spaceEvenly',
+};
+/** Figma counterAxisAlignItems → CrossAxisAlignment; Flutter's default is center, so CENTER emits nothing and MIN emits start. */
+const CROSS_AXIS_ALIGNMENT: Record<string, string | undefined> = {MIN: 'start', CENTER: undefined, MAX: 'end', BASELINE: 'baseline'};
+
+/**
+ * The Row or Column for a frame's `children`, each rendered by childWidget: a HUG main axis shrinks to them, auto-layout
+ * alignment maps to Flutter, and the item gap becomes SizedBox gaps between rendered children (none under SPACE_*).
+ * REST omits MIN alignment, so a missing value is MIN.
+ */
 function layoutWidget(
   children: DeduplicatedComponentChild[],
   frame: LayoutInfo,
+  name: string,
   styleLibrary: FlutterStyleLibrary,
   approximations: string[]
 ): string {
   const axis = frame.direction === 'horizontal' ? 'horizontal' : 'vertical';
   const mainAxisSizing = axis === 'horizontal' ? frame.sizingHorizontal : frame.sizingVertical;
-  const items = children.map(child => {
-    const code = childWidget(child, styleLibrary, approximations);
-    return code ? `${indentAll(wrapForMainAxisSizing(code, child.layout, axis), 4)},\n` : '';
-  }).join('');
-  const mainAxisSize = mainAxisSizing === 'HUG' ? '  mainAxisSize: MainAxisSize.min,\n' : '';
-  return `${axis === 'horizontal' ? 'Row' : 'Column'}(\n${mainAxisSize}  children: [\n${items}  ],\n)`;
+  const args: string[] = [];
+  const notes: string[] = [];
+  if (mainAxisSizing === 'HUG') args.push('mainAxisSize: MainAxisSize.min,');
+  const primary = frame.mainAxisAlignment ?? 'MIN';
+  let gap = 0;
+  if (frame.direction) {
+    if (!(primary in MAIN_AXIS_ALIGNMENT)) notes.push(`"${name}" has primary-axis alignment ${primary}; start is used`);
+    else if (MAIN_AXIS_ALIGNMENT[primary]) args.push(`mainAxisAlignment: MainAxisAlignment.${MAIN_AXIS_ALIGNMENT[primary]},`);
+    const counter = frame.crossAxisAlignment ?? 'MIN';
+    if (!(counter in CROSS_AXIS_ALIGNMENT)) {
+      notes.push(`"${name}" has counter-axis alignment ${counter}; center is used`);
+    } else if (CROSS_AXIS_ALIGNMENT[counter]) {
+      args.push(`crossAxisAlignment: CrossAxisAlignment.${CROSS_AXIS_ALIGNMENT[counter]},`);
+      if (counter === 'BASELINE') {
+        args.push('textBaseline: TextBaseline.alphabetic,');
+        if (children.some(child => child.type !== 'TEXT')) notes.push(`"${name}" aligns to the text baseline; its non-text children sit at the top`);
+      }
+    }
+    // Under SPACE_* Figma ignores the gap (a HUG frame's children touch); a negative gap overlaps, which both Flutter gap forms reject.
+    const spacing = frame.spacing ?? 0;
+    if (spacing < 0) notes.push(`"${name}" has a negative gap (${spacing}); the overlap is not reproduced`);
+    else if (!primary.startsWith('SPACE_')) gap = spacing;
+  }
+  const items = children
+    .map(child => childWidget(child, styleLibrary, approximations))
+    .map((code, i) => code && `${indentAll(wrapForMainAxisSizing(code, children[i].layout, axis), 4)},\n`)
+    .filter(Boolean)
+    .join(gap ? `    SizedBox(${axis === 'horizontal' ? 'width' : 'height'}: ${gap}),\n` : '');
+  const comments = notes.map(note => approximate(note, '', approximations)).join('');
+  return `${comments}${axis === 'horizontal' ? 'Row' : 'Column'}(\n${args.map(arg => `  ${arg}\n`).join('')}  children: [\n${items}  ],\n)`;
 }
 
 /** An approximation: a comment at the widget, and a line in the tool output's Approximations list. */
@@ -199,7 +235,7 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
   if (padding) props.push(`padding: ${padding},`);
   let widget: string;
   if (child.children?.length) {
-    const layout = layoutWidget(child.children, child.layout, styleLibrary, approximations);
+    const layout = layoutWidget(child.children, child.layout, child.name, styleLibrary, approximations);
     // A Container holding only a child adds nothing (avoid_unnecessary_containers).
     if (props.length === 0) return layout;
     props.push(`child: ${indentTail(layout, 2)},`);

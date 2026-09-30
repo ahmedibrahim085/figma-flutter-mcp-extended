@@ -81,7 +81,7 @@ test('Text fixture: alignment, truncation and upper case reach the Text widget',
     assert.equal(argsAfterStyle("'This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.'", 5),
         'textAlign: TextAlign.left,\nmaxLines: 2,\noverflow: TextOverflow.ellipsis,\n),\n),');
     // The heading hugs its text: no SizedBox.
-    assert.equal(argsAfterStyle("'Heading styled by text style'"), 'textAlign: TextAlign.left,\n),\nText(');
+    assert.equal(argsAfterStyle("'Heading styled by text style'"), 'textAlign: TextAlign.left,\n),\nSizedBox(height: 12),');
     assert.ok(code.includes("            'TRACKED LABEL',\n"), code);
 });
 
@@ -114,16 +114,17 @@ test('Text fixture: variable and paint-style colours become literals (pins curre
     assert.ok(code.includes("'Colour from paint style',\n            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFFD93359), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even),"), code);
 });
 
-test('Text fixture: the frame\'s variable-bound item spacing is dropped (pins current behaviour, slice 2 replaces this)', async () => {
+test('Text fixture: the frame\'s variable-bound item spacing is emitted as its value; the binding is dropped (pins current behaviour, slice 5 replaces this)', async () => {
     const {routes, document} = fixture('text-frame.json', '1:8');
     // The fixture frame is a vertical auto layout with itemSpacing 12 bound to a variable.
     assert.equal(document.itemSpacing, 12);
     assert.equal(document.boundVariables.itemSpacing.type, 'VARIABLE_ALIAS');
 
     const code = await widgetCode(routes, '1:8');
-    // No spacing between the texts: the Column opens straight onto the first Text.
-    assert.ok(code.includes("      child: Column(\n        mainAxisSize: MainAxisSize.min,\n        children: [\n          Text(\n            'Heading styled by text style',"), code);
-    assert.doesNotMatch(code, /spacing: |SizedBox\(height: 12/);
+    // A 12 px SizedBox between each pair of the 11 texts (10 gaps), none before the first. The value is literal:
+    // the variable binding is dropped until slice 5 (tokens).
+    assert.ok(code.includes("      child: Column(\n        mainAxisSize: MainAxisSize.min,\n        crossAxisAlignment: CrossAxisAlignment.start,\n        children: [\n          Text(\n            'Heading styled by text style',"), code);
+    assert.equal(code.match(/\n {10}SizedBox\(height: 12\),\n/g)?.length, 10, code);
 });
 
 test('Paints fixture: each shape child renders as a sized container in the Row', async () => {
@@ -131,7 +132,9 @@ test('Paints fixture: each shape child renders as a sized container in the Row',
     assert.equal(document.children.length, 13);
 
     const code = await widgetCode(routes, '1:20');
-    assert.match(code, /      child: Row\(\n        children: \[\n          Container\(\n            width: 140,\n            height: 100,\n            decoration: /);
+    assert.match(code, /      child: Row\(\n        crossAxisAlignment: CrossAxisAlignment\.start,\n        children: \[\n          Container\(\n            width: 140,\n            height: 100,\n            decoration: /);
+    // Gap 16 between the 13 swatches: 12 SizedBoxes.
+    assert.equal(code.match(/\n {10}SizedBox\(width: 16\),\n/g)?.length, 12, code);
     assert.equal(code.match(/Container\(\n\s+width: 140,\n\s+height: 100,\n\s+decoration: /g)?.length, 13, code);
 });
 
@@ -190,12 +193,19 @@ test('Layout fixture: nested frames render their own children, in layer order', 
     ]);
 });
 
+test('Layout fixture: "Layout / space-between" is a spaceBetween Row with no gap and default centre cross alignment', async () => {
+    const {document} = fixture('layout-frame.json', '1:34');
+    const node = document.children.find((c: any) => c.name === 'Layout / space-between');
+    const code = await widgetCode(nodeRoute(node.id, node), node.id);
+    assert.ok(code.includes('      child: Row(\n        mainAxisAlignment: MainAxisAlignment.spaceBetween,\n        children: ['), code);
+    assert.doesNotMatch(code, /SizedBox\(width: 8\)/);
+});
+
 // Case frames analysed on their own, from their subtree in the fixture. These pin the
 // container widget only.
 // The FILL, min/max and absolute-child cases are tested by their own slice-2 tickets.
 for (const [name, container, why] of [
-    ['Layout / wrap', 'Row(\n        children: [', 'layoutWrap WRAP should give a Wrap'],
-    ['Layout / space-between', 'Row(\n        children: [', 'SPACE_BETWEEN and cross-axis CENTER are dropped'],
+    ['Layout / wrap', 'Row(\n        crossAxisAlignment: CrossAxisAlignment.start,\n        children: [', 'layoutWrap WRAP should give a Wrap'],
     ['Layout / plain frame (Stack)', 'Column(\n        children: [', 'overlapping children without auto layout should give a Stack'],
 ] as const) {
     test(`Layout fixture: "${name}" container is ${container.slice(0, container.indexOf('('))} (pins current behaviour, slice 2 replaces this)`, async () => {

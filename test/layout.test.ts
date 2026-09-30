@@ -1,6 +1,7 @@
 // Slice 2 (layout): the generated widget tree mirrors the Figma layer tree.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {callToolOffline, nodeRoute, normalizeStyleIds, FILE_KEY} from './helpers/offline-tool.ts';
 
 const RED = {type: 'SOLID', color: {r: 1, g: 0, b: 0, a: 1}};
@@ -36,12 +37,14 @@ test('a nested frame renders as a container around its own Row, three levels dee
 
     assert.ok(dedent(code).includes([
         'child: Column(',
+        'crossAxisAlignment: CrossAxisAlignment.start,',
         'children: [',
         'Container(',
         'width: 200,',
         'height: 40,',
         'decoration: decorationID,',
         'child: Row(',
+        'crossAxisAlignment: CrossAxisAlignment.start,',
         'children: [',
         'Text(',
         "'Deep',",
@@ -54,7 +57,7 @@ test('a rectangle renders as a sized box with its decoration', async () => {
         children: [{id: '42:2', name: 'Swatch', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(40, 20)}],
     });
 
-    assert.ok(dedent(code).includes(['child: Row(', 'children: [', 'Container(', 'width: 40,', 'height: 20,', 'decoration: decorationID,', '),'].join('\n')), code);
+    assert.ok(dedent(code).includes(['child: Row(', 'crossAxisAlignment: CrossAxisAlignment.start,', 'children: [', 'Container(', 'width: 40,', 'height: 20,', 'decoration: decorationID,', '),'].join('\n')), code);
 });
 
 test('a hidden child renders nothing', async () => {
@@ -139,7 +142,7 @@ test('a nested frame keeps its own padding', async () => {
         }],
     });
 
-    assert.ok(dedent(code).includes(['Container(', 'width: 200,', 'height: 40,', 'padding: paddingID,', 'child: Row(', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
+    assert.ok(dedent(code).includes(['Container(', 'width: 200,', 'height: 40,', 'padding: paddingID,', 'child: Row(', 'crossAxisAlignment: CrossAxisAlignment.start,', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
 });
 
 test('an empty frame without decoration keeps its space as a sized box', async () => {
@@ -186,7 +189,7 @@ test('a nested frame with nothing but children renders its Row or Column directl
             children: [{id: '57:3', name: 'Dot', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(10, 10)}]}],
     });
 
-    assert.ok(dedent(code).includes(['child: Column(', 'children: [', 'Row(', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
+    assert.ok(dedent(code).includes(['child: Column(', 'crossAxisAlignment: CrossAxisAlignment.start,', 'children: [', 'Row(', 'crossAxisAlignment: CrossAxisAlignment.start,', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
 });
 
 test('a shape without a fill keeps its space as a sized box', async () => {
@@ -222,7 +225,7 @@ test('a HUG component root carries no size and its Row shrinks to its children',
     });
 
     assert.doesNotMatch(code, /width: 90|height: 24/);
-    assert.match(code, /      child: Row\(\n        mainAxisSize: MainAxisSize\.min,\n        children: \[/);
+    assert.match(code, /      child: Row\(\n        mainAxisSize: MainAxisSize\.min,\n        crossAxisAlignment: CrossAxisAlignment\.start,\n        children: \[/);
 });
 
 test('a nested FIXED frame carries both sizes; a nested HUG column carries none and shrinks', async () => {
@@ -236,8 +239,8 @@ test('a nested FIXED frame carries both sizes; a nested HUG column carries none 
         ],
     });
 
-    assert.ok(dedent(code).includes(['Container(', 'width: 120,', 'height: 60,', 'decoration: decorationID,', 'child: Row(', 'children: ['].join('\n')), code);
-    assert.ok(dedent(code).includes(['Container(', 'decoration: decorationID,', 'child: Column(', 'mainAxisSize: MainAxisSize.min,', 'children: ['].join('\n')), code);
+    assert.ok(dedent(code).includes(['Container(', 'width: 120,', 'height: 60,', 'decoration: decorationID,', 'child: Row(', 'crossAxisAlignment: CrossAxisAlignment.start,', 'children: ['].join('\n')), code);
+    assert.ok(dedent(code).includes(['Container(', 'decoration: decorationID,', 'child: Column(', 'mainAxisSize: MainAxisSize.min,', 'crossAxisAlignment: CrossAxisAlignment.start,', 'children: ['].join('\n')), code);
     assert.doesNotMatch(code, /width: 33|height: 77/);
 });
 
@@ -279,7 +282,7 @@ test('a FIXED frame without decoration keeps its size and its children in a Size
     });
 
     // A size-only Container trips sized_box_for_whitespace; SizedBox holds the same size and child.
-    assert.ok(dedent(code).includes(['SizedBox(', 'width: 150,', 'height: 50,', 'child: Row(', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
+    assert.ok(dedent(code).includes(['SizedBox(', 'width: 150,', 'height: 50,', 'child: Row(', 'crossAxisAlignment: CrossAxisAlignment.start,', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
 });
 
 test('a childless FIXED frame with a fill (a divider) carries its size', async () => {
@@ -347,4 +350,87 @@ test('a placeholder that fills a column drops its height', async () => {
 
     assert.match(text, /Expanded\(\n\s*child: \/\/ approximate: component "Feed" is not inlined; analyze it separately\n\s*SizedBox\(width: 300\),/);
     assert.doesNotMatch(text, /height: 540/);
+});
+
+// Ticket 03: alignment and gaps. Figma omits MIN alignment in REST, and Flutter's Row/Column default the counter axis to center,
+// so a frame with no counterAxisAlignItems (MIN) emits CrossAxisAlignment.start.
+const text = (id: string, characters: string, fontSize = 14) =>
+    ({id, name: characters, type: 'TEXT', characters, fills: [], absoluteBoundingBox: box(40, fontSize), style: inter({fontSize})});
+const dot = (id: string) => ({id, name: 'Dot', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(10, 10), ...sized('FIXED', 'FIXED')});
+
+test('the item gap becomes a SizedBox between children, none at either end', async () => {
+    const row = dedent(await widgetCode({
+        id: '70:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', itemSpacing: 12, fills: [], absoluteBoundingBox: box(100, 10), ...sized('HUG', 'HUG'),
+        children: [dot('70:2'), dot('70:3'), dot('70:4')],
+    }));
+    assert.equal(row.match(/SizedBox\(width: 12\),/g)?.length, 2, row);
+    assert.ok(row.includes('children: [\nContainer('), row);
+    assert.ok(row.includes('),\n],'), row);
+
+    const column = dedent(await widgetCode({
+        id: '71:1', name: 'Column', type: 'FRAME', layoutMode: 'VERTICAL', itemSpacing: 8, fills: [], absoluteBoundingBox: box(10, 100), ...sized('HUG', 'HUG'),
+        children: [dot('71:2'), dot('71:3')],
+    }));
+    assert.equal(column.match(/SizedBox\(height: 8\),/g)?.length, 1, column);
+});
+
+test('primary and counter alignment map to Flutter, and only non-default values are emitted', async () => {
+    const code = (primary?: string, counter?: string) => widgetCode({
+        id: '72:1', name: 'Bar', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(200, 40), ...sized('FIXED', 'FIXED'),
+        ...(primary ? {primaryAxisAlignItems: primary} : {}), ...(counter ? {counterAxisAlignItems: counter} : {}),
+        children: [dot('72:2'), dot('72:3')],
+    });
+    const defaults = await code();
+    assert.doesNotMatch(defaults, /mainAxisAlignment:/);
+    assert.match(defaults, /child: Row\(\n\s+crossAxisAlignment: CrossAxisAlignment\.start,\n\s+children: \[/);
+
+    const centred = await code('CENTER', 'CENTER');
+    assert.match(centred, /child: Row\(\n\s+mainAxisAlignment: MainAxisAlignment\.center,\n\s+children: \[/);
+    assert.doesNotMatch(centred, /crossAxisAlignment:/);
+
+    assert.match(await code('MAX', 'MAX'), /mainAxisAlignment: MainAxisAlignment\.end,\n\s+crossAxisAlignment: CrossAxisAlignment\.end,/);
+});
+
+test('SPACE_* alignment from a real file maps to Flutter and drops the gap', async () => {
+    const j = JSON.parse(readFileSync(new URL('./fixtures/alignment-frame.json', import.meta.url), 'utf-8'));
+    const frame = (name: string) => j.nodes['2:14'].document.children.find((c: any) => c.name === name);
+    const around = await widgetCode(frame('Probe / around fixed'));
+    assert.match(around, /mainAxisAlignment: MainAxisAlignment\.spaceAround,/);
+    assert.match(await widgetCode(frame('Probe / evenly fixed')), /mainAxisAlignment: MainAxisAlignment\.spaceEvenly,/);
+    const hug = await widgetCode(frame('Probe / between hug'));
+    // Figma lays out a HUG + SPACE_BETWEEN frame with touching children (width 150 = 3 × 50, gap ignored); Flutter's
+    // MainAxisSize.min + spaceBetween does the same, so no note is needed.
+    assert.match(hug, /mainAxisSize: MainAxisSize\.min,\n\s+mainAxisAlignment: MainAxisAlignment\.spaceBetween,/);
+    for (const code of [around, hug]) assert.doesNotMatch(code, /SizedBox\(width: 12\)/);
+});
+
+test('a negative gap from a real file is dropped and named as an approximation', async () => {
+    const j = JSON.parse(readFileSync(new URL('./fixtures/alignment-frame.json', import.meta.url), 'utf-8'));
+    const node = j.nodes['2:14'].document.children.find((c: any) => c.name === 'Probe / negative gap');
+    const out = await toolText(node);
+    assert.match(out, /\/\/ approximate: "Probe \/ negative gap" has a negative gap \(-10\); the overlap is not reproduced\n\s*Row\(/);
+    assert.match(out, /Approximations:\n(?:- [^\n]*\n)*- "Probe \/ negative gap" has a negative gap \(-10\); the overlap is not reproduced/);
+    assert.doesNotMatch(out, /SizedBox\(width: -10\)/);
+});
+
+test('BASELINE emits textBaseline, and names non-text children as an approximation', async () => {
+    const node = (children: object[]) => ({
+        id: '73:1', name: 'Price', type: 'FRAME', layoutMode: 'HORIZONTAL', counterAxisAlignItems: 'BASELINE', fills: [],
+        absoluteBoundingBox: box(200, 40), ...sized('HUG', 'HUG'), children,
+    });
+    const textsOnly = await toolText(node([text('73:2', '$', 12), text('73:3', '42', 32)]));
+    assert.match(textsOnly, /crossAxisAlignment: CrossAxisAlignment\.baseline,\n\s+textBaseline: TextBaseline\.alphabetic,/);
+    assert.doesNotMatch(textsOnly, /approximate:/);
+
+    const mixed = await toolText(node([text('73:4', '42', 32), dot('73:5')]));
+    assert.match(mixed, /\/\/ approximate: "Price" aligns to the text baseline; its non-text children sit at the top/);
+});
+
+test('an unknown primary alignment is named as an approximation and left at start', async () => {
+    const out = await toolText({
+        id: '74:1', name: 'Odd', type: 'FRAME', layoutMode: 'HORIZONTAL', primaryAxisAlignItems: 'SPACE_SIDEWAYS', fills: [],
+        absoluteBoundingBox: box(200, 40), ...sized('FIXED', 'FIXED'), children: [dot('74:2')],
+    });
+    assert.match(out, /\/\/ approximate: "Odd" has primary-axis alignment SPACE_SIDEWAYS; start is used/);
+    assert.doesNotMatch(out, /mainAxisAlignment:/);
 });

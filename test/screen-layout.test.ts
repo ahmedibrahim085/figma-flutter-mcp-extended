@@ -38,6 +38,7 @@ test('a main-axis FILL child is wrapped in Expanded', async () => {
     const {text} = await generateRow('FILL');
 
     assert.ok(text.includes(`      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Expanded(
             child: Text(

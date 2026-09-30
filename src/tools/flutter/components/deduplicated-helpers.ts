@@ -200,10 +200,12 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
     if (props.length === 0) return layout;
     props.push(`child: ${indentTail(layout, 2)},`);
   }
-  // Nothing drawn and no child: the node only holds space (sized_box_for_whitespace).
-  const widget = decoration || padding || child.children?.length
+  // Nothing drawn: a SizedBox holds the size and any child (sized_box_for_whitespace).
+  const widget = decoration || padding
     ? container(props)
-    : `SizedBox(${props.map(prop => prop.slice(0, -1)).join(', ')})`;
+    : child.children?.length
+      ? `SizedBox(\n${props.map(prop => `  ${prop}\n`).join('')})`
+      : `SizedBox(${props.map(prop => prop.slice(0, -1)).join(', ')})`;
   if (BOUNDING_BOX_TYPES.has(child.type)) {
     return approximate(`"${child.name}" (${child.type}) is drawn as its bounding box`, widget, approximations);
   }

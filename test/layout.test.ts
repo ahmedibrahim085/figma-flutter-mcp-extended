@@ -271,14 +271,15 @@ test('a shape outside auto layout keeps its pixel size', async () => {
     assert.ok(dedent(code).includes(['Container(', 'width: 44,', 'height: 22,', 'decoration: decorationID,'].join('\n')), code);
 });
 
-test('a FIXED frame without decoration keeps its size and its children', async () => {
+test('a FIXED frame without decoration keeps its size and its children in a SizedBox', async () => {
     const code = await widgetCode({
         id: '59:1', name: 'Outer', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(300, 100), ...sized('FIXED', 'FIXED'),
         children: [{id: '59:2', name: 'Slot', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(150, 50), ...sized('FIXED', 'FIXED'),
             children: [{id: '59:3', name: 'Dot', type: 'ELLIPSE', fills: [RED], absoluteBoundingBox: box(10, 10), ...sized('FIXED', 'FIXED')}]}],
     });
 
-    assert.ok(dedent(code).includes(['Container(', 'width: 150,', 'height: 50,', 'child: Row(', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
+    // A size-only Container trips sized_box_for_whitespace; SizedBox holds the same size and child.
+    assert.ok(dedent(code).includes(['SizedBox(', 'width: 150,', 'height: 50,', 'child: Row(', 'children: [', 'Container(', 'width: 10,'].join('\n')), code);
 });
 
 test('a childless FIXED frame with a fill (a divider) carries its size', async () => {
@@ -288,4 +289,15 @@ test('a childless FIXED frame with a fill (a divider) carries its size', async (
     });
 
     assert.ok(dedent(code).includes(['Container(', 'width: 200,', 'height: 1,', 'decoration: decorationID,', ')'].join('\n')), code);
+});
+
+test('a FIXED size is rounded to whole pixels, and a node without a bounding box carries no size', async () => {
+    const code = await widgetCode({
+        id: '62:1', name: 'Strip', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [RED], ...sized('FIXED', 'FIXED'),
+        children: [{id: '62:2', name: 'Chip', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(40.6, 19.4), ...sized('FIXED', 'FIXED')}],
+    });
+
+    assert.match(code, /    return Container\(\n      decoration: decorationID,\n/);
+    assert.doesNotMatch(code, /width: 0,|height: 0,/);
+    assert.ok(dedent(code).includes(['Container(', 'width: 41,', 'height: 19,', 'decoration: decorationID,'].join('\n')), code);
 });

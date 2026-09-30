@@ -465,3 +465,11 @@ test('a negative gap under SPACE_* is not named: Figma ignores the gap there too
     });
     assert.doesNotMatch(out, /negative gap/);
 });
+
+test('an unknown primary alignment on a HUG axis is not named: it would have no visible effect', async () => {
+    const out = await toolText({
+        id: '78:1', name: 'Hugger', type: 'FRAME', layoutMode: 'HORIZONTAL', primaryAxisAlignItems: 'SPACE_SIDEWAYS', fills: [],
+        absoluteBoundingBox: box(40, 10), ...sized('HUG', 'HUG'), children: [dot('78:2'), dot('78:3')],
+    });
+    assert.doesNotMatch(out, /primary-axis alignment/);
+});

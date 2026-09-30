@@ -170,8 +170,10 @@ function layoutWidget(
   let gap = 0;
   if (frame.direction) {
     // A HUG main axis leaves no free space, so main-axis alignment has no visible effect (in Figma or in Flutter).
-    if (!(primary in MAIN_AXIS_ALIGNMENT)) notes.push(`"${name}" has primary-axis alignment ${primary}; start is used`);
-    else if (MAIN_AXIS_ALIGNMENT[primary] && mainAxisSizing !== 'HUG') args.push(`mainAxisAlignment: MainAxisAlignment.${MAIN_AXIS_ALIGNMENT[primary]},`);
+    if (mainAxisSizing !== 'HUG') {
+      if (!(primary in MAIN_AXIS_ALIGNMENT)) notes.push(`"${name}" has primary-axis alignment ${primary}; start is used`);
+      else if (MAIN_AXIS_ALIGNMENT[primary]) args.push(`mainAxisAlignment: MainAxisAlignment.${MAIN_AXIS_ALIGNMENT[primary]},`);
+    }
     const counter = frame.crossAxisAlignment ?? 'MIN';
     if (!(counter in CROSS_AXIS_ALIGNMENT)) {
       notes.push(`"${name}" has counter-axis alignment ${counter}; center is used`);

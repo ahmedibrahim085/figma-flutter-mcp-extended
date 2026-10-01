@@ -118,7 +118,7 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
       rootPaddingInside ? analysis.styleRefs.padding : undefined);
     rootProps.push(`child: ${indentTail(overflowLayout(layout, analysis.layout, analysis.children), 2)},`);
   }
-  let root = hugLimits(box('Container', rootProps), analysis.layout, analysis.children);
+  let root = hugLimits(box('Container', rootProps), analysis.layout);
   // A FILL axis's max sits between the LimitedBox and the infinite Container (research 06 P16: 400 bounded, 360 unbounded).
   const fillAxes = (['width', 'height'] as const).filter(axis => (axis === 'width' ? analysis.layout.sizingHorizontal : analysis.layout.sizingVertical) === 'FILL');
   root = constrained(boxConstraints(analysis.layout, [...fillAxes]), root);
@@ -247,13 +247,11 @@ function constrained(constraints: string, child: string): string {
 
 /**
  * A HUG node's min/max become a ConstrainedBox (on a FIXED axis they change nothing, research 06 P14). When a HUG main
- * axis is clamped by its max and its children add up to more, Figma clips them: ClipRect > ConstrainedBox, with an
- * OverflowBox around the Row/Column (see overflowsMax) so the children keep their size instead of throwing.
+ * axis is clamped by its max and its children add up to more, overflowLayout keeps the children at their size and clips.
  */
-function hugLimits(widget: string, layout: LayoutInfo, children: DeduplicatedComponentChild[] | undefined): string {
+function hugLimits(widget: string, layout: LayoutInfo): string {
   const axes = (['width', 'height'] as const).filter(axis => (axis === 'width' ? layout.sizingHorizontal : layout.sizingVertical) === 'HUG');
-  const result = constrained(boxConstraints(layout, [...axes]), widget);
-  return overflowsMax(layout, children) && layout.clipsContent ? box('ClipRect', [`child: ${indentTail(result, 2)},`]) : result;
+  return constrained(boxConstraints(layout, [...axes]), widget);
 }
 
 /** Whether a HUG main axis is clamped by its max (measured = max) with children adding up to more. */
@@ -268,11 +266,19 @@ function overflowsMax(layout: LayoutInfo, children: DeduplicatedComponentChild[]
   return extent > max;
 }
 
-/** The Row/Column in an OverflowBox when its frame clips it at a max (see hugLimits). */
+/**
+ * The Row/Column in an UnconstrainedBox when its frame is clamped by a max narrower than its children: they keep their
+ * size and are clipped like Figma's clipsContent. (Research 06's OverflowBox recipe needs OverflowBoxFit, which
+ * material.dart does not export; this one measured 100 wide, children at 0, 0 errors in bounded, scroll and Row hosts.)
+ */
 function overflowLayout(layout: string, frame: LayoutInfo, children: DeduplicatedComponentChild[] | undefined): string {
   if (!overflowsMax(frame, children)) return layout;
-  const axis = frame.direction === 'horizontal' ? 'maxWidth' : 'maxHeight';
-  return box('OverflowBox', ['fit: OverflowBoxFit.deferToChild,', `${axis}: double.infinity,`, `child: ${indentTail(layout, 2)},`]);
+  return box('UnconstrainedBox', [
+    `constrainedAxis: ${frame.direction === 'horizontal' ? 'Axis.vertical' : 'Axis.horizontal'},`,
+    'alignment: Alignment.topLeft,',
+    ...(frame.clipsContent ? ['clipBehavior: Clip.hardEdge,'] : []),
+    `child: ${indentTail(layout, 2)},`,
+  ]);
 }
 
 /**
@@ -490,7 +496,7 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
   } else {
     widget = decoration || padding ? box('Container', props) : sizedBox(props);
   }
-  widget = hugLimits(widget, child.layout, child.children);
+  widget = hugLimits(widget, child.layout);
   if (BOUNDING_BOX_TYPES.has(child.type)) {
     return approximate(`"${child.name}" (${child.type}) is drawn as its bounding box`, widget, approximations);
   }

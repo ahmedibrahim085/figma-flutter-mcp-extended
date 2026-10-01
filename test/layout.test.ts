@@ -700,17 +700,21 @@ test('a HUG frame with a min gets a ConstrainedBox and keeps its main-axis align
         'child: Row(', 'mainAxisSize: MainAxisSize.min,', 'mainAxisAlignment: MainAxisAlignment.center,'].join('\n')), code);
 });
 
-test('a HUG frame clamped by a max narrower than its children clips them like Figma: ClipRect > ConstrainedBox > OverflowBox', async () => {
+test('a HUG frame clamped by a max narrower than its children clips them like Figma: ConstrainedBox > UnconstrainedBox(hardEdge)', async () => {
     const tight = (children: object[]) => track([{id: '123:2', name: 'Clamp', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [RED], clipsContent: true,
         absoluteBoundingBox: box(100, 20), ...sized('HUG', 'HUG'), maxWidth: 100, children}]);
     const kid = (id: string, width: number) => ({id, name: 'Kid', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(width, 20), ...sized('FIXED', 'FIXED')});
     const clipped = dedent(await widgetCode(tight([kid('123:3', 80), kid('123:4', 80)])));
-    assert.ok(clipped.includes(['ClipRect(', 'child: ConstrainedBox(', 'constraints: BoxConstraints(maxWidth: 100),', 'child: Container('].join('\n')), clipped);
-    assert.ok(clipped.includes(['child: OverflowBox(', 'fit: OverflowBoxFit.deferToChild,', 'maxWidth: double.infinity,', 'child: Row('].join('\n')), clipped);
+    // OverflowBoxFit (research 06's recipe) is not exported by material.dart, so generated code could not compile; an
+    // UnconstrainedBox clips the same way (100 wide, children at 0, 0 errors in bounded, scroll and Row hosts).
+    assert.ok(clipped.includes(['ConstrainedBox(', 'constraints: BoxConstraints(maxWidth: 100),', 'child: Container('].join('\n')), clipped);
+    assert.ok(clipped.includes(['child: UnconstrainedBox(', 'constrainedAxis: Axis.vertical,', 'alignment: Alignment.topLeft,',
+        'clipBehavior: Clip.hardEdge,', 'child: Row('].join('\n')), clipped);
+    assert.doesNotMatch(clipped, /OverflowBox|ClipRect/);
     // Content that fits needs only the ConstrainedBox.
     const fits = await widgetCode(tight([kid('123:5', 30), kid('123:6', 30)]));
     assert.match(fits, /constraints: BoxConstraints\(maxWidth: 100\),/);
-    assert.doesNotMatch(fits, /ClipRect|OverflowBox/);
+    assert.doesNotMatch(fits, /UnconstrainedBox/);
 });
 
 test('several FILL siblings: one clamped by its max keeps its Figma width (non-flex), the rest are Expanded, and it is named', async () => {

@@ -95,7 +95,8 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   implementation += `  @override\n`;
   implementation += `  Widget build(BuildContext context) {\n`;
   // A FILL axis on the root fills its host (double.infinity); in an unbounded host (a scroll view, a Row) a LimitedBox caps it
-  // at the Figma size instead of letting it throw. Without a measured size there is nothing to cap at.
+  // at the Figma size instead of letting it throw. Without a measured size there is nothing to cap at, so the axis asks for
+  // no size at all: an uncapped double.infinity throws in an unbounded host.
   const rootProps: string[] = [];
   const limits: string[] = [];
   const {width, height} = analysis.layout.dimensions;
@@ -103,10 +104,10 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
     if (sizing !== 'FILL') {
       const fixed = axisSize(name, sizing, size);
       if (fixed) rootProps.push(fixed);
-      continue;
+    } else if (size > 0) {
+      rootProps.push(`${name}: double.infinity,`);
+      limits.push(`${limit}: ${Math.round(size)},`);
     }
-    rootProps.push(`${name}: double.infinity,`);
-    if (size > 0) limits.push(`${limit}: ${Math.round(size)},`);
   }
   if (analysis.styleRefs.decoration) rootProps.push(`decoration: ${analysis.styleRefs.decoration},`);
   if (analysis.styleRefs.padding) rootProps.push(`padding: ${analysis.styleRefs.padding},`);

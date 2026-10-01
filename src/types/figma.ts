@@ -27,6 +27,10 @@ export interface FigmaNode {
     clipsContent?: boolean;
     rotation?: number;
     itemReverseZIndex?: boolean;
+    minWidth?: number | null;
+    maxWidth?: number | null;
+    minHeight?: number | null;
+    maxHeight?: number | null;
     absoluteBoundingBox?: FigmaBoundingBox;
     layoutMode?: string;
     primaryAxisSizingMode?: string;

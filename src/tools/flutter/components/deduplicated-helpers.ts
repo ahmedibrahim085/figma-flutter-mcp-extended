@@ -116,9 +116,12 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   if (analysis.children.length > 0) {
     const layout = layoutWidget(analysis.children, analysis.layout, analysis.metadata.name, styleLibrary, approximations,
       rootPaddingInside ? analysis.styleRefs.padding : undefined);
-    rootProps.push(`child: ${indentTail(layout, 2)},`);
+    rootProps.push(`child: ${indentTail(overflowLayout(layout, analysis.layout, analysis.children), 2)},`);
   }
-  let root = box('Container', rootProps);
+  let root = hugLimits(box('Container', rootProps), analysis.layout, analysis.children);
+  // A FILL axis's max sits between the LimitedBox and the infinite Container (research 06 P16: 400 bounded, 360 unbounded).
+  const fillAxes = (['width', 'height'] as const).filter(axis => (axis === 'width' ? analysis.layout.sizingHorizontal : analysis.layout.sizingVertical) === 'FILL');
+  root = constrained(boxConstraints(analysis.layout, [...fillAxes]), root);
   if (limits.length > 0) root = box('LimitedBox', [...limits, `child: ${indentTail(root, 2)},`]);
   implementation += `    return ${indentTail(root, 4)};\n`;
   implementation += `  }\n`;
@@ -227,6 +230,51 @@ function borderRadius(radius: number | number[] | undefined): string {
 /** A number for generated Dart: at most 4 decimals, no trailing zeros. */
 const dartNumber = (value: number) => String(Math.round(value * 10000) / 10000 || 0);
 
+const MIN_KEY = {width: 'minWidth', height: 'minHeight'} as const;
+const MAX_KEY = {width: 'maxWidth', height: 'maxHeight'} as const;
+
+/** `BoxConstraints(minWidth: …, maxWidth: …)` for the given axes' Figma min/max, or '' when none is set. */
+function boxConstraints(layout: LayoutInfo, axes: ('width' | 'height')[]): string {
+  const parts = axes.flatMap(axis => [MIN_KEY[axis], MAX_KEY[axis]])
+    .filter(key => layout[key] !== undefined).map(key => `${key}: ${dartNumber(layout[key]!)}`);
+  return parts.length ? `BoxConstraints(${parts.join(', ')})` : '';
+}
+
+/** `child` in a ConstrainedBox, or unchanged when there is nothing to constrain. */
+function constrained(constraints: string, child: string): string {
+  return constraints ? box('ConstrainedBox', [`constraints: ${constraints},`, `child: ${indentTail(child, 2)},`]) : child;
+}
+
+/**
+ * A HUG node's min/max become a ConstrainedBox (on a FIXED axis they change nothing, research 06 P14). When a HUG main
+ * axis is clamped by its max and its children add up to more, Figma clips them: ClipRect > ConstrainedBox, with an
+ * OverflowBox around the Row/Column (see overflowsMax) so the children keep their size instead of throwing.
+ */
+function hugLimits(widget: string, layout: LayoutInfo, children: DeduplicatedComponentChild[] | undefined): string {
+  const axes = (['width', 'height'] as const).filter(axis => (axis === 'width' ? layout.sizingHorizontal : layout.sizingVertical) === 'HUG');
+  const result = constrained(boxConstraints(layout, [...axes]), widget);
+  return overflowsMax(layout, children) && layout.clipsContent ? box('ClipRect', [`child: ${indentTail(result, 2)},`]) : result;
+}
+
+/** Whether a HUG main axis is clamped by its max (measured = max) with children adding up to more. */
+function overflowsMax(layout: LayoutInfo, children: DeduplicatedComponentChild[] | undefined): boolean {
+  if (!layout.direction || !children?.length) return false;
+  const axis = layout.direction === 'horizontal' ? 'width' : 'height';
+  const max = layout[MAX_KEY[axis]];
+  if ((axis === 'width' ? layout.sizingHorizontal : layout.sizingVertical) !== 'HUG' || max === undefined) return false;
+  if (Math.round(layout.dimensions[axis]) !== Math.round(max)) return false;
+  const padding = layout.padding ? (axis === 'width' ? layout.padding.left + layout.padding.right : layout.padding.top + layout.padding.bottom) : 0;
+  const extent = children.reduce((sum, child) => sum + child.layout.dimensions[axis], 0) + Math.max(0, layout.spacing ?? 0) * (children.length - 1) + padding;
+  return extent > max;
+}
+
+/** The Row/Column in an OverflowBox when its frame clips it at a max (see hugLimits). */
+function overflowLayout(layout: string, frame: LayoutInfo, children: DeduplicatedComponentChild[] | undefined): string {
+  if (!overflowsMax(frame, children)) return layout;
+  const axis = frame.direction === 'horizontal' ? 'maxWidth' : 'maxHeight';
+  return box('OverflowBox', ['fit: OverflowBoxFit.deferToChild,', `${axis}: double.infinity,`, `child: ${indentTail(layout, 2)},`]);
+}
+
 /**
  * A child of a Stack frame placed by its Figma constraints (research 05 table, measured against Figma's resize rule).
  * Start/end/stretch axes are Positioned edges and sizes. CENTER and SCALE axes are placed inside the Positioned box:
@@ -312,8 +360,9 @@ function flexWidget(
   const primary = frame.mainAxisAlignment ?? 'MIN';
   let gap = 0;
   if (frame.direction) {
-    // A HUG main axis leaves no free space, so main-axis alignment has no visible effect (in Figma or in Flutter).
-    if (mainAxisSizing !== 'HUG') {
+    // A HUG main axis leaves no free space, so main-axis alignment has no visible effect (in Figma or in Flutter) — unless
+    // a min makes the frame wider than its children (research 06 G6: a centred child sits at x=30).
+    if (mainAxisSizing !== 'HUG' || frame[MIN_KEY[axis === 'horizontal' ? 'width' : 'height']] !== undefined) {
       if (!(primary in MAIN_AXIS_ALIGNMENT)) notes.push(`"${name}" has primary-axis alignment ${primary}; start is used`);
       else if (MAIN_AXIS_ALIGNMENT[primary]) args.push(`mainAxisAlignment: MainAxisAlignment.${MAIN_AXIS_ALIGNMENT[primary]},`);
     }
@@ -337,24 +386,57 @@ function flexWidget(
   // A HUG main axis has no space to share: Figma keeps a FILL child at its own size, so it renders as FIXED there.
   const rendered = children.map(child => mainAxisSizing === 'HUG' && child.layout[mainKey] === 'FILL'
     ? {...child, layout: {...child.layout, [mainKey]: 'FIXED' as const}} : child);
-  const items = rendered
-    .map(child => childWidget(child, styleLibrary, approximations))
-    .map((code, i) => code && `${indentAll(wrapForMainAxisSizing(fillCrossAxis(code, rendered[i].layout[crossKey], axis), rendered[i].layout, axis), 4)},\n`)
+  // Min/max on main-axis FILL children (research 06, owner decisions 2026-10-01): a single FILL child with a max is
+  // Flexible > ConstrainedBox > infinite SizedBox (exact at every width); among several FILL siblings, one clamped by its
+  // min/max keeps its Figma size (exact at the design width); a min alone is ignored by Expanded.
+  const mainSize = axis === 'horizontal' ? 'width' : 'height';
+  const crossSize = axis === 'horizontal' ? 'height' : 'width';
+  const fillCount = rendered.filter(child => child.layout[mainKey] === 'FILL').length;
+  const flexibleMax = new Set<DeduplicatedComponentChild>();
+  const clamped = rendered.map(child => {
+    const layout = child.layout;
+    if (layout[mainKey] !== 'FILL') return child;
+    const min = layout[MIN_KEY[mainSize]];
+    const max = layout[MAX_KEY[mainSize]];
+    const measured = Math.round(layout.dimensions[mainSize]);
+    if (fillCount > 1 && (measured === max || measured === min)) {
+      notes.push(`"${child.name}" is clamped beside other FILL siblings; it keeps its Figma ${mainSize} ${measured}`);
+      return {...child, layout: {...layout, [mainKey]: 'FIXED' as const}};
+    }
+    if (max !== undefined) flexibleMax.add(child);
+    else if (min !== undefined) notes.push(`"${child.name}" has a min ${mainSize} of ${dartNumber(min)}; it can shrink below it when the parent is narrower`);
+    return child;
+  });
+  const items = clamped
+    .map(child => {
+      const code = childWidget(child, styleLibrary, approximations);
+      if (!code) return code;
+      const filled = fillCrossAxis(code, child.layout, crossKey, crossSize, axis);
+      return flexibleMax.has(child)
+        ? box('Flexible', [`child: ${indentTail(constrained(boxConstraints(child.layout, [mainSize]),
+          box('SizedBox', [`${mainSize}: double.infinity,`, `child: ${indentTail(filled, 2)},`])), 2)},`])
+        : wrapForMainAxisSizing(filled, child.layout, axis);
+    })
+    .map(code => code && `${indentAll(code, 4)},\n`)
     .filter(Boolean)
     .join(gap ? `    SizedBox(${axis === 'horizontal' ? 'width' : 'height'}: ${gap}),\n` : '');
   const comments = notes.map(note => approximate(note, '', approximations)).join('');
   let flex = multiChild(axis === 'horizontal' ? 'Row' : 'Column', args, items);
   // A cross-axis FILL child needs a bounded cross axis: a HUG one is bounded by the tallest (widest) sibling, as in Figma.
-  if (frame[crossKey] === 'HUG' && rendered.some(child => child.layout[crossKey] === 'FILL')) {
+  if (frame[crossKey] === 'HUG' && clamped.some(child => child.layout[crossKey] === 'FILL')) {
     flex = box(axis === 'horizontal' ? 'IntrinsicHeight' : 'IntrinsicWidth', [`child: ${indentTail(flex, 2)},`]);
   }
   return `${comments}${flex}`;
 }
 
-/** A cross-axis FILL child fills its parent's cross axis; per child, so FIXED siblings keep their size (unlike stretch). */
-function fillCrossAxis(code: string, crossSizing: string | undefined, axis: 'horizontal' | 'vertical'): string {
-  if (crossSizing !== 'FILL') return code;
-  return box('SizedBox', [`${axis === 'horizontal' ? 'height' : 'width'}: double.infinity,`, `child: ${indentTail(code, 2)},`]);
+/**
+ * A cross-axis FILL child fills its parent's cross axis; per child, so FIXED siblings keep their size (unlike stretch).
+ * A cross-axis max goes outside the infinite box (research 06 P15: 40; swapped, the max is lost: 100).
+ */
+function fillCrossAxis(code: string, layout: LayoutInfo, crossKey: 'sizingHorizontal' | 'sizingVertical', crossSize: 'width' | 'height', axis: 'horizontal' | 'vertical'): string {
+  if (layout[crossKey] !== 'FILL') return code;
+  const fill = box('SizedBox', [`${axis === 'horizontal' ? 'height' : 'width'}: double.infinity,`, `child: ${indentTail(code, 2)},`]);
+  return constrained(boxConstraints(layout, [crossSize]), fill);
 }
 
 /** An approximation: a comment at the widget, and a line in the tool output's Approximations list. */
@@ -398,8 +480,8 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
   if (padding) props.push(`padding: ${padding},`);
   let widget: string;
   if (child.children?.length) {
-    const layout = layoutWidget(child.children, child.layout, child.name, styleLibrary, approximations,
-      paddingInside ? styleOf('padding') : undefined);
+    const layout = overflowLayout(layoutWidget(child.children, child.layout, child.name, styleLibrary, approximations,
+      paddingInside ? styleOf('padding') : undefined), child.layout, child.children);
     // A Container holding only a child adds nothing (avoid_unnecessary_containers).
     if (props.length === 0) return layout;
     props.push(`child: ${indentTail(layout, 2)},`);
@@ -408,6 +490,7 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
   } else {
     widget = decoration || padding ? box('Container', props) : sizedBox(props);
   }
+  widget = hugLimits(widget, child.layout, child.children);
   if (BOUNDING_BOX_TYPES.has(child.type)) {
     return approximate(`"${child.name}" (${child.type}) is drawn as its bounding box`, widget, approximations);
   }

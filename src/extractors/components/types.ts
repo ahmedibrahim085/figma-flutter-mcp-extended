@@ -70,6 +70,11 @@ export interface LayoutInfo {
     cornerRadius?: number | number[];
     rotation?: number;
     reverseZIndex?: boolean;
+    /** Figma min/max sizes; REST sends null or omits the key when unset. */
+    minWidth?: number;
+    maxWidth?: number;
+    minHeight?: number;
+    maxHeight?: number;
 }
 
 /**

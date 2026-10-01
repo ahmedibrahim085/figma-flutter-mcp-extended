@@ -70,7 +70,11 @@ export function extractLayoutInfo(node: FigmaNode): LayoutInfo {
         clipsContent: node.clipsContent,
         cornerRadius: node.rectangleCornerRadii ?? node.cornerRadius,
         rotation: node.rotation,
-        reverseZIndex: node.itemReverseZIndex
+        reverseZIndex: node.itemReverseZIndex,
+        minWidth: node.minWidth ?? undefined,
+        maxWidth: node.maxWidth ?? undefined,
+        minHeight: node.minHeight ?? undefined,
+        maxHeight: node.maxHeight ?? undefined
     };
 
     // Auto-layout specific properties

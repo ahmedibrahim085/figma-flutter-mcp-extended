@@ -672,3 +672,70 @@ test('a frame with different corner radii clips its Stack with those radii', asy
     const code = await widgetCode(plainFrame([pinned('110:2', 'Dot', at(0, 0, 10, 10), 'LEFT', 'TOP')], {rectangleCornerRadii: [12, 0, 12, 0]}));
     assert.match(code, /child: ClipRRect\(\n\s+borderRadius: BorderRadius\.only\(topLeft: Radius\.circular\(12\), bottomRight: Radius\.circular\(12\)\),/);
 });
+
+// Ticket 06: min/max (research 06; owner decisions 2026-10-01). A min/max "binds" when the measured size equals it.
+const bar = (id: string, name: string, width: number, extra: object = {}) =>
+    ({id, name, type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(width, 20), layoutGrow: 1, ...sized('FILL', 'FIXED'), ...extra});
+const track = (children: object[], extra: object = {}) => ({id: '120:1', name: 'Track', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [],
+    absoluteBoundingBox: box(300, 20), ...sized('FIXED', 'FIXED'), children, ...extra});
+
+test('real fixture: a single FILL child with a max is Flexible > ConstrainedBox > infinite SizedBox (240 = Figma)', async () => {
+    const code = dedent(await widgetCode(layoutCase('Layout / min-max width')));
+    assert.ok(code.includes(['Flexible(', 'child: ConstrainedBox(', 'constraints: BoxConstraints(minWidth: 100, maxWidth: 240),', 'child: SizedBox(',
+        'width: double.infinity,', 'child: Container(', 'height: 40,'].join('\n')), code);
+    assert.doesNotMatch(code, /Expanded/);
+});
+
+test('min/max on a FIXED axis emits nothing: Figma keeps a FIXED size inside its range', async () => {
+    const code = await widgetCode(track([{id: '121:2', name: 'Box', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(150, 20),
+        ...sized('FIXED', 'FIXED'), minWidth: 100, maxWidth: 200}]));
+    assert.doesNotMatch(code, /ConstrainedBox|BoxConstraints/);
+});
+
+test('a HUG frame with a min gets a ConstrainedBox and keeps its main-axis alignment (there is free space)', async () => {
+    const code = dedent(await widgetCode(track([{id: '122:2', name: 'Pill', type: 'FRAME', layoutMode: 'HORIZONTAL', primaryAxisAlignItems: 'CENTER',
+        fills: [RED], absoluteBoundingBox: box(100, 20), ...sized('HUG', 'HUG'), minWidth: 100,
+        children: [{id: '122:3', name: 'Dot', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(40, 20), ...sized('FIXED', 'FIXED')}]}])));
+    assert.ok(code.includes(['ConstrainedBox(', 'constraints: BoxConstraints(minWidth: 100),', 'child: Container(', 'decoration: decorationID,',
+        'child: Row(', 'mainAxisSize: MainAxisSize.min,', 'mainAxisAlignment: MainAxisAlignment.center,'].join('\n')), code);
+});
+
+test('a HUG frame clamped by a max narrower than its children clips them like Figma: ClipRect > ConstrainedBox > OverflowBox', async () => {
+    const tight = (children: object[]) => track([{id: '123:2', name: 'Clamp', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [RED], clipsContent: true,
+        absoluteBoundingBox: box(100, 20), ...sized('HUG', 'HUG'), maxWidth: 100, children}]);
+    const kid = (id: string, width: number) => ({id, name: 'Kid', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(width, 20), ...sized('FIXED', 'FIXED')});
+    const clipped = dedent(await widgetCode(tight([kid('123:3', 80), kid('123:4', 80)])));
+    assert.ok(clipped.includes(['ClipRect(', 'child: ConstrainedBox(', 'constraints: BoxConstraints(maxWidth: 100),', 'child: Container('].join('\n')), clipped);
+    assert.ok(clipped.includes(['child: OverflowBox(', 'fit: OverflowBoxFit.deferToChild,', 'maxWidth: double.infinity,', 'child: Row('].join('\n')), clipped);
+    // Content that fits needs only the ConstrainedBox.
+    const fits = await widgetCode(tight([kid('123:5', 30), kid('123:6', 30)]));
+    assert.match(fits, /constraints: BoxConstraints\(maxWidth: 100\),/);
+    assert.doesNotMatch(fits, /ClipRect|OverflowBox/);
+});
+
+test('several FILL siblings: one clamped by its max keeps its Figma width (non-flex), the rest are Expanded, and it is named', async () => {
+    const out = await toolText(track([bar('124:2', 'Capped', 100, {maxWidth: 100}), bar('124:3', 'Rest', 200)]));
+    const code = dedent(out.slice(out.indexOf('class ')));
+    assert.ok(code.includes(['children: [', 'Container(', 'width: 100,', 'height: 20,'].join('\n')), code);
+    assert.equal(code.match(/Expanded\(/g)?.length, 1, code);
+    assert.match(out, /\/\/ approximate: "Capped" is clamped beside other FILL siblings; it keeps its Figma width 100/);
+});
+
+test('a single FILL child with only a min stays Expanded and is named: Expanded ignores a min', async () => {
+    const out = await toolText(track([bar('125:2', 'Floor', 300, {minWidth: 200})]));
+    assert.match(out, /Expanded\(/);
+    assert.match(out, /\/\/ approximate: "Floor" has a min width of 200; it can shrink below it when the parent is narrower/);
+});
+
+test('a cross-axis FILL child with a max: ConstrainedBox outside the infinite SizedBox', async () => {
+    const code = dedent(await widgetCode({id: '126:1', name: 'Tall', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [],
+        absoluteBoundingBox: box(100, 100), ...sized('FIXED', 'FIXED'),
+        children: [{id: '126:2', name: 'Bar', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(20, 40), ...sized('FIXED', 'FILL'), maxHeight: 40}]}));
+    assert.ok(code.includes(['ConstrainedBox(', 'constraints: BoxConstraints(maxHeight: 40),', 'child: SizedBox(', 'height: double.infinity,'].join('\n')), code);
+});
+
+test('a FILL root with a max: LimitedBox > ConstrainedBox > infinite Container', async () => {
+    const code = await widgetCode({id: '127:1', name: 'Banner', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [RED], absoluteBoundingBox: box(360, 48),
+        ...sized('FILL', 'FIXED'), maxWidth: 400, children: [dot('127:2')]});
+    assert.match(code, /    return LimitedBox\(\n      maxWidth: 360,\n      child: ConstrainedBox\(\n        constraints: BoxConstraints\(maxWidth: 400\),\n        child: Container\(\n          width: double\.infinity,/);
+});

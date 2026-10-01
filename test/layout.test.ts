@@ -743,3 +743,11 @@ test('a FILL root with a max: LimitedBox > ConstrainedBox > infinite Container',
         ...sized('FILL', 'FIXED'), maxWidth: 400, children: [dot('127:2')]});
     assert.match(code, /    return LimitedBox\(\n      maxWidth: 360,\n      child: ConstrainedBox\(\n        constraints: BoxConstraints\(maxWidth: 400\),\n        child: Container\(\n          width: double\.infinity,/);
 });
+
+test('a clamped HUG frame that does not clip in Figma still clips (an unclipped overflow throws) and says so', async () => {
+    const kid = (id: string) => ({id, name: 'Kid', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(80, 20), ...sized('FIXED', 'FIXED')});
+    const out = await toolText(track([{id: '128:2', name: 'Spill', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [RED], clipsContent: false,
+        absoluteBoundingBox: box(100, 20), ...sized('HUG', 'HUG'), maxWidth: 100, children: [kid('128:3'), kid('128:4')]}]));
+    assert.match(out, /clipBehavior: Clip\.hardEdge,/);
+    assert.match(out, /\/\/ approximate: "Spill" shows its children past its max width in Figma; they are clipped here/);
+});

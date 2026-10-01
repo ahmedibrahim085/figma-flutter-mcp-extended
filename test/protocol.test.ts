@@ -1,5 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {withServer, type JsonRpcMessage} from './helpers/mcp-stdio.ts';
 
 // Independent source of truth: the tool names registered in src/tools.
@@ -52,4 +53,18 @@ test('stdio: server identifies as figma-flutter and lists exactly the registered
     assert.equal(init!.result.serverInfo.name, 'figma-flutter');
     const names = list!.result.tools.map((tool: {name: string}) => tool.name).sort();
     assert.deepEqual(names, EXPECTED_TOOLS);
+});
+
+test('README lists exactly the tools the server serves', async () => {
+    let list: JsonRpcMessage | undefined;
+    await withServer(async (s) => {
+        await s.initialize();
+        list = await s.request('tools/list');
+    });
+    const served = list!.result.tools.map((tool: {name: string}) => tool.name).sort();
+    // The tool list in the README sits between these two markers; each tool name is in backticks.
+    const readme = readFileSync(new URL('../README.md', import.meta.url), 'utf8');
+    const section = readme.split('<!-- tools:start -->')[1]?.split('<!-- tools:end -->')[0] ?? '';
+    const listed = [...section.matchAll(/^\| `([a-z_]+)` \|/gm)].map((m) => m[1]).sort();
+    assert.deepEqual(listed, served);
 });

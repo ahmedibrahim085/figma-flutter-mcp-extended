@@ -1,5 +1,5 @@
 ## Figma-Framework MCP
-Since [Figma Context MCP](https://github.com/gLips/Figma-Context-MCP/) is framework‑agnostic, it does not output code or artifacts tailored to React, Angular, Vue, Flutter, etc. This repository adds a concrete implementation for Flutter (see `docs/figma-flutter-mcp.md`) and documents how to adapt the same architecture to any other framework.
+Since [Figma Context MCP](https://github.com/gLips/Figma-Context-MCP/) is framework‑agnostic, it does not output code or artifacts tailored to React, Angular, Vue, Flutter, etc. This repository adds a concrete implementation for Flutter (see upstream's [docs/figma-flutter-mcp.md](https://github.com/mhmzdev/figma-flutter-mcp/blob/main/docs/figma-flutter-mcp.md)) and documents how to adapt the same architecture to any other framework.
 
 ### What you get out of the box
 - **Extractors (framework‑agnostic):** Parse Figma nodes into consistent, rich, typed models for components, screens, colors, and typography.

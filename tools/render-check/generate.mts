@@ -1,7 +1,7 @@
 // Render check, step 1: run the code generator offline on one Figma node and write a Dart
 // library plus a widget test that pumps it in four hosts.
 // Usage: node --import tsx tools/render-check/generate.mts <fixture name in test/fixtures, or a path> <nodeId>
-import {readFileSync, writeFileSync} from 'node:fs';
+import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {isAbsolute, resolve} from 'node:path';
 import {callToolsOffline, nodeRoute, FILE_KEY} from '../../test/helpers/offline-tool.ts';
@@ -44,6 +44,9 @@ const viewSetup = box
     : '';
 const className = widgetClass.match(/^class (\w+) /)![1];
 
+// Git does not keep empty folders, so a fresh clone has neither lib/ nor test/ here.
+mkdirSync(resolve(FLUTTER, 'lib'), {recursive: true});
+mkdirSync(resolve(FLUTTER, 'test'), {recursive: true});
 writeFileSync(resolve(FLUTTER, 'lib/generated.dart'),
     `import 'package:flutter/material.dart';\n\n${styleDefinitions}\n\n${widgetClass}`);
 writeFileSync(resolve(FLUTTER, 'test/host_matrix_test.dart'), `import 'package:flutter/material.dart';

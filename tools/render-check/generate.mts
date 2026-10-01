@@ -1,7 +1,7 @@
 // Render check, step 1: run the code generator offline on one Figma node and write a Dart
 // library plus a widget test that pumps it in four hosts.
 // Usage: node --import tsx tools/render-check/generate.mts <fixture name in test/fixtures, or a path> <nodeId>
-import {mkdirSync, readFileSync, writeFileSync} from 'node:fs';
+import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {isAbsolute, resolve} from 'node:path';
 import {callToolsOffline, nodeRoute, FILE_KEY} from '../../test/helpers/offline-tool.ts';
@@ -15,6 +15,10 @@ if (!fixture || !nodeId) {
     process.exit(2);
 }
 const fixturePath = isAbsolute(fixture) ? fixture : resolve(ROOT, 'test/fixtures', fixture);
+if (!existsSync(fixturePath)) {
+    console.error(`fixture not found: ${fixturePath}`);
+    process.exit(2);
+}
 const payload = JSON.parse(readFileSync(fixturePath, 'utf-8'));
 const find = (node: any): any => node.id === nodeId ? node : (node.children ?? []).map(find).find(Boolean);
 const node = (Object.values(payload.nodes) as any[]).map((entry) => find(entry.document)).find(Boolean);

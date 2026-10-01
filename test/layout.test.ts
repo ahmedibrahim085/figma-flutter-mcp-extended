@@ -536,3 +536,11 @@ test('a FILL root fills a bounded host on either axis: double.infinity inside th
     });
     assert.match(code, /    return LimitedBox\(\n      maxWidth: 360,\n      child: Container\(\n        width: double\.infinity,\n        decoration: decorationID,\n/);
 });
+
+test('a FILL root without a measured size gets no zero LimitedBox cap', async () => {
+    const code = await widgetCode({
+        id: '99:1', name: 'Unsized', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [RED], ...sized('FILL', 'FIXED'),
+        absoluteBoundingBox: {x: 0, y: 0, width: 0, height: 48}, children: [dot('99:2')],
+    });
+    assert.doesNotMatch(code, /maxWidth: 0/);
+});

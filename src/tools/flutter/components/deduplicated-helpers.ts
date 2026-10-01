@@ -94,12 +94,20 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   implementation += `  const ${widgetName}({Key? key}) : super(key: key);\n\n`;
   implementation += `  @override\n`;
   implementation += `  Widget build(BuildContext context) {\n`;
-  // A FILL axis on the root fills its host: double.infinity, capped by the LimitedBox below in an unbounded host.
-  const fixedSizes = fixedSizeProps(analysis.layout);
-  const rootProps = [
-    ...(analysis.layout.sizingHorizontal === 'FILL' ? ['width: double.infinity,'] : fixedSizes.filter(prop => prop.startsWith('width'))),
-    ...(analysis.layout.sizingVertical === 'FILL' ? ['height: double.infinity,'] : fixedSizes.filter(prop => prop.startsWith('height'))),
-  ];
+  // A FILL axis on the root fills its host (double.infinity); in an unbounded host (a scroll view, a Row) a LimitedBox caps it
+  // at the Figma size instead of letting it throw. Without a measured size there is nothing to cap at.
+  const rootProps: string[] = [];
+  const limits: string[] = [];
+  const {width, height} = analysis.layout.dimensions;
+  for (const [name, sizing, size, limit] of [['width', analysis.layout.sizingHorizontal, width, 'maxWidth'], ['height', analysis.layout.sizingVertical, height, 'maxHeight']] as const) {
+    if (sizing !== 'FILL') {
+      const fixed = axisSize(name, sizing, size);
+      if (fixed) rootProps.push(fixed);
+      continue;
+    }
+    rootProps.push(`${name}: double.infinity,`);
+    if (size > 0) limits.push(`${limit}: ${Math.round(size)},`);
+  }
   if (analysis.styleRefs.decoration) rootProps.push(`decoration: ${analysis.styleRefs.decoration},`);
   if (analysis.styleRefs.padding) rootProps.push(`padding: ${analysis.styleRefs.padding},`);
   const approximations: string[] = [];
@@ -108,11 +116,6 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
     rootProps.push(`child: ${indentTail(layout, 2)},`);
   }
   let root = box('Container', rootProps);
-  // A FILL axis takes the host's size; in an unbounded host (a scroll view, a Row) it falls back to the Figma size instead of throwing.
-  const limits = [
-    analysis.layout.sizingHorizontal === 'FILL' ? `maxWidth: ${Math.round(analysis.layout.dimensions.width)},` : '',
-    analysis.layout.sizingVertical === 'FILL' ? `maxHeight: ${Math.round(analysis.layout.dimensions.height)},` : '',
-  ].filter(Boolean);
   if (limits.length > 0) root = box('LimitedBox', [...limits, `child: ${indentTail(root, 2)},`]);
   implementation += `    return ${indentTail(root, 4)};\n`;
   implementation += `  }\n`;
@@ -132,14 +135,13 @@ const BOUNDING_BOX_TYPES = new Set(['LINE', 'STAR', 'POLYGON', 'BOOLEAN_OPERATIO
  * Nodes outside auto layout have no sizing in the REST response and keep their measured size.
  */
 function fixedSizeProps(layout: LayoutInfo): string[] {
-  const props: string[] = [];
-  if (layout.sizingHorizontal !== 'HUG' && layout.sizingHorizontal !== 'FILL' && layout.dimensions.width > 0) {
-    props.push(`width: ${Math.round(layout.dimensions.width)},`);
-  }
-  if (layout.sizingVertical !== 'HUG' && layout.sizingVertical !== 'FILL' && layout.dimensions.height > 0) {
-    props.push(`height: ${Math.round(layout.dimensions.height)},`);
-  }
-  return props;
+  return [axisSize('width', layout.sizingHorizontal, layout.dimensions.width), axisSize('height', layout.sizingVertical, layout.dimensions.height)]
+    .filter(Boolean);
+}
+
+/** One axis's size property: rounded pixels unless the axis is HUG or FILL or has no measured size; '' when none. */
+function axisSize(name: 'width' | 'height', sizing: string | undefined, size: number): string {
+  return sizing !== 'HUG' && sizing !== 'FILL' && size > 0 ? `${name}: ${Math.round(size)},` : '';
 }
 
 /** Figma primaryAxisAlignItems → MainAxisAlignment; MIN is Flutter's default start, so it emits nothing. */
@@ -162,7 +164,9 @@ function layoutWidget(
   approximations: string[]
 ): string {
   const axis = frame.direction === 'horizontal' ? 'horizontal' : 'vertical';
-  const mainAxisSizing = axis === 'horizontal' ? frame.sizingHorizontal : frame.sizingVertical;
+  const mainKey = axis === 'horizontal' ? 'sizingHorizontal' : 'sizingVertical';
+  const crossKey = axis === 'horizontal' ? 'sizingVertical' : 'sizingHorizontal';
+  const mainAxisSizing = frame[mainKey];
   const args: string[] = [];
   const notes: string[] = [];
   if (mainAxisSizing === 'HUG') args.push('mainAxisSize: MainAxisSize.min,');
@@ -191,8 +195,6 @@ function layoutWidget(
       else gap = spacing;
     }
   }
-  const mainKey = axis === 'horizontal' ? 'sizingHorizontal' : 'sizingVertical';
-  const crossKey = axis === 'horizontal' ? 'sizingVertical' : 'sizingHorizontal';
   // A HUG main axis has no space to share: Figma keeps a FILL child at its own size, so it renders as FIXED there.
   const rendered = children.map(child => mainAxisSizing === 'HUG' && child.layout[mainKey] === 'FILL'
     ? {...child, layout: {...child.layout, [mainKey]: 'FIXED' as const}} : child);

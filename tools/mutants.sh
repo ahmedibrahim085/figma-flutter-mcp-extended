@@ -30,7 +30,9 @@ if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
 fi
 LOG="$(mktemp)"
 CURRENT=""
-# On any exit (including Ctrl-C mid-mutant) put back the file being mutated and remove the log.
+# On exit, Ctrl-C, SIGTERM or SIGHUP, put back the file being mutated and remove the log. A run killed
+# outright (SIGKILL, or SIGPIPE when stdout is piped into a reader that stops early) leaves the mutant
+# in place; the uncommitted-changes check above then refuses the next run until it is restored.
 cleanup() {
   [ -n "$CURRENT" ] && git checkout -- "$CURRENT"
   rm -f "$LOG"

@@ -4,6 +4,7 @@ import {mkdtempSync, readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
+import {fileURLToPath} from 'node:url';
 import {withServer, type JsonRpcMessage} from './helpers/mcp-stdio.ts';
 
 // Independent source of truth: the tool names registered in src/tools.
@@ -77,7 +78,7 @@ test('without a Figma key, the start-up hint installs from GitHub, not an unregi
     const cwd = mkdtempSync(join(tmpdir(), 'ff-nokey-'));
     const env = {...process.env};
     delete env.FIGMA_API_KEY;
-    const cli = new URL('../dist/cli.js', import.meta.url).pathname;
+    const cli = fileURLToPath(new URL('../dist/cli.js', import.meta.url));
     const run = spawnSync(process.execPath, [cli, '--stdio'], {cwd, env, encoding: 'utf-8', timeout: 15000});
     assert.equal(run.status, 1);
     assert.match(run.stderr, /npx -y github:ahmedibrahim085\/figma-flutter-mcp-extended --figma-api-key=YOUR_KEY --stdio/);

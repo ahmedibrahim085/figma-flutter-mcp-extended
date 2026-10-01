@@ -126,13 +126,8 @@ function validateFileId(fileId: string): string {
         throw new FigmaError('File ID cannot be empty', 'INVALID_FILE_ID');
     }
 
-    if (trimmed.length < 10 || trimmed.length > 50) {
-        throw new FigmaError(
-            `Invalid file ID length: ${trimmed.length}. Expected 10-50 characters.`,
-            'INVALID_FILE_ID'
-        );
-    }
-
+    // Figma documents no file-key length, so none is checked here; a key Figma
+    // does not know comes back from Figma as an error.
     // File IDs contain alphanumeric characters, hyphens, and underscores
     const validPattern = /^[a-zA-Z0-9\-_]+$/;
     if (!validPattern.test(trimmed)) {

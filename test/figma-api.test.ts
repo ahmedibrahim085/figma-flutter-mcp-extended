@@ -61,3 +61,16 @@ for (const [tool, args] of [
         assert.deepEqual([...new Set(server.blockedHosts)], ['api.figma.com']);
     });
 }
+
+test('a file key of any length reaches Figma: the server does not reject it by length', async () => {
+    // Figma documents no file-key length; a key Figma rejects comes back from Figma as an error.
+    const shortKey = 'SHORTKEY9';
+    const node = {id: '1:2', name: 'Box', type: 'FRAME', children: []};
+    const {text, requests} = await callToolOffline(
+        {[`/files/${shortKey}/nodes?ids=1:2`]: {body: {nodes: {'1:2': {document: node}}}}},
+        'inspect_component_structure',
+        {input: shortKey, nodeId: '1:2'},
+    );
+    assert.doesNotMatch(text, /Invalid file ID length/);
+    assert.deepEqual(requests.map((r) => r.path), [`/files/${shortKey}/nodes`]);
+});

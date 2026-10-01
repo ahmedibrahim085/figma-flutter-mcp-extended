@@ -526,7 +526,6 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
 }
 
 // Helper functions
-
 function detectSectionTypeFromName(name: string): string {
     const lowerName = name.toLowerCase();
     

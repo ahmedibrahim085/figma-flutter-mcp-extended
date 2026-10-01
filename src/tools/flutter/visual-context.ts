@@ -504,6 +504,5 @@ function generateScreenImplementationHints(analysis: ScreenAnalysis): string {
         hints += `   • Tablet layout: Consider NavigationRail for wider screens\n`;
     }
 
-
     return hints;
 }

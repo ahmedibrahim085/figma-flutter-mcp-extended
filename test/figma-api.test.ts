@@ -1,7 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {withServer} from './helpers/mcp-stdio.ts';
-import {callToolOffline, nodeRoute, FILE_KEY} from './helpers/offline-tool.ts';
+import {callToolOffline, callToolsOffline, nodeRoute, FILE_KEY} from './helpers/offline-tool.ts';
 
 test('ff_get_metadata reads the node tree from the configured Figma base URL', async () => {
     const {text, requests} = await callToolOffline({
@@ -63,14 +63,19 @@ for (const [tool, args] of [
 }
 
 test('a file key of any length reaches Figma: the server does not reject it by length', async () => {
-    // Figma documents no file-key length; a key Figma rejects comes back from Figma as an error.
-    const shortKey = 'SHORTKEY9';
     const node = {id: '1:2', name: 'Box', type: 'FRAME', children: []};
-    const {text, requests} = await callToolOffline(
-        {[`/files/${shortKey}/nodes?ids=1:2`]: {body: {nodes: {'1:2': {document: node}}}}},
-        'inspect_component_structure',
-        {input: shortKey, nodeId: '1:2'},
+    const [known, unknown] = await callToolsOffline(
+        {'/files/SHORTKEY9/nodes?ids=1:2': {body: {nodes: {'1:2': {document: node}}}}},
+        [
+            ['inspect_component_structure', {input: 'SHORTKEY9', nodeId: '1:2'}],
+            ['inspect_component_structure', {input: 'SHORTKEY8', nodeId: '1:2'}],
+        ],
     );
-    assert.doesNotMatch(text, /Invalid file ID length/);
-    assert.deepEqual(requests.map((r) => r.path), [`/files/${shortKey}/nodes`]);
+    // A short key Figma knows: the client gets the node.
+    assert.deepEqual(known.requests.map((r) => r.path), ['/files/SHORTKEY9/nodes']);
+    assert.match(known.text, /Box/);
+    // A short key Figma does not know: the answer is Figma's 404, not a length rule of our own.
+    assert.deepEqual(unknown.requests.map((r) => r.path), ['/files/SHORTKEY8/nodes']);
+    assert.doesNotMatch(unknown.text, /Invalid file ID length/);
+    assert.match(unknown.text, /404|not found/i);
 });

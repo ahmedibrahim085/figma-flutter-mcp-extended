@@ -258,5 +258,4 @@ export class GlobalStyleManager {
     
     return key;
   }
-
 }

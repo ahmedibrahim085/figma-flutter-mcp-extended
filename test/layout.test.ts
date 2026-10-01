@@ -526,5 +526,13 @@ test('a component root with a FILL axis falls back to its Figma size in an unbou
         id: '93:1', name: 'Banner', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [RED], absoluteBoundingBox: box(360, 48), ...sized('FILL', 'FIXED'),
         children: [{id: '93:2', name: 'Grow', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(300, 20), layoutGrow: 1, ...sized('FILL', 'FIXED')}],
     });
-    assert.match(code, /    return LimitedBox\(\n      maxWidth: 360,\n      child: Container\(\n        height: 48,\n        decoration: decorationID,\n/);
+    assert.match(code, /    return LimitedBox\(\n      maxWidth: 360,\n      child: Container\(\n        width: double\.infinity,\n        height: 48,\n        decoration: decorationID,\n/);
+});
+
+test('a FILL root fills a bounded host on either axis: double.infinity inside the LimitedBox', async () => {
+    const code = await widgetCode({
+        id: '94:1', name: 'Card', type: 'FRAME', layoutMode: 'VERTICAL', fills: [RED], absoluteBoundingBox: box(360, 40), ...sized('FILL', 'HUG'),
+        children: [dot('94:2')],
+    });
+    assert.match(code, /    return LimitedBox\(\n      maxWidth: 360,\n      child: Container\(\n        width: double\.infinity,\n        decoration: decorationID,\n/);
 });

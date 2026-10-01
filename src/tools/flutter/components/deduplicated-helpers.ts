@@ -94,7 +94,12 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   implementation += `  const ${widgetName}({Key? key}) : super(key: key);\n\n`;
   implementation += `  @override\n`;
   implementation += `  Widget build(BuildContext context) {\n`;
-  const rootProps = fixedSizeProps(analysis.layout);
+  // A FILL axis on the root fills its host: double.infinity, capped by the LimitedBox below in an unbounded host.
+  const fixedSizes = fixedSizeProps(analysis.layout);
+  const rootProps = [
+    ...(analysis.layout.sizingHorizontal === 'FILL' ? ['width: double.infinity,'] : fixedSizes.filter(prop => prop.startsWith('width'))),
+    ...(analysis.layout.sizingVertical === 'FILL' ? ['height: double.infinity,'] : fixedSizes.filter(prop => prop.startsWith('height'))),
+  ];
   if (analysis.styleRefs.decoration) rootProps.push(`decoration: ${analysis.styleRefs.decoration},`);
   if (analysis.styleRefs.padding) rootProps.push(`padding: ${analysis.styleRefs.padding},`);
   const approximations: string[] = [];

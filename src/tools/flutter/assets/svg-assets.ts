@@ -15,6 +15,7 @@ import {
 import {Logger} from "../../../utils/logger.js";
 import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
 import {isEffectivelyVisible} from "../../../utils/visibility.js";
+import defaults from '../../../defaults.json' with { type: 'json' };
 
 export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
     // Tool: Export SVG Flutter Assets
@@ -88,7 +89,7 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
                         nodeId: node.id,
                         nodeName: node.name,
                         filename,
-                        path: `assets/svgs/${filename}`,
+                        path: `${defaults.output.svgsDir}/${filename}`,
                         size: stats.size
                     });
                 }
@@ -112,7 +113,7 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
 
                 output += `\nPubspec Configuration:\n`;
                 output += `- Merged SVG asset declarations into pubspec.yaml\n`;
-                output += `- SVG assets available under: assets/svgs/\n\n`;
+                output += `- SVG assets available under: ${defaults.output.svgsDir}/\n\n`;
 
                 output += `Generated Code:\n`;
                 output += `- Merged SVG asset constants into: ${constantsFile}\n`;

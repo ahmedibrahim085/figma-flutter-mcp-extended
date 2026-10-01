@@ -2,6 +2,7 @@
 import {writeFile, mkdir} from 'fs/promises';
 import {join} from 'path';
 import type {ThemeColor, ThemeGenerationOptions} from '../../../../extractors/colors/index.js';
+import defaults from '../../../../defaults.json' with { type: 'json' };
 
 export class SimpleThemeGenerator {
     /**
@@ -10,7 +11,7 @@ export class SimpleThemeGenerator {
     async generateAppColors(colors: ThemeColor[], outputPath: string, options: ThemeGenerationOptions = {}): Promise<string> {
         // Create output directory
         await mkdir(outputPath, {recursive: true});
-        const filePath = join(outputPath, 'app_colors.dart');
+        const filePath = join(outputPath, defaults.output.colorsFile);
 
         // Generate Dart content
         const content = this.generateDartContent(colors);
@@ -29,7 +30,7 @@ export class SimpleThemeGenerator {
      * Generate Flutter ThemeData from theme colors
      */
     async generateThemeData(colors: ThemeColor[], outputPath: string, options: ThemeGenerationOptions = {}): Promise<string> {
-        const filePath = join(outputPath, 'app_theme.dart');
+        const filePath = join(outputPath, defaults.output.themeFile);
         const content = this.generateThemeDataContent(colors, options);
 
         await writeFile(filePath, content);
@@ -65,7 +66,7 @@ class AppColors {
         let content = `// Generated Flutter ThemeData from Figma theme frame
 
 import 'package:flutter/material.dart';
-import 'app_colors.dart';
+import '${defaults.output.colorsFile}';
 
 class AppTheme {
   // Light Theme

@@ -10,6 +10,7 @@ import {
     createFigmaError
 } from '../types/errors.js';
 import {withRetry} from '../utils/retry.js';
+import defaults from '../defaults.json' with { type: 'json' };
 import {Logger} from '../utils/logger.js';
 
 /**
@@ -90,11 +91,7 @@ export class FigmaService {
 
                 throw new FigmaNetworkError(`Unexpected error: ${error}`, error as Error);
             }
-        }, {
-            maxAttempts: 3,
-            initialDelayMs: 1000,
-            maxDelayMs: 10000
-        });
+        }, defaults.retry);
     }
 
     /**

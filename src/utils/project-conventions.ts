@@ -1,6 +1,7 @@
 // src/utils/project-conventions.mts
 import {readFile, readdir} from 'fs/promises';
 import {join} from 'path';
+import defaults from '../defaults.json' with { type: 'json' };
 
 /** Read the Dart package name from pubspec.yaml, needed to build `package:<name>/...` imports. */
 export async function detectProjectName(projectPath: string): Promise<string> {
@@ -48,14 +49,14 @@ async function detectExistingSubdir(
 export async function detectConstantsDir(projectPath: string): Promise<string> {
     return detectExistingSubdir(
         join(projectPath, 'lib'),
-        'theme',
-        join(projectPath, 'lib', 'constants'),
-        'constants'
+        defaults.output.themeSubdir,
+        join(projectPath, 'lib', defaults.output.constantsSubdir),
+        defaults.output.constantsSubdir
     );
 }
 
 /** Detect where the project already keeps golden tests (test/golden/ if present), else test/. */
 export async function detectGoldenTestDir(projectPath: string): Promise<string> {
     const defaultDir = join(projectPath, 'test');
-    return detectExistingSubdir(defaultDir, 'golden', defaultDir);
+    return detectExistingSubdir(defaultDir, defaults.output.goldenSubdir, defaultDir);
 }

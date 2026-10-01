@@ -1,0 +1,26 @@
+{
+  "httpPort": 3333,
+  "installCommand": "npx -y github:ahmedibrahim085/figma-flutter-mcp-extended",
+  "figmaWebUrl": "https://www.figma.com",
+  "retry": {
+    "maxAttempts": 3,
+    "initialDelayMs": 1000,
+    "maxDelayMs": 10000,
+    "backoffMultiplier": 2
+  },
+  "output": {
+    "imagesDir": "assets/images",
+    "svgsDir": "assets/svgs",
+    "assetConstantsFile": "assets.dart",
+    "svgConstantsFile": "svg_assets.dart",
+    "themeSubdir": "theme",
+    "constantsSubdir": "constants",
+    "colorsFile": "app_colors.dart",
+    "themeFile": "app_theme.dart",
+    "textFile": "app_text.dart",
+    "textThemeFile": "text_theme.dart",
+    "goldenTestSuffix": "_golden_test.dart",
+    "goldensDir": "goldens",
+    "goldenSubdir": "golden"
+  }
+}

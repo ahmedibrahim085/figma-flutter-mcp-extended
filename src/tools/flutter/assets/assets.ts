@@ -15,6 +15,7 @@ import {
 } from "./asset-manager.js";
 import {isEffectivelyVisible} from "../../../utils/visibility.js";
 import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
+import defaults from '../../../defaults.json' with { type: 'json' };
 
 export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string) {
     // Tool: Export Flutter Assets
@@ -91,7 +92,7 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                             nodeId: node.id,
                             nodeName: node.name,
                             filename,
-                            path: `assets/images/${filename}`,
+                            path: `${defaults.output.imagesDir}/${filename}`,
                             size: stats.size
                         });
                     }
@@ -119,7 +120,7 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
 
                 output += `\nPubspec Configuration:\n`;
                 output += `- Merged asset declarations into pubspec.yaml\n`;
-                output += `- Assets available under: assets/images/\n\n`;
+                output += `- Assets available under: ${defaults.output.imagesDir}/\n\n`;
 
                 output += `Generated Code:\n`;
                 output += `- Merged asset constants into: ${constantsFile}\n`;

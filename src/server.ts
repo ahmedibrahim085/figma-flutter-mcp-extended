@@ -177,6 +177,9 @@ export async function startHttpServer(port: number, figmaApiKey?: string): Promi
       Logger.log(
         `Setting up progress notifications for token ${progressToken} on session ${sessionId}`,
       );
+      // A protocol constant, not a design fact: one progress notification per second keeps a long
+      // tool call well inside the SDK's default 60 s request timeout
+      // (DEFAULT_REQUEST_TIMEOUT_MSEC in @modelcontextprotocol/sdk shared/protocol).
       progressInterval = setInterval(async () => {
         Logger.log("Sending progress notification", progress);
         await mcpServer.server.notification({

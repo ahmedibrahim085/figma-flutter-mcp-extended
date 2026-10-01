@@ -4,6 +4,7 @@ import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {join} from "path";
 import {mkdir, writeFile} from "fs/promises";
 import {detectProjectName, detectGoldenTestDir} from "../../../utils/project-conventions.js";
+import defaults from '../../../defaults.json' with { type: 'json' };
 
 function toSnakeCase(name: string): string {
     return name
@@ -34,8 +35,8 @@ export function registerGoldenTestTools(server: McpServer, _figmaApiKey: string)
                 await mkdir(testDir, {recursive: true});
 
                 const snakeCaseName = toSnakeCase(widgetName);
-                const testFilePath = join(testDir, `${snakeCaseName}_golden_test.dart`);
-                const goldenFilePath = `goldens/${snakeCaseName}.png`;
+                const testFilePath = join(testDir, `${snakeCaseName}${defaults.output.goldenTestSuffix}`);
+                const goldenFilePath = `${defaults.output.goldensDir}/${snakeCaseName}.png`;
 
                 const content = `import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

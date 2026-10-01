@@ -7,6 +7,7 @@ import type {
     TypographyDefinition,
     TypographyGenerationOptions
 } from '../../../../extractors/typography/types.js';
+import defaults from '../../../../defaults.json' with { type: 'json' };
 
 /**
  * Flutter typography generator for AppText classes
@@ -37,7 +38,7 @@ export class TypographyGenerator {
         );
 
         // Write AppText file
-        const appTextPath = join(outputDir, 'app_text.dart');
+        const appTextPath = join(outputDir, defaults.output.textFile);
         await writeFile(appTextPath, appTextContent);
 
         // Generate text theme if requested
@@ -48,7 +49,7 @@ export class TypographyGenerator {
                 familyVariableName,
                 options
             );
-            const textThemePath = join(outputDir, 'text_theme.dart');
+            const textThemePath = join(outputDir, defaults.output.textThemeFile);
             await writeFile(textThemePath, textThemeContent);
         }
 
@@ -139,7 +140,7 @@ export class TypographyGenerator {
 
         // Imports
         content += "import 'package:flutter/material.dart';\n";
-        content += "import 'app_text.dart';\n\n";
+        content += `import '${defaults.output.textFile}';\n\n`;
 
         // Class definition
         content += `/// Material Design text theme\n`;

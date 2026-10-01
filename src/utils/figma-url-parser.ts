@@ -1,6 +1,7 @@
 // src/utils/figma-url-parser.mts
 
 import {FigmaError} from '../types/errors.js';
+import defaults from '../defaults.json' with { type: 'json' };
 
 /**
  * Component input parsing result
@@ -209,17 +210,9 @@ export function extractIds(input: string): {fileId?: string; nodeId?: string} {
     return {};
 }
 
-/**
- * Generate Figma URL from file ID and node ID
- */
+/** The Figma web link to a node, for the visual-context sections of tool reports. */
 export function generateFigmaUrl(fileId: string, nodeId: string): string {
-    const validatedFileId = validateFileId(fileId);
-    const validatedNodeId = validateAndConvertNodeId(nodeId);
-
-    // Convert API format back to URL format (123:456 -> 123-456)
-    const urlNodeId = validatedNodeId.replace(':', '-');
-
-    return `https://www.figma.com/file/${validatedFileId}?node-id=${urlNodeId}`;
+    return `${defaults.figmaWebUrl}/design/${fileId}/?node-id=${nodeId}`;
 }
 
 /**

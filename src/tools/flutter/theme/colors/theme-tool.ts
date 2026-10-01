@@ -6,6 +6,7 @@ import {extractThemeColors} from "../../../../extractors/colors/index.js";
 import {SimpleThemeGenerator} from "./theme-generator.js";
 import {validateAndConvertNodeId} from "../../../../utils/figma-url-parser.js";
 import {join} from 'path';
+import defaults from '../../../../defaults.json' with { type: 'json' };
 
 export function registerThemeTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
@@ -62,7 +63,7 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                 }
 
                 // Generate AppColors class
-                const outputPath = join(projectPath, 'lib', 'theme');
+                const outputPath = join(projectPath, 'lib', defaults.output.themeSubdir);
                 const generatedFilePath = await generator.generateAppColors(themeColors, outputPath, {
                     generateThemeData,
                     includeColorScheme: true,
@@ -76,7 +77,7 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                 output += `Colors found: ${themeColors.length}\n`;
                 output += `Generated: ${generatedFilePath}\n`;
                 if (generateThemeData) {
-                    output += `Theme Data: ${join(outputPath, 'app_theme.dart')}\n`;
+                    output += `Theme Data: ${join(outputPath, defaults.output.themeFile)}\n`;
                 }
                 output += `\n`;
 
@@ -86,9 +87,9 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                 });
 
                 output += `\nGenerated Files:\n`;
-                output += `• app_colors.dart - Color constants\n`;
+                output += `• ${defaults.output.colorsFile} - Color constants\n`;
                 if (generateThemeData) {
-                    output += `• app_theme.dart - Flutter ThemeData\n`;
+                    output += `• ${defaults.output.themeFile} - Flutter ThemeData\n`;
                 }
 
                 output += `\nUsage Examples:\n`;

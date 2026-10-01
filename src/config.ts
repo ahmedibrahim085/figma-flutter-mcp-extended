@@ -5,6 +5,7 @@ import {resolve} from "path";
 import {readFileSync} from "fs";
 import {fileURLToPath} from "url";
 import {dirname, join} from "path";
+import defaults from './defaults.json' with { type: 'json' };
 
 export interface ServerConfig {
     figmaApiKey?: string;
@@ -73,7 +74,7 @@ export function getServerConfig(): ServerConfig {
             port: {
                 type: "number",
                 description: "Port number for HTTP server",
-                default: 3333,
+                default: defaults.httpPort,
             },
         })
         .help()
@@ -103,7 +104,7 @@ export function getServerConfig(): ServerConfig {
         isStdioMode: false,
         isHttpMode: false,
         isRemoteMode: false,
-        httpPort: 3333,
+        httpPort: defaults.httpPort,
         configSources: {
             figmaApiKey: "none",
             envFile: envFileSource,
@@ -177,9 +178,9 @@ export function getServerConfig(): ServerConfig {
         }
         console.error("");
         console.error("Examples:");
-        console.error("  npx -y github:ahmedibrahim085/figma-flutter-mcp-extended --figma-api-key=YOUR_KEY --stdio");
-        console.error("  echo 'FIGMA_API_KEY=YOUR_KEY' > .env && npx -y github:ahmedibrahim085/figma-flutter-mcp-extended --stdio");
-        console.error("  npx -y github:ahmedibrahim085/figma-flutter-mcp-extended --figma-api-key=YOUR_KEY --remote");
+        console.error(`  ${defaults.installCommand} --figma-api-key=YOUR_KEY --stdio`);
+        console.error(`  echo 'FIGMA_API_KEY=YOUR_KEY' > .env && ${defaults.installCommand} --stdio`);
+        console.error(`  ${defaults.installCommand} --figma-api-key=YOUR_KEY --remote`);
         process.exit(1);
     }
 

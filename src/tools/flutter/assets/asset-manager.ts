@@ -3,6 +3,7 @@ import {existsSync} from 'fs';
 import {writeFile, mkdir, readFile} from 'fs/promises';
 import {join, dirname} from 'path';
 import {detectConstantsDir} from '../../../utils/project-conventions.js';
+import defaults from '../../../defaults.json' with { type: 'json' };
 
 export interface AssetInfo {
     nodeId: string;
@@ -13,13 +14,13 @@ export interface AssetInfo {
 }
 
 export async function createAssetsDirectory(projectPath: string): Promise<string> {
-    const assetsDir = join(projectPath, 'assets', 'images');
+    const assetsDir = join(projectPath, defaults.output.imagesDir);
     await mkdir(assetsDir, {recursive: true});
     return assetsDir;
 }
 
 export async function createSvgAssetsDirectory(projectPath: string): Promise<string> {
-    const assetsDir = join(projectPath, 'assets', 'svgs');
+    const assetsDir = join(projectPath, defaults.output.svgsDir);
     await mkdir(assetsDir, {recursive: true});
     return assetsDir;
 }
@@ -235,7 +236,7 @@ export async function generateAssetConstants(assets: Array<{filename: string, no
     const constantsDir = await detectConstantsDir(projectPath);
     await mkdir(constantsDir, {recursive: true});
 
-    const constantsPath = join(constantsDir, 'assets.dart');
+    const constantsPath = join(constantsDir, defaults.output.assetConstantsFile);
 
     // Read existing constants if they exist
     const existingConstants = new Map<string, string>();
@@ -262,7 +263,7 @@ export async function generateAssetConstants(assets: Array<{filename: string, no
     // Add new constants to existing ones
     Object.entries(uniqueAssets).forEach(([mainFilename, asset]) => {
         const constantName = toDartIdentifier(asset.nodeName, 'image');
-        existingConstants.set(constantName, `assets/images/${mainFilename}`);
+        existingConstants.set(constantName, `${defaults.output.imagesDir}/${mainFilename}`);
     });
 
     // flutter_gen generates its own `Assets` class; a second one breaks compilation.
@@ -287,7 +288,7 @@ export async function generateSvgAssetConstants(assets: Array<{filename: string,
     const constantsDir = await detectConstantsDir(projectPath);
     await mkdir(constantsDir, {recursive: true});
 
-    const constantsPath = join(constantsDir, 'svg_assets.dart');
+    const constantsPath = join(constantsDir, defaults.output.svgConstantsFile);
 
     // Read existing SVG constants if they exist
     const existingConstants = new Map<string, string>();
@@ -314,7 +315,7 @@ export async function generateSvgAssetConstants(assets: Array<{filename: string,
     // Add new constants to existing ones
     Object.entries(uniqueAssets).forEach(([baseName, asset]) => {
         const constantName = toDartIdentifier(asset.nodeName, 'svg');
-        const assetPath = `assets/svgs/${baseName}.svg`;
+        const assetPath = `${defaults.output.svgsDir}/${baseName}.svg`;
         existingConstants.set(constantName, assetPath);
     });
 

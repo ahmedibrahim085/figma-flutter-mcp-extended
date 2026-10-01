@@ -13,6 +13,7 @@ import {
     formatFigmaNodeBoxEvidence,
     formatSizingAlignment
 } from "../../../utils/style-format.js";
+import {generateFigmaUrl} from "../../../utils/figma-url-parser.js";
 
 export function generateChildLayoutEvidence(
     children: ComponentChild[],
@@ -211,7 +212,7 @@ export function generateScreenAnalysisReport(
     // Visual context for AI implementation
     if (parsedInput?.source === 'url') {
         // Reconstruct the Figma URL from the parsed input
-        const figmaUrl = `https://www.figma.com/design/${parsedInput.fileId}/?node-id=${parsedInput.nodeId}`;
+        const figmaUrl = generateFigmaUrl(parsedInput.fileId, parsedInput.nodeId);
         output += generateScreenVisualContext(analysis, figmaUrl, parsedInput.nodeId);
         output += `\n`;
     }

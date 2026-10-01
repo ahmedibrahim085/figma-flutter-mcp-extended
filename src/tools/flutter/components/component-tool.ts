@@ -12,6 +12,7 @@ import {
     DeduplicatedComponentExtractor,
     type DeduplicatedComponentAnalysis
 } from "../../../extractors/components/index.js";
+import {generateFigmaUrl} from "../../../utils/figma-url-parser.js";
 import {FlutterStyleLibrary, OptimizationReport} from "../../../extractors/flutter/style-library.js";
 import {Logger} from "../../../utils/logger.js";
 
@@ -213,7 +214,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                     // Add visual context for deduplicated analysis
                     if (parsedInput.source === 'url') {
                         // Reconstruct the Figma URL from the parsed input
-                        const figmaUrl = `https://www.figma.com/design/${parsedInput.fileId}/?node-id=${parsedInput.nodeId}`;
+                        const figmaUrl = generateFigmaUrl(parsedInput.fileId, parsedInput.nodeId);
                         analysisReport += "\n\n" + addVisualContextToDeduplicatedReport(
                             deduplicatedAnalysis, 
                             figmaUrl, 

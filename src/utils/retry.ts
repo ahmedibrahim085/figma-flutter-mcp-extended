@@ -3,12 +3,13 @@
 import {FigmaError, FigmaRateLimitError, FigmaNetworkError} from '../types/errors.js';
 import {Logger} from './logger.js';
 
+/** The retry policy; its numbers come from the server config (defaults.json). */
 export interface RetryOptions {
-    maxAttempts?: number;
-    initialDelayMs?: number;
+    maxAttempts: number;
+    initialDelayMs: number;
     /** Longest wait between attempts; a Retry-After longer than this ends the retries. */
-    maxDelayMs?: number;
-    backoffMultiplier?: number;
+    maxDelayMs: number;
+    backoffMultiplier: number;
     retryableErrors?: (error: Error) => boolean;
 }
 
@@ -18,24 +19,18 @@ export interface RetryState {
     lastError?: Error;
 }
 
-const DEFAULT_OPTIONS: Required<RetryOptions> = {
-    maxAttempts: 3,
-    initialDelayMs: 1000,
-    maxDelayMs: 30000,
-    backoffMultiplier: 2,
-    retryableErrors: (error: Error): boolean => {
-        // Retry on network errors and rate limits, but not auth or parse errors
-        return (error instanceof FigmaNetworkError) ||
-            (error instanceof FigmaRateLimitError) ||
-            (error instanceof FigmaError && error.statusCode && error.statusCode >= 500) || false;
-    }
-};
+// Retry on network errors, rate limits and server errors, but not auth or parse errors.
+function isRetryable(error: Error): boolean {
+    return (error instanceof FigmaNetworkError) ||
+        (error instanceof FigmaRateLimitError) ||
+        (error instanceof FigmaError && error.statusCode && error.statusCode >= 500) || false;
+}
 
 export async function withRetry<T>(
     operation: () => Promise<T>,
-    options: RetryOptions = {}
+    options: RetryOptions
 ): Promise<T> {
-    const opts = {...DEFAULT_OPTIONS, ...options};
+    const opts = {retryableErrors: isRetryable, ...options};
     let lastError: Error;
 
     for (let attempt = 1; attempt <= opts.maxAttempts; attempt++) {

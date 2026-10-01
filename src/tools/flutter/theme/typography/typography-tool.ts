@@ -7,6 +7,7 @@ import {extractThemeTypography} from "../../../../extractors/typography/index.js
 import {TypographyGenerator} from "./typography-generator.js";
 import {join} from 'path';
 import {validateAndConvertNodeId} from "../../../../utils/figma-url-parser.js";
+import defaults from '../../../../defaults.json' with { type: 'json' };
 
 export function registerTypographyTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
@@ -64,7 +65,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 }
 
                 // Generate AppText class
-                const outputPath = join(projectPath, 'lib', 'theme');
+                const outputPath = join(projectPath, 'lib', defaults.output.themeSubdir);
                 const generatedFilePath = await generator.generateAppText(themeTypography, outputPath, {
                     generateTextTheme,
                     familyVariableName,
@@ -87,7 +88,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 output += `Primary font family: ${primaryFontFamily}\n`;
                 output += `Generated: ${generatedFilePath}\n`;
                 if (generateTextTheme) {
-                    output += `Text Theme: ${join(outputPath, 'text_theme.dart')}\n`;
+                    output += `Text Theme: ${join(outputPath, defaults.output.textThemeFile)}\n`;
                 }
                 output += `\n`;
 
@@ -105,9 +106,9 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 });
 
                 output += `Generated Files:\n`;
-                output += `• app_text.dart - Typography style constants\n`;
+                output += `• ${defaults.output.textFile} - Typography style constants\n`;
                 if (generateTextTheme) {
-                    output += `• text_theme.dart - Material Design TextTheme\n`;
+                    output += `• ${defaults.output.textThemeFile} - Material Design TextTheme\n`;
                 }
 
                 output += `\nUsage Examples:\n`;

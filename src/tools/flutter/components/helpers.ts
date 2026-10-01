@@ -6,6 +6,7 @@ import {formatComponentProperties} from "../../../utils/component-properties.js"
 import {formatCategorizedEffects} from "../../../utils/effects-format.js";
 import {filterEffectivelyVisibleChildren, isEffectivelyVisible} from "../../../utils/visibility.js";
 import {formatPadding, formatStrokes, formatSizingAlignment} from "../../../utils/style-format.js";
+import {generateFigmaUrl} from "../../../utils/figma-url-parser.js";
 
 /**
  * Generate variant selection prompt when there are more than 3 variants
@@ -210,7 +211,7 @@ export function generateComponentAnalysisReport(
     // Visual context for AI implementation
     if (parsedInput?.source === 'url') {
         // Reconstruct the Figma URL from the parsed input
-        const figmaUrl = `https://www.figma.com/design/${parsedInput.fileId}/?node-id=${parsedInput.nodeId}`;
+        const figmaUrl = generateFigmaUrl(parsedInput.fileId, parsedInput.nodeId);
         output += generateComponentVisualContext(analysis, figmaUrl, parsedInput.nodeId);
         output += `\n`;
     }

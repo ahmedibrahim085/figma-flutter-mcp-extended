@@ -52,17 +52,14 @@ test('a light weight is FontWeight.w300 on both code paths', async () => {
     assert.deepEqual(styles, {dedup: expected, plain: expected});
 });
 
-// The plain path gives error, success and warning texts a semantic color. It must
-// replace the design color, not add a second `color:` (Dart: duplicate_named_argument).
-for (const [label, colorCode] of [
-    ['Invalid password', 'Theme.of(context).colorScheme.error'],
-    ['Warning: low balance', 'Colors.orange'],
-    ['Payment successful', 'Colors.green'],
-] as const) {
-    test(`"${label}" has exactly one color on the plain path`, async () => {
-        const {plain} = await textStyleOnBothPaths(frameWithText(label, restStyle(14, 500)), label);
+// No word decides a text's colour: error, success and warning words keep the
+// design colour on both paths, like any other text.
+for (const label of ['Invalid password', 'Warning: low balance', 'Payment successful', 'Card expired', 'Download failed']) {
+    test(`"${label}" keeps its design colour on both code paths`, async () => {
+        const styles = await textStyleOnBothPaths(frameWithText(label, restStyle(14, 500)), label);
 
-        assert.equal(plain, `TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500, color: ${colorCode}, letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even)`);
+        const expected = "TextStyle(fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF112233), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even)";
+        assert.deepEqual(styles, {dedup: expected, plain: expected});
     });
 }
 
@@ -214,16 +211,85 @@ test('a newline in the text is escaped in the Dart string, on both code paths', 
     assert.deepEqual(widgets, {dedup: expected, plain: expected});
 });
 
-// A text detected as a button (the "submit" keyword) is emitted as ElevatedButton on both paths.
-test('a button label is escaped and letter-cased like any other text, on both code paths', async () => {
-    const node = frameWithText("submit $5 it's", restStyle(16, 400, {textCase: 'UPPER'}));
+// A text that reads like a button label is still a Text, escaped and letter-cased like any other.
+test('a button-like label is escaped and letter-cased like any other text, on both code paths', async () => {
+    const widgets = await textWidgetOnBothPaths(frameWithText("submit $5 it's", restStyle(16, 400, {textCase: 'UPPER'})), "SUBMIT \\$5 IT\\'S");
+
+    const expected = `Text(\n'SUBMIT \\$5 IT\\'S',\n${PLAIN_STYLE}\n)`;
+    assert.deepEqual(widgets, {dedup: expected, plain: expected});
+});
+
+// No word in a text decides the widget (audit A1, A2, A12): every one is a Text with its own style.
+for (const label of ['Save changes', 'Cancellation policy', 'Address', 'Visit our website', 'Elite members', 'Learn more', 'Home']) {
+    test(`"${label}" is a Text with its own style on both code paths`, async () => {
+        const widgets = await textWidgetOnBothPaths(frameWithText(label, restStyle(16, 400)), label);
+
+        const expected = `Text(\n'${label}',\n${PLAIN_STYLE}\n)`;
+        assert.deepEqual(widgets, {dedup: expected, plain: expected});
+    });
+}
+
+test('a text without a style gets no theme role on either code path', async () => {
+    const node = {id: '21:1', name: 'Text Holder', type: 'FRAME', layoutMode: 'VERTICAL', fills: [],
+        children: [{id: '21:2', name: 'Unstyled', type: 'TEXT', characters: 'Unstyled', fills: []}]};
     const args = {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, generateFlutterCode: true};
     const dedup = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', args);
     const plain = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', {...args, useDeduplication: false});
 
-    const label = "child: Text('SUBMIT \\$5 IT\\'S'),";
-    assert.ok(dedup.text.includes(label), dedup.text);
-    assert.ok(plain.text.includes(label), plain.text);
+    for (const text of [dedup.text, plain.text]) {
+        assert.doesNotMatch(text, /textTheme\./);
+        assert.match(text, /Text\(\s*'Unstyled'/);
+    }
+});
+
+test('a text keeps its interactions: the report passes them through for the agent, on both code paths', async () => {
+    const node = frameWithText('Open details', restStyle(16, 400));
+    (node.children[0] as any).interactions = [
+        {trigger: {type: 'ON_CLICK'}, actions: [{type: 'NODE', destinationId: '5:5', navigation: 'NAVIGATE'}]},
+        {trigger: {type: 'ON_HOVER'}, actions: [{type: 'URL', url: 'https://example.com/help'}]},
+    ];
+    const args = {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true};
+    const dedup = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', args);
+    const plain = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', {...args, useDeduplication: false});
+
+    for (const text of [dedup.text, plain.text]) {
+        assert.match(text, /Interactions: ON_CLICK → NODE NAVIGATE 5:5; ON_HOVER → URL https:\/\/example\.com\/help/);
+        assert.doesNotMatch(text, /ElevatedButton|TextButton/);
+    }
+});
+
+test('the analysed node keeps its own interactions in the report, on both code paths', async () => {
+    const node = frameWithText('Open details', restStyle(16, 400));
+    (node as any).interactions = [{trigger: {type: 'ON_CLICK'}, actions: [{type: 'BACK'}]}];
+    const args = {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true};
+    const dedup = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', args);
+    const plain = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', {...args, useDeduplication: false});
+
+    for (const text of [dedup.text, plain.text]) {
+        assert.match(text, /Interactions: ON_CLICK → BACK/);
+    }
+});
+
+test('children keep their Figma order on both code paths, whatever their size or type', async () => {
+    const node = {id: '21:1', name: 'Holder', type: 'FRAME', layoutMode: 'VERTICAL', fills: [],
+        absoluteBoundingBox: {x: 0, y: 0, width: 400, height: 400},
+        children: [
+            {id: '21:2', name: 'Small first', type: 'TEXT', characters: 'Small first', fills: [], style: restStyle(12, 400),
+                absoluteBoundingBox: {x: 0, y: 0, width: 10, height: 10}},
+            {id: '21:3', name: 'Big second', type: 'FRAME', fills: [{type: 'SOLID', color: TEAL}],
+                absoluteBoundingBox: {x: 0, y: 10, width: 400, height: 300}, children: []},
+            {id: '21:4', name: 'Instance third', type: 'INSTANCE', fills: [], componentId: '9:9',
+                absoluteBoundingBox: {x: 0, y: 310, width: 50, height: 50}, children: []},
+        ]};
+    const args = {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true};
+    const dedup = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', args);
+    const plain = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', {...args, useDeduplication: false});
+
+    for (const text of [dedup.text, plain.text]) {
+        const order = ['Small first', 'Big second', 'Instance third'].map((name) => text.indexOf(name));
+        assert.ok(order.every((i) => i >= 0), text);
+        assert.deepEqual([...order].sort((a, b) => a - b), order, text);
+    }
 });
 
 test('quotes, backslashes and dollar signs are escaped in the Dart string, on both code paths', async () => {

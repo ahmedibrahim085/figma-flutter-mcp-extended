@@ -1,6 +1,6 @@
 // src/extractors/components/deduplicated-extractor.mts
 
-import type { FigmaNode } from '../../types/figma.js';
+import type { FigmaInteraction, FigmaNode } from '../../types/figma.js';
 import type { FlutterStyleDefinition } from '../flutter/style-library.js';
 import { FlutterStyleLibrary } from '../flutter/style-library.js';
 import type { TextWidgetFields } from '../flutter/text-style.js';
@@ -37,8 +37,9 @@ export interface DeduplicatedComponentChild {
   type: string;
   styleRefs: string[];
   layout: LayoutInfo;
-  semanticType?: string;
   textContent?: string;
+  /** Prototype interactions, passed through for the agent. */
+  interactions?: FigmaInteraction[];
   /** Text-widget fields (letter case applied, alignment, truncation). */
   textWidget?: TextWidgetFields;
   /** This child's own visible children, for frames and groups rendered inline. */
@@ -161,9 +162,9 @@ export class DeduplicatedComponentExtractor {
         type: child.type,
         styleRefs: childStyleRefs,
         layout: childLayout,
-        semanticType: this.detectSemanticType(child),
         textContent,
         textWidget,
+        ...(child.interactions?.length ? {interactions: child.interactions} : {}),
         ...(grandchildren ? {children: grandchildren} : {}),
         ...(truncated ? {truncated: true} : {})
       });
@@ -174,22 +175,6 @@ export class DeduplicatedComponentExtractor {
   
   private hasDecorationProperties(styling: StylingInfo): boolean {
     return !!(styling.fills?.length || styling.cornerRadius !== undefined || styling.effects?.dropShadows?.length);
-  }
-  
-  private extractTextContent(node: any): string {
-    return node.characters || node.name || '';
-  }
-  
-  private detectSemanticType(node: any): string | undefined {
-    // Simplified semantic detection
-    if (node.type === 'TEXT') {
-      const content = this.extractTextContent(node).toLowerCase();
-      if (['click', 'submit', 'save', 'cancel'].some(word => content.includes(word))) {
-        return 'button';
-      }
-      return 'text';
-    }
-    return undefined;
   }
   
   private extractNestedComponents(node: FigmaNode): NestedComponentInfo[] {

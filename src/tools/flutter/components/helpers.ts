@@ -3,6 +3,7 @@ import type {ComponentAnalysis} from "../../../extractors/components/types.js";
 import {generateFlutterTextWidget} from "../../../extractors/components/extractor.js";
 import {generateComponentVisualContext} from "../visual-context.js";
 import {formatComponentProperties} from "../../../utils/component-properties.js";
+import {formatInteractions} from "../../../utils/interactions.js";
 import {formatCategorizedEffects} from "../../../utils/effects-format.js";
 import {filterEffectivelyVisibleChildren, isEffectivelyVisible} from "../../../utils/visibility.js";
 import {formatPadding, formatStrokes, formatSizingAlignment} from "../../../utils/style-format.js";
@@ -62,6 +63,7 @@ export function generateComponentAnalysisReport(
     }
     output += `\n`;
     output += formatComponentProperties(analysis.metadata.componentProperties);
+    output += formatInteractions(analysis.metadata.interactions, '');
 
     // Variant information
     if (variantAnalysis && variantAnalysis.length > 0) {
@@ -137,6 +139,7 @@ export function generateComponentAnalysisReport(
             const componentMark = child.isNestedComponent ? ' [COMPONENT]' : '';
             const importanceMark = ` (priority: ${child.visualImportance}/10)`;
             output += `${index + 1}. ${child.name} (${child.type})${componentMark}${importanceMark}\n`;
+            output += formatInteractions(child.interactions, '   ');
 
             if (child.basicInfo?.layout?.dimensions) {
                 const dims = child.basicInfo.layout.dimensions;
@@ -162,10 +165,7 @@ export function generateComponentAnalysisReport(
 
             if (child.basicInfo?.text) {
                 const textInfo = child.basicInfo.text;
-                const placeholderMark = textInfo.isPlaceholder ? ' [PLACEHOLDER]' : '';
-                const semanticMark = textInfo.semanticType && textInfo.semanticType !== 'other' ? ` [${textInfo.semanticType.toUpperCase()}]` : '';
-
-                output += `   Text Content: "${textInfo.content}"${placeholderMark}${semanticMark}\n`;
+                output += `   Text Content: "${textInfo.content}"\n`;
 
                 if (textInfo.fontFamily || textInfo.fontSize || textInfo.fontWeight) {
                     const fontParts = [];
@@ -346,10 +346,7 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
             if (textInfo) {
                 // Import the generateFlutterTextWidget function result
                 const widgetSuggestion = generateFlutterTextWidget(textInfo);
-                const placeholderNote = textInfo.isPlaceholder ? ' // Placeholder text - replace with actual content' : '';
-                const semanticNote = textInfo.semanticType && textInfo.semanticType !== 'other' ? ` // Detected as ${textInfo.semanticType}` : '';
-
-                guidance += `${index + 1}. "${textInfo.content}"${placeholderNote}${semanticNote}\n`;
+                guidance += `${index + 1}. "${textInfo.content}"\n`;
                 guidance += `   Flutter Widget:\n`;
 
                 // Indent the widget suggestion

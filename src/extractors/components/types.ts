@@ -1,6 +1,6 @@
 // src/extractors/components/types.mts
 
-import type {FigmaNode, FigmaColor, FigmaEffect} from '../../types/figma.js';
+import type {FigmaNode, FigmaColor, FigmaEffect, FigmaInteraction} from '../../types/figma.js';
 import type {TextStyleFields, TextWidgetFields} from '../flutter/text-style.js';
 
 /**
@@ -29,6 +29,8 @@ export interface ComponentMetadata {
     componentKey?: string; // For actual Figma components
     /** INSTANCE componentProperties (BOOLEAN / TEXT / INSTANCE_SWAP / VARIANT). */
     componentProperties?: ComponentPropertyInfo[];
+    /** Prototype interactions, passed through for the agent. */
+    interactions?: FigmaInteraction[];
 }
 
 /**
@@ -191,6 +193,8 @@ export interface ComponentChild {
         text?: TextInfo;
     };
     children?: ComponentChild[];
+    /** Prototype interactions, passed through for the agent. */
+    interactions?: FigmaInteraction[];
 }
 
 /**
@@ -198,7 +202,6 @@ export interface ComponentChild {
  */
 export interface TextInfo {
     content: string;
-    isPlaceholder: boolean;
     fontFamily?: string;
     fontSize?: number;
     fontWeight?: number;
@@ -208,8 +211,6 @@ export interface TextInfo {
     /** Text-widget fields (letter case applied, alignment, truncation), shared by every code path. */
     widget?: TextWidgetFields;
     textCase?: 'uppercase' | 'lowercase' | 'capitalize' | 'sentence' | 'mixed';
-    semanticType?: 'heading' | 'body' | 'label' | 'button' | 'link' | 'caption' | 'error' | 'success' | 'warning' | 'other';
-    placeholder?: boolean; // Flag for Flutter implementation
 }
 
 /**
@@ -252,6 +253,5 @@ export interface ComponentExtractionOptions {
     maxChildNodes?: number;
     maxDepth?: number;
     includeHiddenNodes?: boolean;
-    prioritizeComponents?: boolean;
     extractTextContent?: boolean;
 }

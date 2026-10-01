@@ -199,7 +199,6 @@ function createScreenSection(
                 maxChildNodes: 20, // Higher limit for screens
                 maxDepth: options.maxDepth,
                 includeHiddenNodes: options.includeHiddenNodes,
-                prioritizeComponents: true,
                 extractTextContent: true
             }, node, siblings));
         });

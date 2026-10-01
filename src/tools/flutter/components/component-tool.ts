@@ -229,8 +229,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                     // Use original extractor
                     const componentExtractor = new ComponentExtractor({
                         maxChildNodes,
-                        extractTextContent: true,
-                        prioritizeComponents: true
+                        extractTextContent: true
                     });
                     
                     let componentAnalysis: ComponentAnalysis;

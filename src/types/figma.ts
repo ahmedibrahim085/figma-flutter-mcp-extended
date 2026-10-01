@@ -11,6 +11,20 @@ export interface FigmaFile {
     editorType: string;
 }
 
+/** A Figma REST Action. Only the fields the reports print are typed. */
+export interface FigmaAction {
+    type: string;
+    url?: string;
+    destinationId?: string | null;
+    navigation?: string;
+}
+
+/** A Figma REST Interaction: a prototype trigger and the actions it runs. */
+export interface FigmaInteraction {
+    trigger: {type: string} | null;
+    actions?: FigmaAction[];
+}
+
 export interface FigmaNode {
     id: string;
     name: string;
@@ -25,6 +39,7 @@ export interface FigmaNode {
     constraints?: FigmaConstraints;
     layoutPositioning?: 'AUTO' | 'ABSOLUTE';
     clipsContent?: boolean;
+    interactions?: FigmaInteraction[];
     rotation?: number;
     itemReverseZIndex?: boolean;
     minWidth?: number | null;

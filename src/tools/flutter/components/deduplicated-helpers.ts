@@ -6,6 +6,7 @@ import { dartString, indentTail, textWidgetCode } from '../../../extractors/flut
 import { generateComponentVisualContext } from '../visual-context.js';
 import type { ComponentAnalysis, LayoutInfo } from '../../../extractors/components/types.js';
 import { formatComponentProperties } from '../../../utils/component-properties.js';
+import { formatInteractions } from '../../../utils/interactions.js';
 import { formatSizingAlignment } from '../../../utils/style-format.js';
 
 export function generateDeduplicatedReport(analysis: DeduplicatedComponentAnalysis): string {
@@ -28,8 +29,7 @@ export function generateDeduplicatedReport(analysis: DeduplicatedComponentAnalys
   if (analysis.children.length > 0) {
     output += `Children (${analysis.children.length}):\n`;
     analysis.children.forEach((child, index) => {
-      const semanticMark = child.semanticType ? ` [${child.semanticType.toUpperCase()}]` : '';
-      output += `${index + 1}. ${child.name} (${child.type})${semanticMark}\n`;
+      output += `${index + 1}. ${child.name} (${child.type})\n`;
       
       if (child.textContent) {
         output += `   Text: "${child.textContent}"\n`;
@@ -460,11 +460,8 @@ function approximate(note: string, widget: string, approximations: string[]): st
   return `// approximate: ${line}\n${widget}`;
 }
 
-/** Dart for one analysed child: text, button, shape, frame (recursively) or a nested-component placeholder. */
+/** Dart for one analysed child: text, shape, frame (recursively) or a nested-component placeholder. */
 function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterStyleLibrary, approximations: string[]): string | undefined {
-  if (child.semanticType === 'button' && child.textContent) {
-    return `ElevatedButton(\n  onPressed: () {},\n  child: Text(${dartString((child.textWidget ?? {text: child.textContent}).text)}),\n)`;
-  }
   const styleOf = (category: string) => child.styleRefs.find(id => styleLibrary.getStyle(id)?.category === category);
   if (child.type === 'TEXT') {
     if (!child.textContent) return undefined;
@@ -546,6 +543,7 @@ export function generateComprehensiveDeduplicatedReport(
   }
   output += `\n`;
   output += formatComponentProperties(analysis.metadata.componentProperties);
+  output += formatInteractions(analysis.metadata.interactions, '');
 
   // Style references with usage information
   if (Object.keys(analysis.styleRefs).length > 0) {
@@ -569,8 +567,8 @@ export function generateComprehensiveDeduplicatedReport(
   if (analysis.children.length > 0) {
     output += `👶 Children Analysis (${analysis.children.length} children):\n`;
     analysis.children.forEach((child, index) => {
-      const semanticMark = child.semanticType ? ` [${child.semanticType.toUpperCase()}]` : '';
-      output += `   ${index + 1}. ${child.name} (${child.type})${semanticMark}\n`;
+      output += `   ${index + 1}. ${child.name} (${child.type})\n`;
+      output += formatInteractions(child.interactions, '      ');
       
       if (child.textContent) {
         output += `      📝 Text: "${child.textContent}"\n`;
@@ -586,10 +584,7 @@ export function generateComprehensiveDeduplicatedReport(
       if (child.styleRefs.length > 0) {
         output += `      🎨 Style refs: ${child.styleRefs.join(', ')}\n`;
       }
-      
-      if (child.semanticType) {
-        output += `      🏷️  Semantic type: ${child.semanticType}\n`;
-      }
+
     });
     output += `\n`;
   } else {
@@ -699,16 +694,10 @@ export function addVisualContextToDeduplicatedReport(
         },
         text: child.textContent ? {
           content: child.textContent,
-          isPlaceholder: false,
           fontFamily: undefined,
           fontSize: undefined,
           fontWeight: undefined,
-          textCase: 'mixed' as const,
-          semanticType: (child.semanticType === 'button' || child.semanticType === 'link' || 
-                       child.semanticType === 'heading' || child.semanticType === 'body' ||
-                       child.semanticType === 'label' || child.semanticType === 'caption' ||
-                       child.semanticType === 'error' || child.semanticType === 'success' ||
-                       child.semanticType === 'warning') ? child.semanticType : 'other' as const
+          textCase: 'mixed' as const
         } : undefined
       }
     })),

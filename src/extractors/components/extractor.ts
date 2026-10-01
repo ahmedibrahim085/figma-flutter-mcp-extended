@@ -16,7 +16,6 @@ import type {
     TextInfo,
     ComponentExtractionOptions
 } from './types.js';
-import { detectSemanticTypeAdvanced, generateSemanticContext } from '../../tools/flutter/semantic-detection.js';
 import {Logger} from '../../utils/logger.js';
 import {filterEffectivelyVisibleChildren} from '../../utils/visibility.js';
 import {extractComponentProperties} from '../../utils/component-properties.js';
@@ -46,6 +45,9 @@ export function extractMetadata(node: FigmaNode, userDefinedAsComponent: boolean
     const componentProperties = extractComponentProperties(node);
     if (componentProperties.length > 0) {
         metadata.componentProperties = componentProperties;
+    }
+    if (node.interactions?.length) {
+        metadata.interactions = node.interactions;
     }
 
     return metadata;
@@ -165,21 +167,12 @@ export function analyzeChildren(
         options.includeHiddenNodes
     );
 
-    // Calculate visual importance for all children
+    // Children stay in Figma layer order: no score or type decides which come first.
     const childrenWithImportance = visibleChildren.map(child => ({
         node: child,
         importance: calculateVisualImportance(child),
         isComponent: isComponentNode(child)
     }));
-
-    // Sort by importance (components first if prioritized, then by visual importance)
-    childrenWithImportance.sort((a, b) => {
-        if (options.prioritizeComponents) {
-            if (a.isComponent && !b.isComponent) return -1;
-            if (!a.isComponent && b.isComponent) return 1;
-        }
-        return b.importance - a.importance;
-    });
 
     // Process up to maxChildNodes
     const processedCount = Math.min(childrenWithImportance.length, options.maxChildNodes);
@@ -246,7 +239,8 @@ export function createComponentChild(
         type: node.type,
         isNestedComponent,
         visualImportance: importance,
-        basicInfo
+        basicInfo,
+        ...(node.interactions?.length ? {interactions: node.interactions} : {})
     };
 
     // Extract basic info for non-component children
@@ -512,20 +506,16 @@ export function extractTextInfo(node: FigmaNode, parent?: FigmaNode, siblings?: 
     if (node.type !== 'TEXT') return undefined;
 
     const textContent = getActualTextContent(node);
-    const isPlaceholder = isPlaceholderText(textContent);
 
     return {
         content: textContent,
-        isPlaceholder,
         fontFamily: node.style?.fontFamily,
         fontSize: node.style?.fontSize,
         fontWeight: node.style?.fontWeight,
         textAlign: node.style?.textAlignHorizontal,
         style: textStyleFields(node),
         widget: convertTextWidget(textContent, node.style, node.absoluteBoundingBox?.height, textOverrides(node, textContent)),
-        textCase: detectTextCase(textContent),
-        semanticType: detectSemanticType(textContent, node.name, node, parent, siblings),
-        placeholder: isPlaceholder
+        textCase: detectTextCase(textContent)
     };
 }
 
@@ -552,73 +542,6 @@ function getActualTextContent(node: FigmaNode): string {
 
     // 3. Fallback: the node name
     return node.name;
-}
-
-/**
- * Check if text content is placeholder/dummy text
- */
-function isPlaceholderText(content: string): boolean {
-    if (!content || content.trim().length === 0) {
-        return true;
-    }
-
-    const trimmedContent = content.trim().toLowerCase();
-
-    // Common placeholder patterns
-    const placeholderPatterns = [
-        /lorem\s+ipsum/i,
-        /dolor\s+sit\s+amet/i,
-        /consectetur\s+adipiscing/i,
-        /the\s+quick\s+brown\s+fox/i,
-        /sample\s+text/i,
-        /placeholder/i,
-        /example\s+text/i,
-        /demo\s+text/i,
-        /test\s+content/i,
-        /dummy\s+text/i,
-        /text\s+goes\s+here/i,
-        /your\s+text\s+here/i,
-        /add\s+text\s+here/i,
-        /enter\s+text/i,
-        /\[.*\]/,  // Text in brackets like [Your text here]
-        /^heading\s*\d*$/i,
-        /^title\s*\d*$/i,
-        /^body\s*\d*$/i,
-        /^text\s*\d*$/i,
-        /^label\s*\d*$/i,
-        /^h[1-6]$/i,
-        /^paragraph$/i,
-        /^caption$/i,
-        /^subtitle$/i,
-        /^overline$/i
-    ];
-
-    // Check against placeholder patterns
-    if (placeholderPatterns.some(pattern => pattern.test(content))) {
-        return true;
-    }
-
-    // Check for generic single words that are likely placeholders
-    const genericWords = [
-        'text', 'label', 'title', 'heading', 'body', 'content', 
-        'description', 'subtitle', 'caption', 'paragraph', 'copy'
-    ];
-
-    if (genericWords.includes(trimmedContent)) {
-        return true;
-    }
-
-    // Check for repeated characters (like "AAAA" or "xxxx")
-    if (content.length > 2 && /^(.)\1+$/.test(content.trim())) {
-        return true;
-    }
-
-    // Check for Lorem Ipsum variations
-    if (/lorem|ipsum|dolor|sit|amet|consectetur|adipiscing|elit/i.test(content)) {
-        return true;
-    }
-
-    return false;
 }
 
 /**
@@ -650,181 +573,13 @@ function detectTextCase(content: string): 'uppercase' | 'lowercase' | 'capitaliz
 }
 
 /**
- * Detect semantic type of text based on content and context
- * Enhanced with multi-factor analysis and confidence scoring
- */
-function detectSemanticType(
-    content: string, 
-    nodeName: string, 
-    node?: any, 
-    parent?: any, 
-    siblings?: any[]
-): 'heading' | 'body' | 'label' | 'button' | 'link' | 'caption' | 'error' | 'success' | 'warning' | 'other' {
-    // Skip detection for placeholder text
-    if (isPlaceholderText(content)) {
-        return 'other';
-    }
-
-    // Use advanced semantic detection if node properties are available
-    if (node) {
-        try {
-            const context = generateSemanticContext(node, parent, siblings);
-            const classification = detectSemanticTypeAdvanced(content, nodeName, context, node);
-            
-            // Only use advanced classification if confidence is high enough
-            if (classification.confidence >= 0.6) {
-                return classification.type;
-            }
-            
-            // Log reasoning for debugging (in development)
-            if (process.env.NODE_ENV === 'development') {
-                Logger.info(`Low confidence (${classification.confidence}) for "${content}": ${classification.reasoning.join(', ')}`);
-            }
-        } catch (error) {
-            // Fall back to legacy detection if advanced detection fails
-            Logger.warn('Advanced semantic detection failed, using legacy method:', error);
-        }
-    }
-
-    // Legacy detection as fallback
-    return detectSemanticTypeLegacy(content, nodeName);
-}
-
-/**
- * Legacy semantic type detection (fallback)
- */
-function detectSemanticTypeLegacy(content: string, nodeName: string): 'heading' | 'body' | 'label' | 'button' | 'link' | 'caption' | 'error' | 'success' | 'warning' | 'other' {
-    const lowerContent = content.toLowerCase().trim();
-    const lowerNodeName = nodeName.toLowerCase();
-
-    // Button text patterns - exact matches for common button labels
-    const buttonPatterns = [
-        /^(click|tap|press|submit|send|save|cancel|ok|yes|no|continue|next|back|close|done|finish|start|begin)$/i,
-        /^(login|log in|sign in|signup|sign up|register|logout|log out|sign out)$/i,
-        /^(buy|purchase|add|remove|delete|edit|update|create|new|get started|learn more|try now)$/i,
-        /^(download|upload|share|copy|paste|cut|undo|redo|refresh|reload|search|filter|sort|apply|reset|clear)$/i,
-        /^(accept|decline|agree|disagree|confirm|verify|validate|approve|reject)$/i
-    ];
-
-    if (buttonPatterns.some(pattern => pattern.test(content)) || lowerNodeName.includes('button')) {
-        return 'button';
-    }
-
-    // Error/status text patterns - more comprehensive detection
-    const errorPatterns = /error|invalid|required|missing|failed|wrong|incorrect|forbidden|unauthorized|not found|unavailable|expired|timeout/i;
-    const successPatterns = /success|completed|done|saved|updated|created|uploaded|downloaded|sent|delivered|confirmed|verified|approved/i;
-    const warningPatterns = /warning|caution|note|important|attention|notice|alert|reminder|tip|info|information/i;
-
-    if (errorPatterns.test(content)) {
-        return 'error';
-    }
-
-    if (successPatterns.test(content)) {
-        return 'success';
-    }
-
-    if (warningPatterns.test(content)) {
-        return 'warning';
-    }
-
-    // Link patterns - navigation and informational links
-    const linkPatterns = [
-        /^(learn more|read more|see more|view all|show all|details|click here|view details)$/i,
-        /^(about|contact|help|support|faq|terms|privacy|policy|documentation|docs|guide|tutorial)$/i,
-        /^(home|dashboard|profile|settings|preferences|account|billing|notifications|security)$/i
-    ];
-
-    if (linkPatterns.some(pattern => pattern.test(content)) || lowerNodeName.includes('link')) {
-        return 'link';
-    }
-
-    // Heading patterns - based on structure and context
-    if (content.length < 80 && !content.endsWith('.') && !content.includes('\n')) {
-        if (lowerNodeName.includes('heading') || lowerNodeName.includes('title') || /h[1-6]/.test(lowerNodeName)) {
-            return 'heading';
-        }
-        // Check if it looks like a title (short, starts with capital, no sentence punctuation)
-        if (content.length < 50 && /^[A-Z]/.test(content) && !/[.!?]$/.test(content)) {
-            return 'heading';
-        }
-    }
-
-    // Label patterns - form labels and descriptive text
-    if (content.length < 40 && (content.endsWith(':') || lowerNodeName.includes('label') || lowerNodeName.includes('field'))) {
-        return 'label';
-    }
-
-    // Caption patterns - short descriptive text
-    if (content.length < 120 && (
-        lowerNodeName.includes('caption') || 
-        lowerNodeName.includes('subtitle') || 
-        lowerNodeName.includes('description') ||
-        lowerNodeName.includes('meta')
-    )) {
-        return 'caption';
-    }
-
-    // Body text - longer content, paragraphs
-    if (content.length > 80 || content.includes('\n') || content.includes('. ')) {
-        return 'body';
-    }
-
-    return 'other';
-}
-
-/**
- * Generate Flutter widget suggestion based on semantic type and text info
+ * The Text widget for a text node: its characters with its own style. No word in the text
+ * decides another widget, a colour or a theme role.
  */
 export function generateFlutterTextWidget(textInfo: TextInfo): string {
     const widget = textInfo.widget ?? {text: textInfo.content};
-    const label = dartString(widget.text);
-
-    if (textInfo.isPlaceholder) {
-        return `Text(${label}) // TODO: Replace with actual content`;
-    }
-
-    const customStyle = textInfo.style ? textStyleCode(textInfo.style) ?? null : null;
-    // A semantic color replaces the design color: TextStyle cannot take `color:` twice.
-    const withSemanticColor = (colorCode: string) => textStyleCode(textInfo.style ?? {}, colorCode)!;
-
-    switch (textInfo.semanticType) {
-        case 'button':
-            return `ElevatedButton(\n  onPressed: () {\n    // TODO: Implement button action\n  },\n  child: Text(${label}),\n)`;
-
-        case 'link':
-            return `TextButton(\n  onPressed: () {\n    // TODO: Implement navigation\n  },\n  child: Text(${label}),\n)`;
-
-        case 'heading':
-            const headingStyle = customStyle || 'Theme.of(context).textTheme.headlineMedium';
-            return textWidgetCode(widget, headingStyle);
-
-        case 'body':
-            const bodyStyle = customStyle || 'Theme.of(context).textTheme.bodyMedium';
-            return textWidgetCode(widget, bodyStyle);
-
-        case 'caption':
-            const captionStyle = customStyle || 'Theme.of(context).textTheme.bodySmall';
-            return textWidgetCode(widget, captionStyle);
-
-        case 'label':
-            const labelStyle = customStyle || 'Theme.of(context).textTheme.labelMedium';
-            return textWidgetCode(widget, labelStyle);
-
-        case 'error':
-            const errorStyle = withSemanticColor('Theme.of(context).colorScheme.error');
-            return textWidgetCode(widget, errorStyle);
-
-        case 'success':
-            const successStyle = withSemanticColor('Colors.green');
-            return textWidgetCode(widget, successStyle);
-
-        case 'warning':
-            const warningStyle = withSemanticColor('Colors.orange');
-            return textWidgetCode(widget, warningStyle);
-
-        default:
-            return textWidgetCode(widget, customStyle ?? undefined);
-    }
+    const customStyle = textInfo.style ? textStyleCode(textInfo.style) : undefined;
+    return textWidgetCode(widget, customStyle);
 }
 
 /**

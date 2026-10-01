@@ -95,7 +95,7 @@ for (const [fill, slice, node] of [
     });
 }
 
-test('component properties give no widget parameters and a nested ElevatedButton (pins current behaviour, slice 6 replaces this)', async () => {
+test('component properties give no widget parameters (pins current behaviour, slice 6 replaces this)', async () => {
     const code = await widgetCode({
         id: '16:1', name: 'Primary Button', type: 'COMPONENT', layoutMode: 'HORIZONTAL', paddingLeft: 16, paddingRight: 16,
         cornerRadius: 8, fills: [{type: 'SOLID', color: color(0, 0.4, 1)}],
@@ -103,12 +103,11 @@ test('component properties give no widget parameters and a nested ElevatedButton
         children: [textNode('16:2', 'Submit', {fontFamily: 'Inter', fontWeight: 500, fontSize: 14}, {componentPropertyReferences: {characters: 'Label#1:0'}})],
     });
 
-    // Label and Disabled are not constructor parameters; the button's own label is wrapped in another ElevatedButton.
+    // Label and Disabled are not constructor parameters (slice 6). The label is a Text with its own
+    // style, not a button guessed from the word "Submit" (hard-coded audit ticket 03).
     assert.ok(code.includes('const PrimaryButton({Key? key}) : super(key: key);'), code);
-    assert.ok(code.includes(`          ElevatedButton(
-            onPressed: () {},
-            child: Text('Submit'),
-          ),`), code);
+    assert.ok(!code.includes('ElevatedButton'), code);
+    assert.match(code, /Text\(\s*'Submit',\s*style: /);
 });
 
 test('a fill bound to a variable becomes a literal colour (pins current behaviour, slice 5 replaces this)', async () => {

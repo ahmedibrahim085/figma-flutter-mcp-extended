@@ -24,7 +24,6 @@ export class ComponentExtractor {
             maxChildNodes: options.maxChildNodes ?? 10,
             maxDepth: options.maxDepth ?? 3,
             includeHiddenNodes: options.includeHiddenNodes ?? false,
-            prioritizeComponents: options.prioritizeComponents ?? true,
             extractTextContent: options.extractTextContent ?? true
         };
     }

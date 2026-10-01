@@ -4,6 +4,9 @@
 # never in a checkout someone else is using: each mutant edits files in place. A plain copy without
 # .git will not do, because each mutant is reverted with git checkout.
 # Usage: tools/mutants.sh <mutant list file> [test file ...]   (default: test/*.test.ts)
+# The list path is relative to where you run it; test files are relative to the repo root.
+# A signal sent to this script alone takes effect when the running build or test step ends
+# (Ctrl-C reaches the whole process group and stops at once); the mutated file is put back either way.
 # List lines: name<TAB>repo-relative file<TAB>perl -0pi expression
 # Each mutant is reverted with git checkout, so it must target a tracked file, and the copy
 # must hold no uncommitted changes.

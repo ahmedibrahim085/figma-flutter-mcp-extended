@@ -1,6 +1,6 @@
 // src/tools/flutter/screens/helpers.mts
 
-import type {ScreenAnalysis, ScreenSection, NavigationElement, ScreenAssetInfo} from "../../../extractors/screens/types.js";
+import type {ScreenAnalysis, ScreenSection, NavigationElement} from "../../../extractors/screens/types.js";
 import type {ComponentChild} from "../../../extractors/components/types.js";
 import {generateScreenVisualContext} from "../visual-context.js";
 import {filterEffectivelyVisibleChildren} from "../../../utils/visibility.js";
@@ -163,20 +163,6 @@ export function generateScreenAnalysisReport(
             if (nav.text) {
                 output += `   Text: "${nav.text}"\n`;
             }
-        });
-        output += `\n`;
-    }
-
-    // Assets information
-    if (analysis.assets.length > 0) {
-        output += `Screen Assets (${analysis.assets.length} found):\n`;
-        
-        const assetsByType = groupAssetsByType(analysis.assets);
-        Object.entries(assetsByType).forEach(([type, assets]) => {
-            output += `${type.toUpperCase()} (${assets.length}):\n`;
-            assets.forEach(asset => {
-                output += `- ${asset.name} (${asset.size}, ${asset.usage})\n`;
-            });
         });
         output += `\n`;
     }
@@ -523,29 +509,6 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
         guidance += `\n`;
     }
 
-    // Asset guidance
-    if (analysis.assets.length > 0) {
-        guidance += `Assets Implementation:\n`;
-        
-        const images = analysis.assets.filter(asset => asset.type === 'image');
-        const icons = analysis.assets.filter(asset => asset.type === 'icon');
-        const illustrations = analysis.assets.filter(asset => asset.type === 'illustration');
-        
-        if (images.length > 0) {
-            guidance += `Images (${images.length}): Use Image.asset() or Image.network()\n`;
-        }
-        
-        if (icons.length > 0) {
-            guidance += `Icons (${icons.length}): Use Icon() widget with appropriate IconData\n`;
-        }
-        
-        if (illustrations.length > 0) {
-            guidance += `Illustrations (${illustrations.length}): Use SvgPicture or Image.asset()\n`;
-        }
-        
-        guidance += `\n`;
-    }
-
     // Responsive design guidance
     guidance += `Responsive Design:\n`;
     guidance += `- Device Type: ${analysis.metadata.deviceType}\n`;
@@ -563,15 +526,6 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
 }
 
 // Helper functions
-function groupAssetsByType(assets: ScreenAssetInfo[]): Record<string, ScreenAssetInfo[]> {
-    return assets.reduce((acc, asset) => {
-        if (!acc[asset.type]) {
-            acc[asset.type] = [];
-        }
-        acc[asset.type].push(asset);
-        return acc;
-    }, {} as Record<string, ScreenAssetInfo[]>);
-}
 
 function detectSectionTypeFromName(name: string): string {
     const lowerName = name.toLowerCase();

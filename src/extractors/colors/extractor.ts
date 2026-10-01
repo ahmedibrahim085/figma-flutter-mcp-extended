@@ -3,7 +3,6 @@
 import type {FigmaNode} from '../../types/figma.js';
 import type {
     ThemeColor,
-    ColorDefinition,
     ColorExtractorFn
 } from './types.js';
 
@@ -245,78 +244,3 @@ function rgbaToHex(color: {r: number; g: number; b: number; a?: number}): string
     return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
 }
 
-/**
- * Add color to library with deduplication
- */
-function addColorToLibrary(
-    colorValue: string,
-    nodeName: string,
-    colorLibrary: ColorDefinition[],
-    colorMap: Map<string, string>
-): string {
-    // Check if color already exists
-    const existingId = colorMap.get(colorValue);
-    if (existingId) {
-        // Increment usage count
-        const color = colorLibrary.find(c => c.id === existingId);
-        if (color) {
-            color.usageCount++;
-        }
-        return existingId;
-    }
-
-    // Create new color definition
-    const colorId = `color_${colorLibrary.length + 1}`;
-    const colorDef: ColorDefinition = {
-        id: colorId,
-        name: generateColorName(colorValue, nodeName),
-        value: colorValue,
-        usage: categorizeColorUsage(nodeName),
-        usageCount: 1
-    };
-
-    colorLibrary.push(colorDef);
-    colorMap.set(colorValue, colorId);
-
-    return colorId;
-}
-
-/**
- * Generate meaningful color name from hex value and context
- */
-function generateColorName(colorValue: string, nodeName: string): string {
-    // Try to infer name from node context
-    const name = nodeName.toLowerCase();
-
-    if (name.includes('primary')) return 'Primary';
-    if (name.includes('secondary')) return 'Secondary';
-    if (name.includes('background')) return 'Background';
-    if (name.includes('text')) return 'Text';
-    if (name.includes('accent')) return 'Accent';
-
-    // Generate name based on color value
-    const colorNames: Record<string, string> = {
-        '#ffffff': 'White',
-        '#000000': 'Black',
-        '#ff0000': 'Red',
-        '#00ff00': 'Green',
-        '#0000ff': 'Blue',
-    };
-
-    return colorNames[colorValue.toLowerCase()] || `Color${Math.random().toString(36).substr(2, 4)}`;
-}
-
-/**
- * Categorize color usage based on node name
- */
-function categorizeColorUsage(nodeName: string): ColorDefinition['usage'] {
-    const name = nodeName.toLowerCase();
-
-    if (name.includes('primary')) return 'primary';
-    if (name.includes('secondary')) return 'secondary';
-    if (name.includes('background') || name.includes('bg')) return 'background';
-    if (name.includes('text') || name.includes('label')) return 'text';
-    if (name.includes('accent') || name.includes('highlight')) return 'accent';
-
-    return 'other';
-}

@@ -550,71 +550,8 @@ function getActualTextContent(node: FigmaNode): string {
         }
     }
 
-    // 3. Check for text in component properties (for component instances)
-    if (node.type === 'INSTANCE' && (node as any).componentProperties) {
-        const textProps = extractTextFromComponentProperties((node as any).componentProperties);
-        if (textProps && textProps.trim().length > 0) {
-            return textProps.trim();
-        }
-    }
-
-    // 4. Analyze node name for meaningful content
-    const nodeName = node.name;
-
-    // If node name looks like actual content (not generic), use it
-    if (isLikelyActualContent(nodeName)) {
-        return nodeName;
-    }
-
-    // 5. Fallback to node name with placeholder flag
-    return nodeName;
-}
-
-/**
- * Check if node name looks like actual content vs generic label
- */
-function isLikelyActualContent(name: string): boolean {
-    const genericPatterns = [
-        /^text$/i,
-        /^label$/i,
-        /^heading$/i,
-        /^title$/i,
-        /^body\s*\d*$/i,
-        /^text\s*\d+$/i,
-        /^heading\s*\d+$/i,
-        /^h\d+$/i,
-        /^lorem\s+ipsum/i,
-        /^sample\s+text/i,
-        /^placeholder/i,
-        /^example\s+text/i,
-        /^demo\s+text/i,
-        /^text\s*layer/i,
-        /^component\s*\d+/i
-    ];
-
-    // If it matches generic patterns, it's probably not actual content
-    if (genericPatterns.some(pattern => pattern.test(name))) {
-        return false;
-    }
-
-    // If it's very short and common UI text, it might be actual content
-    const shortUIText = ['ok', 'yes', 'no', 'save', 'cancel', 'close', 'menu', 'home', 'back', 'next', 'login', 'signup'];
-    if (name.length <= 8 && shortUIText.includes(name.toLowerCase())) {
-        return true;
-    }
-
-    // If it contains real words and is reasonably long, likely actual content
-    if (name.length > 3 && name.length < 100) {
-        // Check if it has word-like structure
-        const hasWords = /\b[a-zA-Z]{2,}\b/.test(name);
-        const hasSpaces = name.includes(' ');
-
-        if (hasWords && (hasSpaces || name.length > 8)) {
-            return true;
-        }
-    }
-
-    return false;
+    // 3. Fallback: the node name
+    return node.name;
 }
 
 /**
@@ -682,33 +619,6 @@ function isPlaceholderText(content: string): boolean {
     }
 
     return false;
-}
-
-/**
- * Extract text from component properties
- */
-function extractTextFromComponentProperties(properties: any): string | null {
-    if (!properties || typeof properties !== 'object') {
-        return null;
-    }
-
-    // Look for common text property names
-    const textPropertyNames = ['text', 'label', 'title', 'content', 'value', 'caption'];
-
-    for (const propName of textPropertyNames) {
-        if (properties[propName] && typeof properties[propName] === 'string') {
-            return properties[propName];
-        }
-    }
-
-    // Look for any string property that might contain text
-    for (const [key, value] of Object.entries(properties)) {
-        if (typeof value === 'string' && value.length > 0 && !isPlaceholderText(value)) {
-            return value;
-        }
-    }
-
-    return null;
 }
 
 /**
@@ -914,45 +824,6 @@ export function generateFlutterTextWidget(textInfo: TextInfo): string {
 
         default:
             return textWidgetCode(widget, customStyle ?? undefined);
-    }
-}
-
-/**
- * Get all text content from a component tree
- */
-export function extractAllTextContent(node: FigmaNode): Array<{nodeId: string, textInfo: TextInfo, widgetSuggestion: string}> {
-    const textNodes: Array<{nodeId: string, textInfo: TextInfo, widgetSuggestion: string}> = [];
-
-    traverseForText(node, textNodes);
-
-    return textNodes;
-}
-
-/**
- * Recursively traverse node tree to find all text nodes
- */
-function traverseForText(
-    node: FigmaNode,
-    results: Array<{nodeId: string, textInfo: TextInfo, widgetSuggestion: string}>,
-    depth: number = 0
-): void {
-    if (depth > 5) return; // Prevent infinite recursion
-
-    if (node.type === 'TEXT') {
-        const textInfo = extractTextInfo(node);
-        if (textInfo) {
-            results.push({
-                nodeId: node.id,
-                textInfo,
-                widgetSuggestion: generateFlutterTextWidget(textInfo)
-            });
-        }
-    }
-
-    if (node.children) {
-        node.children.forEach(child => {
-            traverseForText(child, results, depth + 1);
-        });
     }
 }
 

@@ -12,7 +12,6 @@ export interface ScreenAnalysis {
     sections: ScreenSection[];
     components: NestedComponentInfo[];
     navigation: NavigationInfo;
-    assets: ScreenAssetInfo[];
     skippedNodes?: SkippedNodeInfo[];
 }
 
@@ -98,16 +97,6 @@ export interface NavigationElement {
     isActive?: boolean;
 }
 
-/**
- * Screen asset information
- */
-export interface ScreenAssetInfo {
-    nodeId: string;
-    name: string;
-    type: 'image' | 'icon' | 'illustration' | 'background';
-    size: 'small' | 'medium' | 'large';
-    usage: 'decorative' | 'content' | 'navigation' | 'branding';
-}
 
 /**
  * Information about nodes that were skipped
@@ -127,6 +116,5 @@ export interface ScreenExtractionOptions {
     maxDepth?: number;
     includeHiddenNodes?: boolean;
     extractNavigation?: boolean;
-    extractAssets?: boolean;
     deviceTypeDetection?: boolean;
 }

@@ -3,10 +3,8 @@
 import type {FigmaNode, FigmaTextStyle} from '../../types/figma.js';
 import type {
     TypographyStyle,
-    TypographyDefinition,
     TypographyExtractionContext,
-    TypographyExtractorFn,
-    TextStyleHash
+    TypographyExtractorFn
 } from './types.js';
 
 /**
@@ -42,28 +40,6 @@ export function extractTypographyFromThemeFrame(frameNode: FigmaNode): Typograph
     });
 
     return typography;
-}
-
-/**
- * Extract typography from a single node (used by theme frame extraction)
- */
-function extractTypographyFromNode(node: FigmaNode): TypographyStyle | null {
-    // Check if this node is a text node
-    if (node.type === 'TEXT' && node.style) {
-        return createTypographyStyle(node);
-    }
-
-    // Only check immediate children for text nodes, don't go deep to avoid color frames
-    if (node.children) {
-        for (const child of node.children) {
-            // Only process direct text nodes, ignore nested structures
-            if (child.type === 'TEXT' && child.style) {
-                return createTypographyStyle(child);
-            }
-        }
-    }
-
-    return null;
 }
 
 /**
@@ -112,31 +88,6 @@ function getTypographyName(node: FigmaNode): string | null {
     }
 
     return null;
-}
-
-/**
- * Check if name looks like a typography style name
- */
-function isTypographyStyleName(name: string): boolean {
-    const typographyKeywords = [
-        // Typography categories
-        'heading', 'title', 'subtitle', 'body', 'caption', 'label', 'button',
-        'display', 'headline', 'subheading', 'overline',
-
-        // Size variations
-        'large', 'medium', 'small', 'xl', 'lg', 'md', 'sm', 'xs',
-        'big', 'regular', 'tiny',
-
-        // Weight variations
-        'bold', 'semibold', 'medium', 'regular', 'light', 'thin',
-
-        // Number variations
-        'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-        '1', '2', '3', '4', '5', '6'
-    ];
-
-    const lowerName = name.toLowerCase();
-    return typographyKeywords.some(keyword => lowerName.includes(keyword));
 }
 
 /**
@@ -228,115 +179,3 @@ function generateTypographyNameFromStyle(style: FigmaTextStyle): string {
     return sizeName;
 }
 
-/**
- * Generate meaningful typography name from style and context
- */
-function generateTypographyName(style: FigmaTextStyle, nodeName: string): string {
-    // Try to infer name from node context first
-    const name = nodeName.toLowerCase();
-
-    if (name.includes('heading') || name.includes('title')) return 'Heading';
-    if (name.includes('subtitle')) return 'Subtitle';
-    if (name.includes('body')) return 'Body';
-    if (name.includes('caption')) return 'Caption';
-    if (name.includes('button')) return 'Button';
-    if (name.includes('label')) return 'Label';
-
-    // Fallback to style-based naming
-    return generateTypographyNameFromStyle(style);
-}
-
-/**
- * Generate Dart-safe property name
- */
-function generateDartSafeName(style: FigmaTextStyle, nodeName: string): string {
-    const baseName = generateTypographyName(style, nodeName);
-
-    // Convert to camelCase and ensure it's Dart-safe
-    return baseName.charAt(0).toLowerCase() + baseName.slice(1)
-        .replace(/[^a-zA-Z0-9]/g, '')
-        .replace(/^\d/, '_$&'); // Prefix with underscore if starts with number
-}
-
-/**
- * Categorize typography usage
- */
-function categorizeTypographyUsage(style: FigmaTextStyle, nodeName: string): TypographyDefinition['usage'] {
-    const name = nodeName.toLowerCase();
-    const fontSize = style.fontSize || 16;
-
-    // Check name patterns first
-    if (name.includes('heading') || name.includes('title') || name.includes('h1') || name.includes('h2') || name.includes('h3')) {
-        return 'heading';
-    }
-    if (name.includes('body') || name.includes('paragraph')) return 'body';
-    if (name.includes('caption') || name.includes('small')) return 'caption';
-    if (name.includes('button')) return 'button';
-    if (name.includes('label')) return 'label';
-
-    // Fallback to size-based categorization
-    if (fontSize >= 20) return 'heading';
-    if (fontSize >= 14) return 'body';
-    if (fontSize >= 12) return 'caption';
-
-    return 'other';
-}
-
-/**
- * Create text style hash for deduplication
- */
-function createTextStyleHash(style: FigmaTextStyle): TextStyleHash {
-    return {
-        fontFamily: style.fontFamily || 'default',
-        fontSize: style.fontSize || 16,
-        fontWeight: style.fontWeight || 400,
-        lineHeight: style.lineHeightPx || (style.fontSize || 16) * 1.2,
-        letterSpacing: style.letterSpacing || 0,
-    };
-}
-
-/**
- * Add typography to library with deduplication
- */
-function addTypographyToLibrary(
-    style: FigmaTextStyle,
-    nodeName: string,
-    typographyLibrary: TypographyDefinition[],
-    typographyMap: Map<string, string>
-): string {
-    const styleHash = createTextStyleHash(style);
-    const hashString = JSON.stringify(styleHash);
-
-    // Check if typography already exists
-    const existingId = typographyMap.get(hashString);
-    if (existingId) {
-        // Increment usage count
-        const typography = typographyLibrary.find(t => t.id === existingId);
-        if (typography) {
-            typography.usageCount++;
-        }
-        return existingId;
-    }
-
-    // Create new typography definition
-    const typographyId = `typography_${typographyLibrary.length + 1}`;
-    const typographyDef: TypographyDefinition = {
-        id: typographyId,
-        name: generateTypographyName(style, nodeName),
-        fontFamily: style.fontFamily && style.fontFamily.trim() !== ''
-            ? style.fontFamily.trim()
-            : 'Roboto',
-        fontSize: style.fontSize || 16,
-        fontWeight: style.fontWeight || 400,
-        lineHeight: style.lineHeightPx || (style.fontSize || 16) * 1.2,
-        letterSpacing: style.letterSpacing || 0,
-        usage: categorizeTypographyUsage(style, nodeName),
-        usageCount: 1,
-        dartName: generateDartSafeName(style, nodeName)
-    };
-
-    typographyLibrary.push(typographyDef);
-    typographyMap.set(hashString, typographyId);
-
-    return typographyId;
-}

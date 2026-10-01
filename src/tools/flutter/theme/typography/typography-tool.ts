@@ -72,13 +72,12 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                     includeLetterSpacing: true
                 });
 
-                // Determine primary font family
+                // Determine primary font family (the list is non-empty: an empty one returned above)
                 const fontFamilies = new Set(themeTypography.map(t => t.fontFamily));
-                const primaryFontFamily = themeTypography.length > 0 ? 
-                    [...fontFamilies].reduce((a, b) => 
-                        themeTypography.filter(t => t.fontFamily === a).length > 
-                        themeTypography.filter(t => t.fontFamily === b).length ? a : b
-                    ) : 'Roboto';
+                const primaryFontFamily = [...fontFamilies].reduce((a, b) =>
+                    themeTypography.filter(t => t.fontFamily === a).length >
+                    themeTypography.filter(t => t.fontFamily === b).length ? a : b
+                );
 
                 // Create success report
                 let output = `Successfully extracted theme typography!\n\n`;

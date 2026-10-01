@@ -503,11 +503,7 @@ function generateScreenImplementationHints(analysis: ScreenAnalysis): string {
     } else if (analysis.metadata.deviceType === 'tablet') {
         hints += `   • Tablet layout: Consider NavigationRail for wider screens\n`;
     }
-    
-    // Asset handling
-    if (analysis.assets.length > 0) {
-        hints += `   • Assets: ${analysis.assets.length} image/icon assets to implement\n`;
-    }
+
 
     return hints;
 }

@@ -10,8 +10,7 @@ export {
     extractScreenMetadata,
     extractScreenLayoutInfo,
     analyzeScreenSections,
-    extractNavigationInfo,
-    extractScreenAssets
+    extractNavigationInfo
 } from './extractor.js';
 
 // Types
@@ -22,7 +21,6 @@ export type {
     ScreenSection,
     NavigationInfo,
     NavigationElement,
-    ScreenAssetInfo,
     SkippedNodeInfo,
     ScreenExtractionOptions
 } from './types.js';

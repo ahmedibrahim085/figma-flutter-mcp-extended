@@ -14,7 +14,7 @@ import fetch from 'node-fetch';
 // ────────────────────────────────────────────────────────────
 
 /** Recursively summarise a node tree (id, name, type, children count, bounding box). */
-function summariseNode(node: any, depth = 0, maxDepth = 6): any {
+function summariseNode(node: any, depth: number, maxDepth: number): any {
     const summary: any = {
         id: node.id,
         name: node.name,

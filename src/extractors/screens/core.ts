@@ -10,7 +10,6 @@ import {
     extractScreenLayoutInfo,
     analyzeScreenSections,
     extractNavigationInfo,
-    extractScreenAssets
 } from './extractor.js';
 
 /**
@@ -25,7 +24,6 @@ export class ScreenExtractor {
             maxDepth: options.maxDepth ?? 4,
             includeHiddenNodes: options.includeHiddenNodes ?? false,
             extractNavigation: options.extractNavigation ?? true,
-            extractAssets: options.extractAssets ?? true,
             deviceTypeDetection: options.deviceTypeDetection ?? true
         };
     }
@@ -43,17 +41,12 @@ export class ScreenExtractor {
             ? extractNavigationInfo(node)
             : { navigationElements: [] };
             
-        const assets = this.options.extractAssets 
-            ? extractScreenAssets(node)
-            : [];
-
         return {
             metadata,
             layout,
             sections,
             components,
             navigation,
-            assets,
             skippedNodes: skippedNodes.length > 0 ? skippedNodes : undefined
         };
     }

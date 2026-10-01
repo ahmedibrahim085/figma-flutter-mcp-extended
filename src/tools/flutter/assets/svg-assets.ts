@@ -207,11 +207,6 @@ function isSvgNode(node: any): boolean {
         return true;
     }
 
-    // Check if the node itself is created with pen tool
-    if (isPenToolNode(node)) {
-        return true;
-    }
-
     // For container nodes (GROUP, FRAME, COMPONENT, INSTANCE), calculate vector percentage
     if (node.type === 'GROUP' || node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') {
         const vectorPercentage = calculateVectorPercentage(node);
@@ -275,11 +270,6 @@ function isVectorBasedNode(node: any): boolean {
         return true;
     }
     
-    // Pen tool created nodes
-    if (isPenToolNode(node)) {
-        return true;
-    }
-    
     // Some instances might be vector-based components
     if (node.type === 'INSTANCE') {
         // If an instance has vector-like properties, consider it vector-based
@@ -304,80 +294,8 @@ function hasVectorLikeProperties(node: any): boolean {
         stroke.type === 'SOLID' && stroke.visible !== false
     );
     
-    // Check for vector network or path data
-    const hasVectorNetwork = node.vectorNetwork && 
-        node.vectorNetwork.vertices && 
-        node.vectorNetwork.segments;
-    
-    return hasVectorNetwork || (hasVectorFills && hasVectorStrokes);
+    // The REST API sends no vectorNetwork, so fills and strokes are the only signal here.
+    return hasVectorFills && hasVectorStrokes;
 }
 
 
-function isPenToolNode(node: any): boolean {
-    // Check if this node was created with the pen tool
-    // Pen tool nodes are typically VECTOR nodes with specific characteristics:
-    
-    if (node.type !== 'VECTOR') {
-        return false;
-    }
-    
-    // Check for vector network (pen tool creates vector paths)
-    if (node.vectorNetwork && node.vectorNetwork.vertices && node.vectorNetwork.segments) {
-        const vertices = node.vectorNetwork.vertices;
-        const segments = node.vectorNetwork.segments;
-        
-        // Pen tool creates paths with multiple vertices and segments
-        if (vertices.length > 2 && segments.length > 0) {
-            // Check if segments have bezier curves (common in pen tool usage)
-            const hasBezierCurves = segments.some((segment: any) => 
-                segment.tangentStart || segment.tangentEnd
-            );
-            
-            // Check if vertices have handle positions (pen tool characteristic)
-            const hasHandles = vertices.some((vertex: any) => 
-                vertex.tangentStart || vertex.tangentEnd
-            );
-            
-            return hasBezierCurves || hasHandles || vertices.length > 3;
-        }
-    }
-    
-    // Check for fills that indicate custom drawn paths
-    if (node.fills && node.fills.length > 0) {
-        const hasCustomFill = node.fills.some((fill: any) => 
-            fill.type === 'SOLID' || fill.type === 'GRADIENT_LINEAR' || fill.type === 'GRADIENT_RADIAL'
-        );
-        
-        // If it has custom fills and no strokes, likely a pen tool shape
-        const hasStrokes = node.strokes && node.strokes.length > 0;
-        if (hasCustomFill && !hasStrokes && node.vectorNetwork) {
-            return true;
-        }
-    }
-    
-    // Check for custom strokes (pen tool often used for line art)
-    if (node.strokes && node.strokes.length > 0 && node.vectorNetwork) {
-        const hasCustomStroke = node.strokes.some((stroke: any) => 
-            stroke.type === 'SOLID' && stroke.visible !== false
-        );
-        
-        if (hasCustomStroke && node.vectorNetwork.vertices && node.vectorNetwork.vertices.length > 1) {
-            return true;
-        }
-    }
-    
-    return false;
-}
-
-function hasPenToolDescendants(node: any): boolean {
-    // Check if this node or any of its descendants were created with pen tool
-    if (isPenToolNode(node)) {
-        return true;
-    }
-    
-    if (node.children) {
-        return node.children.some((child: any) => hasPenToolDescendants(child));
-    }
-    
-    return false;
-}

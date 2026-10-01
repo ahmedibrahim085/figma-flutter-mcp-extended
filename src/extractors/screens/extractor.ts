@@ -8,7 +8,6 @@ import type {
     ScreenSection,
     NavigationInfo,
     NavigationElement,
-    ScreenAssetInfo,
     SkippedNodeInfo,
     ScreenExtractionOptions,
     ScreenSafeAreaInfo
@@ -165,17 +164,6 @@ export function extractNavigationInfo(node: FigmaNode): NavigationInfo {
         hasBottomSheet: detectBottomSheet(node),
         navigationElements
     };
-}
-
-/**
- * Extract screen assets information
- */
-export function extractScreenAssets(node: FigmaNode): ScreenAssetInfo[] {
-    const assets: ScreenAssetInfo[] = [];
-    
-    traverseForAssets(node, assets);
-    
-    return assets;
 }
 
 /**
@@ -384,7 +372,6 @@ function detectFooter(node: FigmaNode): boolean {
                (bounds && bounds.y > screenHeight * 0.8); // Bottom area
     });
 }
-
 
 /**
  * Detect whether the screen needs to own the runtime top safe-area inset
@@ -678,86 +665,3 @@ function hasStatusBarContent(node: FigmaNode): boolean {
     return statusBarElements;
 }
 
-/**
- * Traverse for assets
- */
-function traverseForAssets(node: FigmaNode, results: ScreenAssetInfo[], depth: number = 0): void {
-    if (depth > 4) return;
-    if (!isEffectivelyVisible(node)) return;
-
-    // Check if this node is an asset
-    if (isAssetNode(node)) {
-        results.push({
-            nodeId: node.id,
-            name: node.name,
-            type: detectAssetType(node),
-            size: detectAssetSize(node),
-            usage: detectAssetUsage(node)
-        });
-    }
-
-    // Traverse children
-    if (node.children) {
-        node.children.forEach(child => {
-            traverseForAssets(child, results, depth + 1);
-        });
-    }
-}
-
-/**
- * Check if node is an asset
- */
-function isAssetNode(node: FigmaNode): boolean {
-    // Check for image fills
-    if (node.fills && node.fills.some((fill: any) => fill.type === 'IMAGE')) return true;
-    
-    // Check for vectors that are likely assets
-    if (node.type === 'VECTOR') {
-        const name = node.name.toLowerCase();
-        return name.includes('image') || name.includes('illustration') || 
-               name.includes('icon') || name.includes('logo');
-    }
-    
-    return false;
-}
-
-/**
- * Detect asset type
- */
-function detectAssetType(node: FigmaNode): ScreenAssetInfo['type'] {
-    const name = node.name.toLowerCase();
-    
-    if (name.includes('icon')) return 'icon';
-    if (name.includes('illustration') || name.includes('graphic')) return 'illustration';
-    if (name.includes('background') || name.includes('bg')) return 'background';
-    
-    return 'image';
-}
-
-/**
- * Detect asset size
- */
-function detectAssetSize(node: FigmaNode): ScreenAssetInfo['size'] {
-    const bounds = node.absoluteBoundingBox;
-    if (!bounds) return 'medium';
-    
-    const area = bounds.width * bounds.height;
-    
-    if (area < 2500) return 'small'; // < 50x50
-    if (area > 40000) return 'large'; // > 200x200
-    
-    return 'medium';
-}
-
-/**
- * Detect asset usage
- */
-function detectAssetUsage(node: FigmaNode): ScreenAssetInfo['usage'] {
-    const name = node.name.toLowerCase();
-    
-    if (name.includes('logo') || name.includes('brand')) return 'branding';
-    if (name.includes('nav') || name.includes('menu') || name.includes('tab')) return 'navigation';
-    if (name.includes('background') || name.includes('decoration')) return 'decorative';
-    
-    return 'content';
-}

@@ -72,7 +72,6 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
                 const screenExtractor = new ScreenExtractor({
                     maxSections,
                     extractNavigation,
-                    extractAssets: false, // We'll handle asset export separately
                     deviceTypeDetection
                 });
 

@@ -32,14 +32,7 @@ export class GlobalStyleManager {
       return semanticMatch;
     }
     
-    // Check if this should be a variant of existing style
-    const parentStyle = this.findPotentialParent(properties);
-    if (parentStyle) {
-      Logger.info(`👨‍👩‍👧‍👦 GlobalStyleManager: Found potential parent ${parentStyle.id}`);
-    }
-    
-    // Create new style with proper relationships
-    return this.createNewStyle(properties, parentStyle, context);
+    return this.createNewStyle(properties, context);
   }
   
   private findExactMatch(properties: any): string | undefined {
@@ -66,22 +59,7 @@ export class GlobalStyleManager {
     return undefined;
   }
   
-  private findPotentialParent(properties: any, threshold: number = 0.8): FlutterStyleDefinition | undefined {
-    let bestMatch: FlutterStyleDefinition | undefined;
-    let bestSimilarity = 0;
-    
-    for (const style of Object.values(this.globalVars.styles)) {
-      const similarity = this.calculateSimilarity(properties, style.properties);
-      if (similarity >= threshold && similarity < 1.0 && similarity > bestSimilarity) {
-        bestMatch = style;
-        bestSimilarity = similarity;
-      }
-    }
-    
-    return bestMatch;
-  }
-  
-  private createNewStyle(properties: any, parentStyle?: FlutterStyleDefinition, context?: string): string {
+  private createNewStyle(properties: any, context?: string): string {
     // Determine category from context or properties
     const category = this.determineCategory(properties, context);
     
@@ -280,45 +258,5 @@ export class GlobalStyleManager {
     
     return key;
   }
-  
-  private calculateSimilarity(props1: any, props2: any): number {
-    const keys1 = new Set(Object.keys(props1));
-    const keys2 = new Set(Object.keys(props2));
-    const allKeys = new Set([...keys1, ...keys2]);
-    
-    let matches = 0;
-    let total = allKeys.size;
-    
-    for (const key of allKeys) {
-      if (keys1.has(key) && keys2.has(key)) {
-        if (this.areValuesSimilar(props1[key], props2[key])) {
-          matches++;
-        }
-      }
-    }
-    
-    return total > 0 ? matches / total : 0;
-  }
-  
-  private areValuesSimilar(val1: any, val2: any): boolean {
-    if (val1 === val2) return true;
-    
-    if (Array.isArray(val1) && Array.isArray(val2)) {
-      if (val1.length !== val2.length) return false;
-      return val1.every((item, index) => this.areValuesSimilar(item, val2[index]));
-    }
-    
-    if (typeof val1 === 'object' && typeof val2 === 'object' && val1 !== null && val2 !== null) {
-      const keys1 = Object.keys(val1);
-      const keys2 = Object.keys(val2);
-      if (keys1.length !== keys2.length) return false;
-      return keys1.every(key => this.areValuesSimilar(val1[key], val2[key]));
-    }
-    
-    if (typeof val1 === 'number' && typeof val2 === 'number') {
-      return Math.abs(val1 - val2) < 0.01;
-    }
-    
-    return false;
-  }
+
 }

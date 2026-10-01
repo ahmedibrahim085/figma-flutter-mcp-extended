@@ -59,11 +59,10 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 exportAssets: z.boolean().optional().describe("Automatically export image assets found in component (default: true)"),
                 useDeduplication: z.boolean().optional().describe("Use style deduplication for token efficiency (default: true)"),
                 generateFlutterCode: z.boolean().optional().describe("Generate full Flutter implementation code (default: false)"),
-                resetStyleLibrary: z.boolean().optional().describe("Reset style library before analysis (default: false)"),
-                autoOptimize: z.boolean().optional().describe("Auto-optimize style library during analysis (default: true)")
+                resetStyleLibrary: z.boolean().optional().describe("Reset style library before analysis (default: false)")
             }
         },
-        async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true, useDeduplication = true, generateFlutterCode = false, resetStyleLibrary = false, autoOptimize = true}) => {
+        async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true, useDeduplication = true, generateFlutterCode = false, resetStyleLibrary = false}) => {
             const token = figmaApiKey;
             if (!token) {
                 return {
@@ -82,14 +81,10 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                     styleLibrary.reset();
                 }
                 
-                // Configure auto-optimization
-                styleLibrary.setAutoOptimization(autoOptimize);
-                
                 Logger.info(`🎯 Component Analysis Started:`, {
                     input: input.substring(0, 50) + '...',
                     nodeId,
                     useDeduplication,
-                    autoOptimize,
                     resetStyleLibrary
                 });
 

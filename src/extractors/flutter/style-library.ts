@@ -54,9 +54,6 @@ export class FlutterStyleLibrary {
   private styles = new Map<string, FlutterStyleDefinition>();
   private hashToId = new Map<string, string>();
   private semanticHashToId = new Map<string, string>();
-  private autoOptimizeEnabled = true;
-  private optimizationThreshold = 20; // Auto-optimize after every N styles
-  private lastOptimizationCount = 0;
   
   static getInstance(): FlutterStyleLibrary {
     if (!this.instance) {
@@ -125,8 +122,6 @@ export class FlutterStyleLibrary {
     this.hashToId.set(hash, styleId);
     this.semanticHashToId.set(semanticHash, styleId);
     
-    // Auto-optimize if threshold is reached
-    this.checkAutoOptimization();
     
     return styleId;
   }
@@ -137,19 +132,6 @@ export class FlutterStyleLibrary {
   
   getAllStyles(): FlutterStyleDefinition[] {
     return Array.from(this.styles.values());
-  }
-  
-  findSimilarStyles(properties: any, threshold: number = 0.8): string[] {
-    const similarStyles: string[] = [];
-    
-    for (const [id, style] of this.styles) {
-      const similarity = this.calculateSimilarity(properties, style.properties);
-      if (similarity >= threshold && similarity < 1.0) {
-        similarStyles.push(id);
-      }
-    }
-    
-    return similarStyles;
   }
   
   getStyleHierarchy(): Record<string, StyleRelationship> {
@@ -237,39 +219,6 @@ export class FlutterStyleLibrary {
     this.styles.clear();
     this.hashToId.clear();
     this.semanticHashToId.clear();
-    this.lastOptimizationCount = 0;
-  }
-  
-  setAutoOptimization(enabled: boolean, threshold: number = 20): void {
-    this.autoOptimizeEnabled = enabled;
-    this.optimizationThreshold = threshold;
-    Logger.info(`⚙️  Auto-optimization ${enabled ? 'enabled' : 'disabled'} (threshold: ${threshold})`);
-  }
-  
-  private checkAutoOptimization(): void {
-    if (!this.autoOptimizeEnabled) return;
-    
-    const currentCount = this.styles.size;
-    const stylesSinceLastOptimization = currentCount - this.lastOptimizationCount;
-    
-    if (stylesSinceLastOptimization >= this.optimizationThreshold) {
-      Logger.info(`🚀 Auto-optimization triggered! (${stylesSinceLastOptimization} new styles since last optimization)`);
-      this.runAutoOptimization();
-      this.lastOptimizationCount = currentCount;
-    }
-  }
-  
-  private runAutoOptimization(): OptimizationReport {
-    Logger.info(`⚡ Running auto-optimization...`);
-    const report = this.optimizeLibrary();
-    Logger.info(`✅ Auto-optimization complete:`, {
-      totalStyles: report.totalStyles,
-      duplicatesRemoved: report.duplicatesRemoved,
-      variantsCreated: report.variantsCreated,
-      hierarchyDepth: report.hierarchyDepth,
-      memoryReduction: report.memoryReduction
-    });
-    return report;
   }
   
   private generateHash(properties: any): string {

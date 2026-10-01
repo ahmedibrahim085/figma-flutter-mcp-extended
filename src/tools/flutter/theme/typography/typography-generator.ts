@@ -265,7 +265,8 @@ export class TypographyGenerator {
             }
         }
 
-        return weightMap[closestWeight] || 'FontWeight.w400';
+        // closestWeight always comes from weightMap's own keys.
+        return weightMap[closestWeight];
     }
 
     /**

@@ -32,7 +32,7 @@ LOG="$(mktemp)"
 CURRENT=""
 # On exit, Ctrl-C, SIGTERM or SIGHUP, put back the file being mutated and remove the log. SIGKILL leaves
 # the mutant in place. A closed output pipe (SIGPIPE) usually ends with the file put back, but has been
-# seen to leave the mutant (timing-dependent). Trapping PIPE was tried and made it worse, so it stays
+# seen to leave the mutant (once, with `bash -x ... 2>&1 | grep -m1`). Trapping PIPE was tried and made it worse, so it stays
 # untrapped; the uncommitted-changes check above refuses the next run until a leftover is restored.
 cleanup() {
   [ -n "$CURRENT" ] && git checkout -- "$CURRENT"

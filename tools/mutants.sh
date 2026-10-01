@@ -36,7 +36,12 @@ cleanup() {
   rm -f "$LOG"
 }
 trap cleanup EXIT
-trap 'exit 130' INT TERM
+# Exit through the EXIT trap on these signals too; a pipe closing early (SIGPIPE) would otherwise
+# kill the script with the mutant still applied. Codes follow the 128 + signal convention.
+trap 'exit 129' HUP
+trap 'exit 130' INT
+trap 'exit 141' PIPE
+trap 'exit 143' TERM
 while IFS=$'\t' read -r name file expr; do
   [ -z "$name" ] && continue
   if ! git ls-files --error-unmatch -- "$file" >/dev/null 2>&1; then

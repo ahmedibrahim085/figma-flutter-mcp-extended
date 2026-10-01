@@ -9,6 +9,6 @@ cd "$ROOT"
 npm run build --silent
 node --import tsx "$HERE/generate.mts" "$@"
 cd "$HERE/flutter"
-[ -d .dart_tool ] || flutter pub get >/dev/null
+flutter pub get >/dev/null
 dart analyze --fatal-warnings lib/generated.dart
 flutter test test/host_matrix_test.dart

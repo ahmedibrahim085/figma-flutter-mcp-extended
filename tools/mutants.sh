@@ -1,7 +1,8 @@
 #!/bin/bash
 # Mutation runner: apply each mutant to the source, rebuild, run the tests, and report whether a
-# test failed (the mutant is "killed"). Run it in a COPY of the repo (git worktree add, or
-# git archive | tar -x), never in a checkout someone else is using: each mutant edits files in place.
+# test failed (the mutant is "killed"). Run it in a git worktree of the repo (git worktree add),
+# never in a checkout someone else is using: each mutant edits files in place. A plain copy without
+# .git will not do, because each mutant is reverted with git checkout.
 # Usage: tools/mutants.sh <mutant list file> [test file ...]   (default: test/*.test.ts)
 # List lines: name<TAB>repo-relative file<TAB>perl -0pi expression
 # Each mutant is reverted with git checkout, so it must target a tracked file, and the copy
@@ -15,6 +16,10 @@ LIST="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 shift
 cd "$(dirname "$0")/.." || exit 2
 if [ $# -eq 0 ]; then set -- test/*.test.ts; fi
+if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  echo "refusing to run: not a git work tree, so mutants could not be reverted; use git worktree add" >&2
+  exit 2
+fi
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
   echo "refusing to run: uncommitted changes would be lost by git checkout; commit them first" >&2
   exit 2

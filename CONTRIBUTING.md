@@ -115,7 +115,7 @@ These run from any clone and are not part of the published package: `npm pack` s
 
   It fails on any analyzer error or Flutter layout error, and prints the rendered size in each host. Example: `npm run render-check -- layout-frame.json 1:45`. The Flutter project is `tools/render-check/flutter/`; its generated files are gitignored.
 - **Mutation runner.** `npm run mutants -- <list file> [test file ...]` applies each mutant (one line each: name, file, `perl -0pi` expression, separated by tabs), rebuilds, runs the tests, and reports whether a test failed. It edits files in place and reverts them with `git checkout`, so:
-  - run it in a copy of the repo (`git worktree add`, or `git archive | tar -x`), never in a checkout someone else is using;
+  - run it in a git worktree of the repo (`git worktree add`), never in a checkout someone else is using. A copy without `.git` is refused, because mutants are reverted with `git checkout`;
   - it refuses to start when there are uncommitted changes, and skips a mutant whose file git does not track;
   - on any exit, Ctrl-C included, it puts back the file it was mutating.
 - **Literal scan.** `npm run --silent audit:literals > literals.tsv` lists every number, string, template and regex literal in `src/` with file, line and context. `node tools/lex-count.cjs` counts the same literals with the TypeScript lexer, as a cross-check. Digits and quotes inside regex literals count only there.

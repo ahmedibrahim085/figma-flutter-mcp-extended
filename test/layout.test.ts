@@ -628,3 +628,12 @@ test('a group in a frame without auto layout lends its layers to the frame: each
     assert.ok(code.includes(['Positioned(', 'right: 10,', 'bottom: 10,', 'width: 20,', 'height: 20,'].join('\n')), code);
     assert.equal(code.match(/Stack\(/g)?.length, 1, code);
 });
+
+test('itemReverseZIndex swaps which absolute layers paint behind and in front of the flow', async () => {
+    const flow = {id: '106:2', name: 'Flow', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: at(0, 0, 40, 40), ...sized('FIXED', 'FIXED')};
+    const badge = pinned('106:3', 'Badge', at(30, 0, 10, 10), 'LEFT', 'TOP', {layoutPositioning: 'ABSOLUTE'});
+    const code = dedent(await widgetCode({id: '106:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], clipsContent: true,
+        itemReverseZIndex: true, absoluteBoundingBox: at(0, 0, 40, 40), ...sized('HUG', 'HUG'), children: [flow, badge]}));
+    // Without the flag the badge (after the flow child) would paint in front; reversed, it paints behind the Row.
+    assert.ok(code.includes(['fit: StackFit.passthrough,', 'children: [', 'Positioned('].join('\n')), code);
+});

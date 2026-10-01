@@ -104,6 +104,10 @@ src/
 - **Temp projects.** Tests that write files (asset export) create their own temp Flutter project and remove it when the test ends.
 - **Pinned defects.** `test/characterization.test.ts` (hand-built nodes) and `test/real-fixtures.test.ts` (real Figma fixtures) assert today's known-wrong output. Each test name says `pins current behaviour, slice N replaces this`. A change that fixes one of these defects rewrites that test to assert the correct output in the same commit; never delete a pin to make the suite pass.
 
+### Defaults (`src/defaults.json`)
+
+Environment facts live in `src/defaults.json`, not in code: the HTTP port, the install command shown in the start-up hint, the Figma web URL, the retry policy, and the folder and file names the tools write (assets, theme, typography, golden tests). Change a value there to change the behaviour; no code edit is needed. The CLI flags and environment variables (`--port`, `HTTP_PORT`, `FIGMA_API_BASE_URL`, `FIGMA_API_KEY`) still override what they override.
+
 ### Developer tools (`tools/`)
 
 These run from any clone and are not part of the published package: `npm pack` ships only `dist/`, `README.md`, `LICENSE.md` and `package.json`, and `test/package-contents.test.ts` fails if anything else would ship.

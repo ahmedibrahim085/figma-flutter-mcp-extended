@@ -23,7 +23,10 @@
     "dev:remote": "tsx src/cli.ts --remote --port 3333",
     "changeset": "changeset add",
     "version": "changeset version && npm install --lockfile-only",
-    "release": "changeset publish"
+    "release": "changeset publish",
+    "render-check": "bash tools/render-check/run.sh",
+    "mutants": "bash tools/mutants.sh",
+    "audit:literals": "node tools/literal-scan.cjs"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.0.0",

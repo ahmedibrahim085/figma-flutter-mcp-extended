@@ -7,3 +7,9 @@ reports/
 .cursor/
 prompts/
 *.DS_STORE
+# render check: generated per run
+tools/render-check/flutter/.dart_tool/
+tools/render-check/flutter/build/
+tools/render-check/flutter/pubspec.lock
+tools/render-check/flutter/lib/generated.dart
+tools/render-check/flutter/test/host_matrix_test.dart

@@ -106,7 +106,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 });
 
                 output += `Generated Files:\n`;
-                output += `• ${defaults.output.textFile} - Typography style constants\n`;
+                output += `• ${defaults.output.textStylesFile} - Typography style constants\n`;
                 if (generateTextTheme) {
                     output += `• ${defaults.output.textThemeFile} - Material Design TextTheme\n`;
                 }

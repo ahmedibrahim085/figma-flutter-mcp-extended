@@ -58,5 +58,5 @@ export async function detectConstantsDir(projectPath: string): Promise<string> {
 /** Detect where the project already keeps golden tests (test/golden/ if present), else test/. */
 export async function detectGoldenTestDir(projectPath: string): Promise<string> {
     const defaultDir = join(projectPath, 'test');
-    return detectExistingSubdir(defaultDir, defaults.output.goldenSubdir, defaultDir);
+    return detectExistingSubdir(defaultDir, defaults.output.goldenTestSubdir, defaultDir);
 }

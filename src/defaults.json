@@ -17,10 +17,10 @@
     "constantsSubdir": "constants",
     "colorsFile": "app_colors.dart",
     "themeFile": "app_theme.dart",
-    "textFile": "app_text.dart",
+    "textStylesFile": "app_text.dart",
     "textThemeFile": "text_theme.dart",
     "goldenTestSuffix": "_golden_test.dart",
-    "goldensDir": "goldens",
-    "goldenSubdir": "golden"
+    "goldenImagesDir": "goldens",
+    "goldenTestSubdir": "golden"
   }
 }

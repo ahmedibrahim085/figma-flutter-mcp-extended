@@ -38,7 +38,7 @@ export class TypographyGenerator {
         );
 
         // Write AppText file
-        const appTextPath = join(outputDir, defaults.output.textFile);
+        const appTextPath = join(outputDir, defaults.output.textStylesFile);
         await writeFile(appTextPath, appTextContent);
 
         // Generate text theme if requested
@@ -140,7 +140,7 @@ export class TypographyGenerator {
 
         // Imports
         content += "import 'package:flutter/material.dart';\n";
-        content += `import '${defaults.output.textFile}';\n\n`;
+        content += `import '${defaults.output.textStylesFile}';\n\n`;
 
         // Class definition
         content += `/// Material Design text theme\n`;

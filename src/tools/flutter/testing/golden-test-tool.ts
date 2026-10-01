@@ -36,7 +36,7 @@ export function registerGoldenTestTools(server: McpServer, _figmaApiKey: string)
 
                 const snakeCaseName = toSnakeCase(widgetName);
                 const testFilePath = join(testDir, `${snakeCaseName}${defaults.output.goldenTestSuffix}`);
-                const goldenFilePath = `${defaults.output.goldensDir}/${snakeCaseName}.png`;
+                const goldenFilePath = `${defaults.output.goldenImagesDir}/${snakeCaseName}.png`;
 
                 const content = `import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';

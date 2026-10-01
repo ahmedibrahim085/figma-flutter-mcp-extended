@@ -8,11 +8,12 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import {registerAllTools} from "./tools/index.js";
 import { Logger } from "./utils/logger.js";
+import { getPackageVersion } from "./config.js";
 
 export function createServer(figmaApiKey: string) {
     const server = new McpServer({
         name: "figma-flutter",
-        version: process.env.npm_package_version || "0.0.1"
+        version: getPackageVersion()
     });
 
     registerAllTools(server, figmaApiKey);

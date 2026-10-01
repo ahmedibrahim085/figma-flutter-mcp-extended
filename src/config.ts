@@ -28,20 +28,10 @@ function maskApiKey(key: string): string {
     return `****${key.slice(-4)}`;
 }
 
-function getPackageVersion(): string {
-    try {
-        // Get the directory of the current module
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = dirname(__filename);
-        
-        // Read package.json from the project root (one level up from src)
-        const packageJsonPath = join(__dirname, '..', 'package.json');
-        const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8'));
-        return packageJson.version || '0.0.1';
-    } catch (error) {
-        // Fallback to environment variable or default
-        return process.env.npm_package_version || '0.0.1';
-    }
+/** The package's own version; package.json ships next to src/ and dist/ in every install. */
+export function getPackageVersion(): string {
+    const packageJsonPath = join(dirname(fileURLToPath(import.meta.url)), '..', 'package.json');
+    return JSON.parse(readFileSync(packageJsonPath, 'utf8')).version;
 }
 
 interface CliArgs {

@@ -60,6 +60,9 @@ async function serve(): Promise<{init: JsonRpcMessage; tools: string[]}> {
 test('stdio: server identifies as figma-flutter and lists exactly the registered tools', async () => {
     const {init, tools} = await serve();
     assert.equal(init.result.serverInfo.name, 'figma-flutter');
+    // The version a client sees is the package's own version.
+    const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
+    assert.equal(init.result.serverInfo.version, pkg.version);
     assert.deepEqual(tools, EXPECTED_TOOLS);
 });
 

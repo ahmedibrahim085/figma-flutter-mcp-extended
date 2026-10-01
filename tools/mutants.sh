@@ -16,8 +16,9 @@ LIST="$(cd "$(dirname "$1")" && pwd)/$(basename "$1")"
 shift
 cd "$(dirname "$0")/.." || exit 2
 if [ $# -eq 0 ]; then set -- test/*.test.ts; fi
-if ! git rev-parse --is-inside-work-tree >/dev/null 2>&1; then
-  echo "refusing to run: not a git work tree, so mutants could not be reverted; use git worktree add" >&2
+# The git root must be this copy itself: a plain copy nested inside another repo would pass a looser check.
+if [ "$(git rev-parse --show-toplevel 2>/dev/null)" != "$(pwd -P)" ]; then
+  echo "refusing to run: $(pwd -P) is not the root of a git work tree, so mutants could not be reverted; use git worktree add" >&2
   exit 2
 fi
 if [ -n "$(git status --porcelain --untracked-files=no)" ]; then

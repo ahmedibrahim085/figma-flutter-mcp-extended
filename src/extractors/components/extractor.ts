@@ -64,7 +64,13 @@ export function extractLayoutInfo(node: FigmaNode): LayoutInfo {
         sizingHorizontal: node.layoutSizingHorizontal,
         sizingVertical: node.layoutSizingVertical,
         layoutAlign: node.layoutAlign,
-        layoutGrow: node.layoutGrow
+        layoutGrow: node.layoutGrow,
+        origin: {x: node.absoluteBoundingBox?.x || 0, y: node.absoluteBoundingBox?.y || 0},
+        positioning: node.layoutPositioning,
+        clipsContent: node.clipsContent,
+        cornerRadius: node.cornerRadius,
+        rotation: node.rotation,
+        reverseZIndex: node.itemReverseZIndex
     };
 
     // Auto-layout specific properties

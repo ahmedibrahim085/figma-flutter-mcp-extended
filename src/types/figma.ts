@@ -23,6 +23,10 @@ export interface FigmaNode {
     backgroundColor?: FigmaColor;
     style?: FigmaTextStyle;
     constraints?: FigmaConstraints;
+    layoutPositioning?: 'AUTO' | 'ABSOLUTE';
+    clipsContent?: boolean;
+    rotation?: number;
+    itemReverseZIndex?: boolean;
     absoluteBoundingBox?: FigmaBoundingBox;
     layoutMode?: string;
     primaryAxisSizingMode?: string;

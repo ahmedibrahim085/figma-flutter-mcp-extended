@@ -435,12 +435,13 @@ test('an unknown primary alignment is named as an approximation and left at star
 
 test('a frame without auto layout gets no alignment arguments', async () => {
     const code = await widgetCode({
-        id: '75:1', name: 'Canvas', type: 'FRAME', fills: [], absoluteBoundingBox: box(200, 100), ...sized('FIXED', 'FIXED'),
+        id: '75:1', name: 'Canvas', type: 'FRAME', fills: [], clipsContent: true, absoluteBoundingBox: box(200, 100), ...sized('FIXED', 'FIXED'),
         primaryAxisAlignItems: 'CENTER', counterAxisAlignItems: 'CENTER', itemSpacing: 10,
         children: [dot('75:2'), dot('75:3')],
     });
 
-    assert.match(code, /child: Column\(\n\s+children: \[/);
+    // Ticket 05: a frame without auto layout is a Stack of positioned children; no alignment, no gap.
+    assert.match(code, /child: Stack\(\n\s+children: \[/);
     assert.doesNotMatch(code, /AxisAlignment|SizedBox\(height: 10\)/);
 });
 
@@ -544,4 +545,86 @@ test('a FILL root without a measured size asks for no infinite size and gets no 
     });
     // Nothing to cap at: an uncapped double.infinity throws in a horizontal scroll or a Row (Spec review render check).
     assert.doesNotMatch(code, /maxWidth: 0|double\.infinity/);
+});
+
+// Ticket 05: absolute children and constraints (research 05; owner decisions 2026-10-01). Positions are the child's box minus
+// the parent's; the Stack sits outside the frame padding with StackFit.passthrough so the flow keeps today's constraints.
+const at = (x: number, y: number, width: number, height: number) => ({x, y, width, height});
+const pinned = (id: string, name: string, box: object, horizontal: string, vertical: string, extra: object = {}) =>
+    ({id, name, type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box, constraints: {horizontal, vertical}, ...extra});
+const plainFrame = (children: object[], extra: object = {}) => ({
+    id: '100:1', name: 'Canvas', type: 'FRAME', fills: [], clipsContent: true, absoluteBoundingBox: at(0, 0, 100, 100),
+    ...sized('FIXED', 'FIXED'), children, ...extra,
+});
+
+test('real fixture: an ABSOLUTE child in auto layout sits in a Stack outside the padding, the flow Row sizing it', async () => {
+    const code = dedent(await widgetCode(layoutCase('Layout / absolute child')));
+    assert.ok(code.includes(['child: Stack(', 'fit: StackFit.passthrough,', 'children: [', 'Padding(', 'padding: paddingID,', 'child: Row('].join('\n')), code);
+    assert.ok(code.includes(['Positioned(', 'left: 150,', 'top: -4,', 'width: 16,', 'height: 16,', 'child: Container('].join('\n')), code);
+    assert.doesNotMatch(code, /\nContainer\(\ndecoration: decorationID,\npadding: paddingID,/);
+    assert.equal(code.match(/width: 16,/g)?.length, 2, code);
+});
+
+test('real fixture: a frame without auto layout is a Stack of children placed by their constraints', async () => {
+    const code = dedent(await widgetCode(layoutCase('Layout / plain frame (Stack)')));
+    assert.ok(code.includes(['child: Stack(', 'children: ['].join('\n')), code);
+    assert.ok(code.includes(['Positioned(', 'left: 0,', 'top: 0,', 'width: 200,', 'height: 120,'].join('\n')), code);
+    assert.ok(code.includes(['Positioned(', 'right: 10,', 'bottom: 10,', 'width: 60,', 'height: 30,'].join('\n')), code);
+    assert.doesNotMatch(code, /child: Column\(/);
+});
+
+test('constraint recipes: LEFT_RIGHT/TOP_BOTTOM stretch, CENTER pads then aligns, SCALE aligns then sizes by fraction', async () => {
+    const code = dedent(await widgetCode(plainFrame([
+        pinned('100:2', 'Stretch', at(10, 20, 70, 30), 'LEFT_RIGHT', 'TOP_BOTTOM'),
+        pinned('100:3', 'Centred', at(55, 40, 20, 20), 'CENTER', 'CENTER'),
+        pinned('100:4', 'Scaled', at(10, 0, 70, 50), 'SCALE', 'TOP'),
+    ])));
+    assert.ok(code.includes(['Positioned(', 'left: 10,', 'right: 20,', 'top: 20,', 'bottom: 50,'].join('\n')), code);
+    // CENTER: d = x + w/2 - W/2 = 15 → Padding(left: 30), Align(0, ...), SizedBox(w).
+    assert.ok(code.includes(['Positioned(', 'left: 0,', 'right: 0,', 'top: 0,', 'bottom: 0,', 'child: Padding(',
+        'padding: EdgeInsets.only(left: 30),', 'child: Align(', 'alignment: Alignment(0, 0),', 'child: SizedBox(', 'width: 20,', 'height: 20,'].join('\n')), code);
+    // SCALE: alignment x = 2·10/(100−70) − 1 = -0.3333; widthFactor 70/100 = 0.7; TOP keeps top/height on the Positioned.
+    assert.ok(code.includes(['Positioned(', 'left: 0,', 'right: 0,', 'top: 0,', 'height: 50,', 'child: Align(', 'alignment: Alignment(-0.3333, -1),',
+        'child: FractionallySizedBox(', 'widthFactor: 0.7,'].join('\n')), code);
+});
+
+test('a SCALE child as wide as its frame aligns at -1, and RIGHT/BOTTOM measure from the far edges', async () => {
+    const code = dedent(await widgetCode(plainFrame([
+        pinned('101:2', 'Full', at(0, 0, 100, 10), 'SCALE', 'TOP'),
+        pinned('101:3', 'Corner', at(70, 80, 20, 10), 'RIGHT', 'BOTTOM'),
+    ])));
+    assert.ok(code.includes(['alignment: Alignment(-1, -1),', 'child: FractionallySizedBox(', 'widthFactor: 1,'].join('\n')), code);
+    assert.ok(code.includes(['Positioned(', 'right: 10,', 'bottom: 10,', 'width: 20,', 'height: 10,'].join('\n')), code);
+});
+
+test('z-order: an absolute layer before every flow child paints behind the flow; one between flow children is named', async () => {
+    const flow = (id: string) => ({id, name: 'Flow', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: at(0, 0, 40, 40), ...sized('FIXED', 'FIXED')});
+    const badge = (id: string) => pinned(id, 'Badge', at(30, 0, 10, 10), 'LEFT', 'TOP', {layoutPositioning: 'ABSOLUTE'});
+    const frame = (children: object[]) => ({id: '102:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], clipsContent: true,
+        absoluteBoundingBox: at(0, 0, 80, 40), ...sized('HUG', 'HUG'), children});
+
+    const behind = dedent(await widgetCode(frame([badge('102:2'), flow('102:3'), flow('102:4')])));
+    assert.ok(behind.includes(['fit: StackFit.passthrough,', 'children: [', 'Positioned('].join('\n')), behind);
+    const between = await toolText(frame([flow('102:5'), badge('102:6'), flow('102:7')]));
+    assert.match(between, /\/\/ approximate: "Badge" is absolute between flow children of "Row"; it is painted in front of them/);
+});
+
+test('clipping follows clipsContent: none when off, the default hard edge when on, ClipRRect when the frame is rounded', async () => {
+    const child = [pinned('103:2', 'Dot', at(0, 0, 10, 10), 'LEFT', 'TOP')];
+    assert.match(await widgetCode(plainFrame(child, {clipsContent: false})), /child: Stack\(\n\s+clipBehavior: Clip\.none,/);
+    assert.doesNotMatch(await widgetCode(plainFrame(child)), /clipBehavior|ClipRRect/);
+    assert.match(await widgetCode(plainFrame(child, {cornerRadius: 12})), /child: ClipRRect\(\n\s+borderRadius: BorderRadius\.circular\(12\),\n\s+child: Stack\(/);
+});
+
+test('a rotated child is placed by its box and named as an approximation', async () => {
+    const out = await toolText(plainFrame([pinned('104:2', 'Tilted', at(10, 10, 30, 30), 'LEFT', 'TOP', {rotation: 0.5})]));
+    assert.match(out, /\/\/ approximate: "Tilted" is rotated; it is placed by its bounding box/);
+});
+
+test('a group in a frame without auto layout lends its layers to the frame: each is placed by its own constraints', async () => {
+    const code = dedent(await widgetCode(plainFrame([{id: '105:2', name: 'Cluster', type: 'GROUP', absoluteBoundingBox: at(60, 60, 30, 30), children: [
+        pinned('105:3', 'Inner', at(70, 70, 20, 20), 'RIGHT', 'BOTTOM'),
+    ]}])));
+    assert.ok(code.includes(['Positioned(', 'right: 10,', 'bottom: 10,', 'width: 20,', 'height: 20,'].join('\n')), code);
+    assert.equal(code.match(/Stack\(/g)?.length, 1, code);
 });

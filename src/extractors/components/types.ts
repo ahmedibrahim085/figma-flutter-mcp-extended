@@ -62,6 +62,13 @@ export interface LayoutInfo {
     sizingVertical?: 'FIXED' | 'HUG' | 'FILL';
     layoutAlign?: 'INHERIT' | 'STRETCH';
     layoutGrow?: number;
+    /** Top-left of the node's absoluteBoundingBox; a child's position is its origin minus its parent's. */
+    origin?: {x: number; y: number};
+    positioning?: 'AUTO' | 'ABSOLUTE';
+    clipsContent?: boolean;
+    cornerRadius?: number;
+    rotation?: number;
+    reverseZIndex?: boolean;
 }
 
 /**

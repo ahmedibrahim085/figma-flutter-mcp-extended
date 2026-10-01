@@ -110,10 +110,12 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
     }
   }
   if (analysis.styleRefs.decoration) rootProps.push(`decoration: ${analysis.styleRefs.decoration},`);
-  if (analysis.styleRefs.padding) rootProps.push(`padding: ${analysis.styleRefs.padding},`);
+  const rootPaddingInside = paddingInsideStack(analysis.layout, analysis.children);
+  if (analysis.styleRefs.padding && !rootPaddingInside) rootProps.push(`padding: ${analysis.styleRefs.padding},`);
   const approximations: string[] = [];
   if (analysis.children.length > 0) {
-    const layout = layoutWidget(analysis.children, analysis.layout, analysis.metadata.name, styleLibrary, approximations);
+    const layout = layoutWidget(analysis.children, analysis.layout, analysis.metadata.name, styleLibrary, approximations,
+      rootPaddingInside ? analysis.styleRefs.padding : undefined);
     rootProps.push(`child: ${indentTail(layout, 2)},`);
   }
   let root = box('Container', rootProps);
@@ -158,6 +160,127 @@ const CROSS_AXIS_ALIGNMENT: Record<string, string | undefined> = {MIN: 'start', 
  * REST omits MIN alignment, so a missing value is MIN.
  */
 function layoutWidget(
+  children: DeduplicatedComponentChild[],
+  frame: LayoutInfo,
+  name: string,
+  styleLibrary: FlutterStyleLibrary,
+  approximations: string[],
+  padding?: string
+): string {
+  // A frame without auto layout places every child by its constraints; groups lend their layers to it (Figma applies
+  // constraints to a group's layers, relative to the frame).
+  if (!frame.direction) {
+    const layers = children.flatMap(function lift(child): DeduplicatedComponentChild[] {
+      return child.type === 'GROUP' && child.children?.length ? child.children.flatMap(lift) : [child];
+    });
+    return clipStack(layers.map(layer => positioned(layer, frame, styleLibrary, approximations)), [], frame);
+  }
+  const absoluteAt = children.map(child => child.layout.positioning === 'ABSOLUTE');
+  if (!absoluteAt.includes(true)) return flexWidget(children, frame, name, styleLibrary, approximations);
+  // ABSOLUTE children leave the flow: the flow Row/Column sizes a Stack (StackFit.passthrough keeps its constraints), the
+  // padding moves inside so positions are measured from the frame's outer box, and z-order follows the layer list.
+  const first = absoluteAt.indexOf(false);
+  const last = absoluteAt.lastIndexOf(false);
+  const flow = children.filter((_, i) => !absoluteAt[i]);
+  let behind: string[] = [];
+  let front: string[] = [];
+  children.forEach((child, i) => {
+    if (!absoluteAt[i]) return;
+    const layer = positioned(child, frame, styleLibrary, approximations);
+    if (i < first) behind.push(layer);
+    else if (i > last) front.push(layer);
+    else front.push(approximate(`"${child.name}" is absolute between flow children of "${name}"; it is painted in front of them`, layer, approximations));
+  });
+  if (frame.reverseZIndex) [behind, front] = [front, behind];
+  let flex = flexWidget(flow, frame, name, styleLibrary, approximations);
+  if (padding) flex = box('Padding', [`padding: ${padding},`, `child: ${indentTail(flex, 2)},`]);
+  return clipStack([...behind, flex, ...front], ['fit: StackFit.passthrough,'], frame);
+}
+
+/** Whether a frame's padding moves inside its Stack: auto layout with an ABSOLUTE child. */
+function paddingInsideStack(frame: LayoutInfo, children: DeduplicatedComponentChild[] | undefined): boolean {
+  return !!frame.direction && !!children?.some(child => child.layout.positioning === 'ABSOLUTE');
+}
+
+/** A Stack of `items` clipped like the Figma frame: Clip.none without clipsContent, ClipRRect when the frame is rounded. */
+function clipStack(items: string[], args: string[], frame: LayoutInfo): string {
+  const clip = frame.clipsContent ? [] : ['clipBehavior: Clip.none,'];
+  const stack = `Stack(\n${[...args, ...clip].map(arg => `  ${arg}\n`).join('')}  children: [\n${items.map(item => `${indentAll(item, 4)},\n`).join('')}  ],\n)`;
+  return frame.clipsContent && frame.cornerRadius
+    ? box('ClipRRect', [`borderRadius: BorderRadius.circular(${frame.cornerRadius}),`, `child: ${indentTail(stack, 2)},`])
+    : stack;
+}
+
+/** A number for generated Dart: at most 4 decimals, no trailing zeros. */
+const dartNumber = (value: number) => String(Math.round(value * 10000) / 10000);
+
+/**
+ * A child of a Stack frame placed by its Figma constraints (research 05 table, 29 probes matching Figma's resize rule).
+ * Start/end/stretch axes are Positioned edges and sizes; CENTER and SCALE axes span the frame and are placed inside it:
+ * Padding (CENTER offset) > Align > FractionallySizedBox (SCALE) > SizedBox (CENTER size) > child.
+ */
+function positioned(child: DeduplicatedComponentChild, frame: LayoutInfo, styleLibrary: FlutterStyleLibrary, approximations: string[]): string {
+  const origin = child.layout.origin ?? {x: 0, y: 0};
+  const frameOrigin = frame.origin ?? {x: 0, y: 0};
+  const edges: Record<string, number> = {};
+  const sizes: Record<string, number> = {};
+  const padding: Record<string, number> = {};
+  const factors: string[] = [];
+  const boxSizes: string[] = [];
+  const align = {x: -1, y: -1};
+  let wrapped = false;
+  const axis = (constraint: string, offset: number, size: number, frameSize: number, start: string, end: string, sizeName: 'width' | 'height', key: 'x' | 'y') => {
+    if (constraint === 'RIGHT' || constraint === 'BOTTOM') {
+      edges[end] = frameSize - offset - size;
+      sizes[sizeName] = size;
+    } else if (constraint === 'LEFT_RIGHT' || constraint === 'TOP_BOTTOM') {
+      edges[start] = offset;
+      edges[end] = frameSize - offset - size;
+    } else if (constraint === 'CENTER') {
+      wrapped = true;
+      edges[start] = 0;
+      edges[end] = 0;
+      const shift = offset + size / 2 - frameSize / 2;
+      if (shift > 0) padding[start] = 2 * shift;
+      if (shift < 0) padding[end] = -2 * shift;
+      align[key] = 0;
+      boxSizes.push(`${sizeName}: ${dartNumber(size)},`);
+    } else if (constraint === 'SCALE') {
+      wrapped = true;
+      edges[start] = 0;
+      edges[end] = 0;
+      align[key] = size === frameSize ? -1 : 2 * offset / (frameSize - size) - 1;
+      factors.push(`${sizeName}Factor: ${dartNumber(size / frameSize)},`);
+    } else {
+      // LEFT / TOP, and the fallback when REST omits constraints.
+      edges[start] = offset;
+      sizes[sizeName] = size;
+    }
+  };
+  const {width, height} = child.layout.dimensions;
+  axis(child.layout.constraints?.horizontal ?? 'LEFT', origin.x - frameOrigin.x, width, frame.dimensions.width, 'left', 'right', 'width', 'x');
+  axis(child.layout.constraints?.vertical ?? 'TOP', origin.y - frameOrigin.y, height, frame.dimensions.height, 'top', 'bottom', 'height', 'y');
+  let code = childWidget(child, styleLibrary, approximations) ?? sizedBox([]);
+  if (boxSizes.length) code = box('SizedBox', [...boxSizes, `child: ${indentTail(code, 2)},`]);
+  if (factors.length) code = box('FractionallySizedBox', [...factors, `child: ${indentTail(code, 2)},`]);
+  if (wrapped) code = box('Align', [`alignment: Alignment(${dartNumber(align.x)}, ${dartNumber(align.y)}),`, `child: ${indentTail(code, 2)},`]);
+  if (Object.keys(padding).length) {
+    const insets = ['left', 'top', 'right', 'bottom'].filter(side => side in padding).map(side => `${side}: ${dartNumber(padding[side])}`).join(', ');
+    code = box('Padding', [`padding: EdgeInsets.only(${insets}),`, `child: ${indentTail(code, 2)},`]);
+  }
+  const props = [
+    ...['left', 'right', 'top', 'bottom'].filter(edge => edge in edges).map(edge => `${edge}: ${dartNumber(edges[edge])},`),
+    ...['width', 'height'].filter(size => size in sizes).map(size => `${size}: ${dartNumber(sizes[size])},`),
+    `child: ${indentTail(code, 2)},`,
+  ];
+  const layer = box('Positioned', props);
+  return child.layout.rotation
+    ? approximate(`"${child.name}" is rotated; it is placed by its bounding box`, layer, approximations)
+    : layer;
+}
+
+/** The Row or Column for an auto-layout frame's flow children (see layoutWidget). */
+function flexWidget(
   children: DeduplicatedComponentChild[],
   frame: LayoutInfo,
   name: string,
@@ -255,11 +378,13 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
   }
   const props = fixedSizeProps(child.layout);
   if (decoration) props.push(`decoration: ${decoration},`);
-  const padding = styleOf('padding');
+  const paddingInside = paddingInsideStack(child.layout, child.children);
+  const padding = paddingInside ? undefined : styleOf('padding');
   if (padding) props.push(`padding: ${padding},`);
   let widget: string;
   if (child.children?.length) {
-    const layout = layoutWidget(child.children, child.layout, child.name, styleLibrary, approximations);
+    const layout = layoutWidget(child.children, child.layout, child.name, styleLibrary, approximations,
+      paddingInside ? styleOf('padding') : undefined);
     // A Container holding only a child adds nothing (avoid_unnecessary_containers).
     if (props.length === 0) return layout;
     props.push(`child: ${indentTail(layout, 2)},`);

@@ -173,9 +173,10 @@ test('Layout fixture: nested frames render their own children, in layer order', 
     assert.equal(document.children.length, 8);
 
     const code = await widgetCode(routes, '1:34');
-    // Seven auto-layout rows and one frame without auto layout (a Column until ticket 05 gives it a Stack).
+    // Seven auto-layout rows; the frame without auto layout and the frame with an absolute child are Stacks (ticket 05).
     assert.equal(code.match(/child: Row\(/g)?.length, 7, code);
-    assert.equal(code.match(/child: Column\(/g)?.length, 2, code);
+    assert.equal(code.match(/child: Column\(/g)?.length, 1, code);
+    assert.equal(code.match(/child: Stack\(/g)?.length, 2, code);
     // Every container in layer order, with the pixels of its FIXED axes ('-' for a HUG or FILL axis),
     // from the fixture's layoutSizing fields. Children of the plain frame have none and keep their size.
     const sizes = [...code.matchAll(/Container\(\n(?:\s+width: (\d+),\n)?(?:\s+height: (\d+),\n)?/g)]
@@ -206,7 +207,6 @@ test('Layout fixture: "Layout / space-between" is a spaceBetween Row with no gap
 // The FILL, min/max and absolute-child cases are tested by their own slice-2 tickets.
 for (const [name, container, why] of [
     ['Layout / wrap', 'Row(\n        crossAxisAlignment: CrossAxisAlignment.start,\n        children: [', 'layoutWrap WRAP should give a Wrap'],
-    ['Layout / plain frame (Stack)', 'Column(\n        children: [', 'overlapping children without auto layout should give a Stack'],
 ] as const) {
     test(`Layout fixture: "${name}" container is ${container.slice(0, container.indexOf('('))} (pins current behaviour, slice 2 replaces this)`, async () => {
         const {document} = fixture('layout-frame.json', '1:34');

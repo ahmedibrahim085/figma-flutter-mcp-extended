@@ -30,9 +30,10 @@ if [ -n "$(git status --porcelain --untracked-files=no)" ]; then
 fi
 LOG="$(mktemp)"
 CURRENT=""
-# On exit, Ctrl-C, SIGTERM or SIGHUP, put back the file being mutated and remove the log. A run killed
-# outright (SIGKILL, or SIGPIPE when stdout is piped into a reader that stops early) leaves the mutant
-# in place; the uncommitted-changes check above then refuses the next run until it is restored.
+# On exit, Ctrl-C, SIGTERM or SIGHUP, put back the file being mutated and remove the log. SIGKILL leaves
+# the mutant in place. A closed output pipe (SIGPIPE) usually ends with the file put back, but has been
+# seen to leave the mutant (timing-dependent). Trapping PIPE was tried and made it worse, so it stays
+# untrapped; the uncommitted-changes check above refuses the next run until a leftover is restored.
 cleanup() {
   [ -n "$CURRENT" ] && git checkout -- "$CURRENT"
   rm -f "$LOG"

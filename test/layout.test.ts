@@ -580,9 +580,11 @@ test('constraint recipes: LEFT_RIGHT/TOP_BOTTOM stretch, CENTER pads then aligns
         pinned('100:4', 'Scaled', at(10, 0, 70, 50), 'SCALE', 'TOP'),
     ])));
     assert.ok(code.includes(['Positioned(', 'left: 10,', 'right: 20,', 'top: 20,', 'bottom: 50,'].join('\n')), code);
-    // CENTER: d = x + w/2 - W/2 = 15 → Padding(left: 30), Align(0, ...), SizedBox(w).
-    assert.ok(code.includes(['Positioned(', 'left: 0,', 'right: 0,', 'top: 0,', 'bottom: 0,', 'child: Padding(',
-        'padding: EdgeInsets.only(left: 30),', 'child: Align(', 'alignment: Alignment(0, 0),', 'child: SizedBox(', 'width: 20,', 'height: 20,'].join('\n')), code);
+    // CENTER: the box keeps the frame size, shifted by s = x + w/2 - W/2 = 15 (Positioned left: s, right: -s), then
+    // Align(0, ...) and SizedBox(w). A Padding of 2s squashed children that cross the frame edge (ticket 05 Spec review).
+    assert.ok(code.includes(['Positioned(', 'left: 15,', 'right: -15,', 'top: 0,', 'bottom: 0,', 'child: Align(',
+        'alignment: Alignment(0, 0),', 'child: SizedBox(', 'width: 20,', 'height: 20,'].join('\n')), code);
+    assert.doesNotMatch(code, /EdgeInsets\.only/);
     // SCALE: alignment x = 2·10/(100−70) − 1 = -0.3333; widthFactor 70/100 = 0.7; TOP keeps top/height on the Positioned.
     assert.ok(code.includes(['Positioned(', 'left: 0,', 'right: 0,', 'top: 0,', 'height: 50,', 'child: Align(', 'alignment: Alignment(-0.3333, -1),',
         'child: FractionallySizedBox(', 'widthFactor: 0.7,'].join('\n')), code);
@@ -636,4 +638,37 @@ test('itemReverseZIndex swaps which absolute layers paint behind and in front of
         itemReverseZIndex: true, absoluteBoundingBox: at(0, 0, 40, 40), ...sized('HUG', 'HUG'), children: [flow, badge]}));
     // Without the flag the badge (after the flow child) would paint in front; reversed, it paints behind the Row.
     assert.ok(code.includes(['fit: StackFit.passthrough,', 'children: [', 'Positioned('].join('\n')), code);
+});
+
+test('a stretch axis paired with CENTER or SCALE still stretches: an infinite box on that axis inside the Align', async () => {
+    const code = dedent(await widgetCode(plainFrame([
+        pinned('107:2', 'Wide', at(10, 40, 70, 20), 'LEFT_RIGHT', 'CENTER'),
+        pinned('107:3', 'Tall', at(10, 10, 80, 70), 'SCALE', 'TOP_BOTTOM'),
+    ])));
+    assert.ok(code.includes(['Positioned(', 'left: 10,', 'right: 20,', 'top: 0,', 'bottom: 0,', 'child: Align(', 'alignment: Alignment(-1, 0),',
+        'child: SizedBox(', 'width: double.infinity,', 'height: 20,'].join('\n')), code);
+    assert.ok(code.includes(['child: FractionallySizedBox(', 'widthFactor: 0.8,', 'child: SizedBox(', 'height: double.infinity,'].join('\n')), code);
+});
+
+test('a CENTER child that crosses the frame edge keeps its size: no padding to squash it', async () => {
+    const code = dedent(await widgetCode(plainFrame([pinned('108:2', 'Outside', at(-20, 0, 10, 10), 'CENTER', 'TOP')])));
+    // s = -20 + 5 - 50 = -65
+    assert.ok(code.includes(['Positioned(', 'left: -65,', 'right: 65,', 'top: 0,', 'height: 10,', 'child: Align(', 'alignment: Alignment(0, -1),',
+        'child: SizedBox(', 'width: 10,'].join('\n')), code);
+});
+
+test('itemReverseZIndex reverses the whole paint order: the last absolute layer paints first', async () => {
+    const flow = {id: '109:2', name: 'Flow', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: at(0, 0, 40, 40), ...sized('FIXED', 'FIXED')};
+    const code = dedent(await widgetCode({id: '109:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], clipsContent: true,
+        itemReverseZIndex: true, absoluteBoundingBox: at(0, 0, 40, 40), ...sized('HUG', 'HUG'), children: [flow,
+            pinned('109:3', 'First', at(1, 0, 10, 10), 'LEFT', 'TOP', {layoutPositioning: 'ABSOLUTE'}),
+            pinned('109:4', 'Second', at(2, 0, 10, 10), 'LEFT', 'TOP', {layoutPositioning: 'ABSOLUTE'})]}));
+    // Figma: "the first layer will be drawn on top" — paint order Second, First, then the flow on top.
+    const [second, first, flowRow] = [code.indexOf('left: 2,'), code.indexOf('left: 1,'), code.indexOf('\nRow(')];
+    assert.ok(second >= 0 && second < first && first < flowRow, code);
+});
+
+test('a frame with different corner radii clips its Stack with those radii', async () => {
+    const code = await widgetCode(plainFrame([pinned('110:2', 'Dot', at(0, 0, 10, 10), 'LEFT', 'TOP')], {rectangleCornerRadii: [12, 0, 12, 0]}));
+    assert.match(code, /child: ClipRRect\(\n\s+borderRadius: BorderRadius\.only\(topLeft: Radius\.circular\(12\), bottomRight: Radius\.circular\(12\)\),/);
 });

@@ -66,7 +66,8 @@ export interface LayoutInfo {
     origin?: {x: number; y: number};
     positioning?: 'AUTO' | 'ABSOLUTE';
     clipsContent?: boolean;
-    cornerRadius?: number;
+    /** One radius, or [topLeft, topRight, bottomRight, bottomLeft] from rectangleCornerRadii. */
+    cornerRadius?: number | number[];
     rotation?: number;
     reverseZIndex?: boolean;
 }

@@ -68,7 +68,7 @@ export function extractLayoutInfo(node: FigmaNode): LayoutInfo {
         origin: {x: node.absoluteBoundingBox?.x || 0, y: node.absoluteBoundingBox?.y || 0},
         positioning: node.layoutPositioning,
         clipsContent: node.clipsContent,
-        cornerRadius: node.cornerRadius,
+        cornerRadius: node.rectangleCornerRadii ?? node.cornerRadius,
         rotation: node.rotation,
         reverseZIndex: node.itemReverseZIndex
     };

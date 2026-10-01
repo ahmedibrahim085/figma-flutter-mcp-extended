@@ -756,3 +756,20 @@ test('a fractional max still binds when the measured size rounds to it', async (
     const out = await toolText(track([bar('129:2', 'Capped', 100, {maxWidth: 100.4}), bar('129:3', 'Rest', 200)]));
     assert.match(out, /\/\/ approximate: "Capped" is clamped beside other FILL siblings; it keeps its Figma width 100/);
 });
+
+test('an undecorated HUG frame keeps its min/max (no early return past the ConstrainedBox)', async () => {
+    const kid = (id: string, width: number) => ({id, name: 'Kid', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(width, 20), ...sized('FIXED', 'FIXED')});
+    const bare = (extra: object, children: object[]) => track([{id: '131:2', name: 'Bare', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [],
+        absoluteBoundingBox: box(100, 20), ...sized('HUG', 'HUG'), ...extra, children}]);
+    const min = dedent(await widgetCode(bare({minWidth: 100, primaryAxisAlignItems: 'CENTER'}, [kid('131:3', 40)])));
+    assert.ok(min.includes(['ConstrainedBox(', 'constraints: BoxConstraints(minWidth: 100),', 'child: Row(', 'mainAxisSize: MainAxisSize.min,',
+        'mainAxisAlignment: MainAxisAlignment.center,'].join('\n')), min);
+    const max = dedent(await widgetCode(bare({maxWidth: 100, clipsContent: true}, [kid('131:4', 80), kid('131:5', 80)])));
+    assert.ok(max.includes(['ConstrainedBox(', 'constraints: BoxConstraints(maxWidth: 100),', 'child: UnconstrainedBox('].join('\n')), max);
+});
+
+test('a HUG text with a max wraps inside a ConstrainedBox', async () => {
+    const code = dedent(await widgetCode(track([{id: '132:2', name: 'Note', type: 'TEXT', characters: 'A long line that should wrap at its max width',
+        fills: [], absoluteBoundingBox: box(120, 40), ...sized('HUG', 'HUG'), maxWidth: 120, style: inter({textAutoResize: 'WIDTH_AND_HEIGHT'})}])));
+    assert.ok(code.includes(['ConstrainedBox(', 'constraints: BoxConstraints(maxWidth: 120),', 'child: Text('].join('\n')), code);
+});

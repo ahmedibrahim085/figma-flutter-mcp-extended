@@ -471,7 +471,7 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
     const textStyleId = styleOf('text');
     // Only an explicit FIXED width is emitted: a text node sizes itself by textAutoResize otherwise.
     const width = child.layout.sizingHorizontal === 'FIXED' ? Math.round(child.layout.dimensions.width) : undefined;
-    return textWidgetCode(child.textWidget ?? {text: child.textContent}, textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined, width);
+    return hugLimits(textWidgetCode(child.textWidget ?? {text: child.textContent}, textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined, width), child.layout);
   }
   // A placeholder stands in for content that is not rendered, so it keeps the measured size except on a FILL axis.
   const w = child.layout.sizingHorizontal === 'FILL' ? undefined : Math.round(child.layout.dimensions.width);
@@ -495,8 +495,8 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
   if (child.children?.length) {
     const layout = overflowLayout(layoutWidget(child.children, child.layout, child.name, styleLibrary, approximations,
       paddingInside ? styleOf('padding') : undefined), child.layout, child.children, child.name, approximations);
-    // A Container holding only a child adds nothing (avoid_unnecessary_containers).
-    if (props.length === 0) return layout;
+    // A Container holding only a child adds nothing (avoid_unnecessary_containers); a HUG min/max still applies.
+    if (props.length === 0) return hugLimits(layout, child.layout);
     props.push(`child: ${indentTail(layout, 2)},`);
     // Nothing drawn: a SizedBox holds the size and the child (sized_box_for_whitespace).
     widget = box(decoration || padding ? 'Container' : 'SizedBox', props);

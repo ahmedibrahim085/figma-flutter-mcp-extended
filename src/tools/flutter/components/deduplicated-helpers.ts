@@ -584,7 +584,6 @@ export function generateComprehensiveDeduplicatedReport(
       if (child.styleRefs.length > 0) {
         output += `      🎨 Style refs: ${child.styleRefs.join(', ')}\n`;
       }
-
     });
     output += `\n`;
   } else {

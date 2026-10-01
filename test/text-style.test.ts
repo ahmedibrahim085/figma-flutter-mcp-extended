@@ -219,7 +219,7 @@ test('a button-like label is escaped and letter-cased like any other text, on bo
     assert.deepEqual(widgets, {dedup: expected, plain: expected});
 });
 
-// No word in a text decides the widget (audit A1, A2, A12): every one is a Text with its own style.
+// No word in a text decides the widget: every one is a Text with its own style.
 for (const label of ['Save changes', 'Cancellation policy', 'Address', 'Visit our website', 'Elite members', 'Learn more', 'Home']) {
     test(`"${label}" is a Text with its own style on both code paths`, async () => {
         const widgets = await textWidgetOnBothPaths(frameWithText(label, restStyle(16, 400)), label);
@@ -255,6 +255,21 @@ test('a text keeps its interactions: the report passes them through for the agen
     for (const text of [dedup.text, plain.text]) {
         assert.match(text, /Interactions: ON_CLICK → NODE NAVIGATE 5:5; ON_HOVER → URL https:\/\/example\.com\/help/);
         assert.doesNotMatch(text, /ElevatedButton|TextButton/);
+    }
+});
+
+test('an interaction with no trigger, no actions or an action without a target is still reported, on both code paths', async () => {
+    const node = frameWithText('Open details', restStyle(16, 400));
+    (node.children[0] as any).interactions = [
+        {trigger: null, actions: [{type: 'CLOSE'}]},
+        {trigger: {type: 'ON_DRAG'}, actions: []},
+    ];
+    const args = {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true};
+    const dedup = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', args);
+    const plain = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', {...args, useDeduplication: false});
+
+    for (const text of [dedup.text, plain.text]) {
+        assert.match(text, /Interactions: no trigger → CLOSE; ON_DRAG → no action/);
     }
 });
 

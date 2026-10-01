@@ -187,9 +187,9 @@ export function getServerConfig(): ServerConfig {
         }
         console.error("");
         console.error("Examples:");
-        console.error("  npx figma-flutter --figma-api-key=YOUR_KEY --stdio");
-        console.error("  echo 'FIGMA_API_KEY=YOUR_KEY' > .env && npx figma-flutter --stdio");
-        console.error("  npx figma-flutter --figma-api-key=YOUR_KEY --remote");
+        console.error("  npx -y github:ahmedibrahim085/figma-flutter-mcp-extended --figma-api-key=YOUR_KEY --stdio");
+        console.error("  echo 'FIGMA_API_KEY=YOUR_KEY' > .env && npx -y github:ahmedibrahim085/figma-flutter-mcp-extended --stdio");
+        console.error("  npx -y github:ahmedibrahim085/figma-flutter-mcp-extended --figma-api-key=YOUR_KEY --remote");
         process.exit(1);
     }
 

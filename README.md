@@ -12,10 +12,10 @@ This repository is a fork of [mhmzdev/figma-flutter-mcp](https://github.com/mhmz
   - auto layout maps to Flutter: fixed and hug sizing, alignment, item gaps as `SizedBox`, FILL children that never meet an unbounded constraint, min/max sizes as constraints;
   - absolute children and frames without auto layout become a `Stack` placed by the Figma constraints;
   - child frames and shapes render recursively, and hidden nodes stay hidden.
-- **No silent guesses:** where Flutter cannot match Figma exactly, the code carries an `// approximate:` comment and the tool lists every approximation.
+- **No silent layout guesses:** where the layout code cannot match Figma exactly, it carries an `// approximate:` comment and the tool lists every such approximation.
 - **Safer runtime:**
   - in stdio mode, stdout carries JSON-RPC only;
-  - Figma 403 and 429 errors come back as tool errors, and a 429 says how long to wait;
+  - the component, screen, theme and asset tools and `ff_get_variable_defs` return Figma 403 and 429 as tool errors, and a 429 says how long to wait;
   - asset export no longer corrupts `pubspec.yaml`.
 - **A golden-test scaffold tool** and a test suite (`npm test`).
 
@@ -78,7 +78,7 @@ The key can also be passed as `--figma-api-key=YOUR-API-KEY`, or loaded from a f
 | Tool | What it does |
 |---|---|
 | `ff_get_metadata` | Node tree of a file or node: IDs, names, types, bounding boxes |
-| `ff_get_screenshot` | PNG, JPG or SVG image of one node |
+| `ff_get_screenshot` | PNG, JPG, SVG or PDF image of one node |
 | `ff_get_design_context` | Layout tree, components, styles, text and properties of a node |
 | `ff_get_variable_defs` | Design tokens from the Variables panel: colors, spacing, typography, radii |
 | `ff_whoami` | The authenticated Figma user; checks that the key works |
@@ -137,7 +137,7 @@ For better results, give your agent project rules (`CLAUDE.md`, `.cursor/rules/*
 
 - The output is a strong starting point, not production code to ship unreviewed.
 - The cleaner the design (auto layout, frames rather than groups, consistent alignment), the closer the code.
-- Heavy use can hit Figma rate limits (HTTP 429). The server retries up to 3 times with backoff and honours Figma's `Retry-After` when it is 30 seconds or less; a longer wait comes back as an error that states it.
+- Heavy use can hit Figma rate limits (HTTP 429). The component, screen, theme and asset tools make up to 3 attempts with backoff and honour Figma's `Retry-After` when it is 10 seconds or less; a longer wait comes back as an error that states it. The `ff_*` tools do not retry.
 
 ## Development
 
@@ -158,7 +158,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for more.
 
 ## Attribution
 
-- This project starts from [figma-flutter-mcp](https://github.com/mhmzdev/figma-flutter-mcp) by [Muhammad Hamza](https://github.com/mhmzdev). Upstream's README has translations (Korean, Japanese, Simplified and Traditional Chinese), a getting-started guide and the release history up to 0.3.3.
+- This project starts from [figma-flutter-mcp](https://github.com/mhmzdev/figma-flutter-mcp) by [Muhammad Hamza](https://github.com/mhmzdev). Upstream also has:
+  - README translations: [Korean](https://github.com/mhmzdev/figma-flutter-mcp/blob/main/README.ko.md), [Japanese](https://github.com/mhmzdev/figma-flutter-mcp/blob/main/README.ja.md), [Simplified Chinese](https://github.com/mhmzdev/figma-flutter-mcp/blob/main/README.zh-cn.md), [Traditional Chinese](https://github.com/mhmzdev/figma-flutter-mcp/blob/main/README.zh-tw.md);
+  - a [getting-started guide](https://github.com/mhmzdev/figma-flutter-mcp/blob/main/docs/getting-started.md) and a [how-it-works page](https://github.com/mhmzdev/figma-flutter-mcp/blob/main/docs/figma-flutter-mcp.md);
+  - the [release history](https://github.com/mhmzdev/figma-flutter-mcp/blob/main/CHANGELOG.md) up to 0.3.3.
 - Upstream was inspired by [Figma Context MCP](https://github.com/GLips/Figma-Context-MCP) by Graham Lipsman.
 - To build the same kind of server for another framework, see [docs/figma-framework-mcp.md](docs/figma-framework-mcp.md).
 

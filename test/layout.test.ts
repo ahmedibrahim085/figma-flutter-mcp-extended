@@ -751,3 +751,8 @@ test('a clamped HUG frame that does not clip in Figma still clips (an unclipped 
     assert.match(out, /clipBehavior: Clip\.hardEdge,/);
     assert.match(out, /\/\/ approximate: "Spill" shows its children past its max width in Figma; they are clipped here/);
 });
+
+test('a fractional max still binds when the measured size rounds to it', async () => {
+    const out = await toolText(track([bar('129:2', 'Capped', 100, {maxWidth: 100.4}), bar('129:3', 'Rest', 200)]));
+    assert.match(out, /\/\/ approximate: "Capped" is clamped beside other FILL siblings; it keeps its Figma width 100/);
+});

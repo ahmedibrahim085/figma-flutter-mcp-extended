@@ -15,7 +15,7 @@ This repository is a fork of [mhmzdev/figma-flutter-mcp](https://github.com/mhmz
 - **No silent layout guesses:** where the layout code cannot match Figma exactly, it carries an `// approximate:` comment and the tool lists every such approximation.
 - **Safer runtime:**
   - in stdio mode, stdout carries JSON-RPC only;
-  - the component, screen, theme and asset tools and `ff_get_variable_defs` return Figma 403 and 429 as tool errors, and a 429 says how long to wait;
+  - after a Figma 429, the component, screen, theme and asset tools and `ff_get_variable_defs` say how long to wait; `analyze_figma_component` and `ff_get_variable_defs` also mark Figma errors as tool errors;
   - asset export no longer corrupts `pubspec.yaml`.
 - **A golden-test scaffold tool** and a test suite (`npm test`).
 

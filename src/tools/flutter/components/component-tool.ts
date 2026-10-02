@@ -18,7 +18,6 @@ import {FlutterStyleLibrary, OptimizationReport} from "../../../extractors/flutt
 import {Logger} from "../../../utils/logger.js";
 
 import {
-    generateVariantSelectionPrompt,
     generateComponentAnalysisReport,
     generateStructureInspectionReport
 } from "./helpers.js";
@@ -56,7 +55,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 userDefinedComponent: z.boolean().optional().describe("Treat a FRAME as a component (when designer hasn't converted to actual component yet) (default: false)"),
                 maxChildNodes: z.number().optional().describe("Maximum child nodes to analyze (default: 10)"),
                 includeVariants: z.boolean().optional().describe("Include variant analysis for component sets (default: true)"),
-                variantSelection: z.array(z.string()).optional().describe("Specific variant names to analyze (if >3 variants)"),
+                variantSelection: z.array(z.string()).optional().describe("Variant names to analyze instead of every variant of a component set"),
                 projectPath: z.string().optional().describe("Path to Flutter project for asset export (defaults to current directory)"),
                 exportAssets: z.boolean().optional().describe("Automatically export image assets found in component (default: true)"),
                 useDeduplication: z.boolean().optional().describe("Use style deduplication for token efficiency (default: true)"),
@@ -138,125 +137,84 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                     }
                 }
 
-                // Check if this is a component set and handle variants
-                let variantAnalysis: ComponentVariant[] | undefined;
+                // A component set is analysed whole: every variant (or the ones variantSelection names),
+                // taken from the set response, with the axes and defaults Figma defines.
                 let selectedVariants: ComponentVariant[] = [];
+                let variantHeader = '';
 
                 if (componentNode.type === 'COMPONENT_SET' && includeVariants) {
                     const variantAnalyzer = new VariantAnalyzer();
-                    variantAnalysis = await variantAnalyzer.analyzeComponentSet(componentNode);
+                    const variantAnalysis = await variantAnalyzer.analyzeComponentSet(componentNode);
+                    selectedVariants = variantSelection && variantSelection.length > 0
+                        ? variantAnalyzer.filterVariantsBySelection(variantAnalysis, {variantNames: variantSelection, includeDefault: true})
+                        : variantAnalysis;
 
-                    if (variantAnalyzer.shouldPromptForVariantSelection(variantAnalysis)) {
-                        // More than 3 variants - check if user provided selection
-                        if (!variantSelection || variantSelection.length === 0) {
-                            const selectionInfo = variantAnalyzer.getVariantSelectionInfo(variantAnalysis);
-
-                            return {
-                                content: [{
-                                    type: "text",
-                                    text: generateVariantSelectionPrompt(componentNode.name, selectionInfo, variantAnalysis)
-                                }]
-                            };
-                        } else {
-                            // Filter variants based on user selection
-                            selectedVariants = variantAnalyzer.filterVariantsBySelection(variantAnalysis, {
-                                variantNames: variantSelection,
-                                includeDefault: true
-                            });
-
-                            if (selectedVariants.length === 0) {
-                                return {
-                                    content: [{
-                                        type: "text",
-                                        text: `No variants found matching selection: ${variantSelection.join(', ')}`
-                                    }]
-                                };
-                            }
-                        }
-                    } else {
-                        // 3 or fewer variants - analyze all
-                        selectedVariants = variantAnalysis;
+                    if (variantSelection && variantSelection.length > 0 && selectedVariants.length === 0) {
+                        return {
+                            content: [{
+                                type: "text",
+                                text: `No variants found matching selection: ${variantSelection.join(', ')}`
+                            }]
+                        };
                     }
+
+                    variantHeader = `Component Set: ${componentNode.name}\n\n`
+                        + `${variantAnalyzer.generateVariantSummary(variantAnalysis, variantAnalyzer.getVariantAxes(componentNode))}\n`
+                        + `Analyzed variants (${selectedVariants.length} of ${variantAnalysis.length}):\n`
+                        + selectedVariants.map(variant => `- ${variant.name}${variant.isDefault ? ' (default)' : ''}\n`).join('')
+                        + `\n`;
                 }
 
-                // Analyze the main component
-                let analysisReport: string;
+                // Analyse each variant node, or the node itself when there are none.
+                const targets: Array<{variant?: ComponentVariant; node: typeof componentNode}> = selectedVariants.length > 0
+                    ? selectedVariants.map(variant => ({variant, node: componentNode.children!.find(child => child.id === variant.nodeId)!}))
+                    : [{node: componentNode}];
+                const deduplicatedExtractor = new DeduplicatedComponentExtractor();
+                const componentExtractor = new ComponentExtractor({
+                    maxChildNodes,
+                    extractTextContent: true
+                });
+                const reports: string[] = [];
 
-                if (useDeduplication) {
-                    Logger.info(`🔧 Using enhanced deduplication for component analysis`);
-                    // Use deduplicated extractor
-                    const deduplicatedExtractor = new DeduplicatedComponentExtractor();
-                    let deduplicatedAnalysis: DeduplicatedComponentAnalysis;
+                for (const {variant, node} of targets) {
+                    let analysisReport: string;
 
-                    if (componentNode.type === 'COMPONENT_SET') {
-                        // For component sets, analyze the default variant or first selected variant
-                        const targetVariant = selectedVariants.find(v => v.isDefault) || selectedVariants[0];
-                        if (targetVariant) {
-                            const variantNode = await figmaService.getNode(parsedInput.fileId, targetVariant.nodeId);
-                            deduplicatedAnalysis = await deduplicatedExtractor.analyzeComponent(variantNode, true);
-                        } else {
-                            // Fallback to analyzing the component set itself
-                            deduplicatedAnalysis = await deduplicatedExtractor.analyzeComponent(componentNode, true);
+                    if (useDeduplication) {
+                        Logger.info(`🔧 Using enhanced deduplication for component analysis`);
+                        const deduplicatedAnalysis: DeduplicatedComponentAnalysis = await deduplicatedExtractor.analyzeComponent(node, true);
+
+                        Logger.info(`📊 Deduplication analysis complete:`, {
+                            styleRefs: Object.keys(deduplicatedAnalysis.styleRefs).length,
+                            children: deduplicatedAnalysis.children.length,
+                            nestedComponents: deduplicatedAnalysis.nestedComponents.length,
+                            newStyleDefinitions: deduplicatedAnalysis.newStyleDefinitions ? Object.keys(deduplicatedAnalysis.newStyleDefinitions).length : 0
+                        });
+
+                        analysisReport = generateComprehensiveDeduplicatedReport(deduplicatedAnalysis, true);
+
+                        // Add visual context for deduplicated analysis
+                        if (parsedInput.source === 'url') {
+                            // Reconstruct the Figma URL from the parsed input
+                            const figmaUrl = generateFigmaUrl(parsedInput.fileId, parsedInput.nodeId);
+                            analysisReport += "\n\n" + addVisualContextToDeduplicatedReport(
+                                deduplicatedAnalysis,
+                                figmaUrl,
+                                parsedInput.nodeId
+                            );
+                        }
+
+                        if (generateFlutterCode) {
+                            analysisReport += "\n\n" + generateFlutterImplementation(deduplicatedAnalysis);
                         }
                     } else {
-                        // Regular component, instance, or user-defined frame
-                        deduplicatedAnalysis = await deduplicatedExtractor.analyzeComponent(componentNode, true);
+                        const componentAnalysis: ComponentAnalysis = await componentExtractor.analyzeComponent(node, userDefinedComponent);
+                        analysisReport = generateComponentAnalysisReport(componentAnalysis, parsedInput);
                     }
 
-                    Logger.info(`📊 Deduplication analysis complete:`, {
-                        styleRefs: Object.keys(deduplicatedAnalysis.styleRefs).length,
-                        children: deduplicatedAnalysis.children.length,
-                        nestedComponents: deduplicatedAnalysis.nestedComponents.length,
-                        newStyleDefinitions: deduplicatedAnalysis.newStyleDefinitions ? Object.keys(deduplicatedAnalysis.newStyleDefinitions).length : 0
-                    });
-                    
-                    analysisReport = generateComprehensiveDeduplicatedReport(deduplicatedAnalysis, true);
-                    
-                    // Add visual context for deduplicated analysis
-                    if (parsedInput.source === 'url') {
-                        // Reconstruct the Figma URL from the parsed input
-                        const figmaUrl = generateFigmaUrl(parsedInput.fileId, parsedInput.nodeId);
-                        analysisReport += "\n\n" + addVisualContextToDeduplicatedReport(
-                            deduplicatedAnalysis, 
-                            figmaUrl, 
-                            parsedInput.nodeId
-                        );
-                    }
-                    
-                    if (generateFlutterCode) {
-                        analysisReport += "\n\n" + generateFlutterImplementation(deduplicatedAnalysis);
-                    }
-                } else {
-                    // Use original extractor
-                    const componentExtractor = new ComponentExtractor({
-                        maxChildNodes,
-                        extractTextContent: true
-                    });
-                    
-                    let componentAnalysis: ComponentAnalysis;
-
-                    if (componentNode.type === 'COMPONENT_SET') {
-                        // For component sets, analyze the default variant or first selected variant
-                        const targetVariant = selectedVariants.find(v => v.isDefault) || selectedVariants[0];
-                        if (targetVariant) {
-                            const variantNode = await figmaService.getNode(parsedInput.fileId, targetVariant.nodeId);
-                            componentAnalysis = await componentExtractor.analyzeComponent(variantNode, userDefinedComponent);
-                        } else {
-                            // Fallback to analyzing the component set itself
-                            componentAnalysis = await componentExtractor.analyzeComponent(componentNode, userDefinedComponent);
-                        }
-                    } else {
-                        // Regular component, instance, or user-defined frame
-                        componentAnalysis = await componentExtractor.analyzeComponent(componentNode, userDefinedComponent);
-                    }
-
-                    analysisReport = generateComponentAnalysisReport(
-                        componentAnalysis,
-                        variantAnalysis,
-                        selectedVariants,
-                        parsedInput
-                    );
+                    reports.push(variant ? `Variant: ${variant.name}${variant.isDefault ? ' (default)' : ''}\n${'─'.repeat(30)}\n${analysisReport}` : analysisReport);
                 }
+
+                const analysisReport = variantHeader + reports.join('\n\n');
 
                 // Detect and export image assets if enabled
                 let assetExportInfo = '';
@@ -302,7 +260,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
         "list_component_variants",
         {
             title: "List Component Variants",
-            description: "List all variants in a Figma component set to help with variant selection",
+            description: "List the variants of a Figma component set with the variant axes and defaults Figma defines",
             inputSchema: {
                 input: z.string().describe("Figma component set URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)")
@@ -354,18 +312,9 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
 
                 const variantAnalyzer = new VariantAnalyzer();
                 const variants = await variantAnalyzer.analyzeComponentSet(componentNode);
-                const summary = variantAnalyzer.generateVariantSummary(variants);
-                const selectionInfo = variantAnalyzer.getVariantSelectionInfo(variants);
+                const summary = variantAnalyzer.generateVariantSummary(variants, variantAnalyzer.getVariantAxes(componentNode));
 
-                let output = `Component Set: ${componentNode.name}\n\n${summary}\n`;
-
-                if (variants.length > 3) {
-                    output += `\nTo analyze specific variants, use the analyze_figma_component tool with variantSelection parameter.\n`;
-                    output += `Example variant names you can select:\n`;
-                    selectionInfo.variantNames.slice(0, 5).forEach(name => {
-                        output += `- "${name}"\n`;
-                    });
-                }
+                const output = `Component Set: ${componentNode.name}\n\n${summary}\n`;
 
                 return {
                     content: [{type: "text", text: output}]

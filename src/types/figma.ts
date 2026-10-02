@@ -44,6 +44,8 @@ export interface FigmaNode {
     /** Scroll direction of a frame that scrolls (Figma REST). */
     overflowDirection?: string;
     interactions?: FigmaInteraction[];
+    /** On a COMPONENT_SET: its property definitions; the VARIANT ones are the variant axes. */
+    componentPropertyDefinitions?: Record<string, {type: string; defaultValue?: string | boolean; variantOptions?: string[]}>;
     rotation?: number;
     itemReverseZIndex?: boolean;
     minWidth?: number | null;

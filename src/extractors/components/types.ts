@@ -229,6 +229,13 @@ export interface NestedComponentInfo {
 /**
  * Component variant information
  */
+/** A VARIANT property of a component set, as Figma defines it. */
+export interface VariantAxis {
+    name: string;
+    options: string[];
+    defaultValue: string;
+}
+
 export interface ComponentVariant {
     nodeId: string;
     name: string;

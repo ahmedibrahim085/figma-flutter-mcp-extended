@@ -1,5 +1,4 @@
 import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
-import type {ComponentVariant} from "../../../extractors/components/types.js";
 import type {ComponentAnalysis} from "../../../extractors/components/types.js";
 import {generateFlutterTextWidget} from "../../../extractors/components/extractor.js";
 import {generateComponentVisualContext} from "../visual-context.js";
@@ -11,46 +10,10 @@ import {formatPadding, formatStrokes, formatSizingAlignment} from "../../../util
 import {generateFigmaUrl} from "../../../utils/figma-url-parser.js";
 
 /**
- * Generate variant selection prompt when there are more than 3 variants
- */
-export function generateVariantSelectionPrompt(
-    componentName: string,
-    selectionInfo: any,
-    variants: ComponentVariant[]
-): string {
-    let output = `Component Set "${componentName}" has ${selectionInfo.totalCount} variants.\n\n`;
-    output += `Since there are more than 3 variants, please specify which ones to analyze.\n\n`;
-
-    output += `Available variants:\n`;
-    variants.forEach((variant, index) => {
-        const defaultMark = variant.isDefault ? ' (default)' : '';
-        output += `${index + 1}. ${variant.name}${defaultMark}\n`;
-    });
-
-    output += `\nVariant properties:\n`;
-    Object.entries(selectionInfo.variantProperties).forEach(([prop, values]: [string, any]) => {
-        output += `- ${prop}: ${Array.from(values).join(', ')}\n`;
-    });
-
-    if (selectionInfo.defaultVariant) {
-        output += `\nDefault variant: ${selectionInfo.defaultVariant.name}\n`;
-    }
-
-    output += `\nTo analyze specific variants, run the tool again with:\n`;
-    output += `variantSelection: ["variant name 1", "variant name 2"]\n\n`;
-    output += `Or to analyze all variants (may be token-intensive):\n`;
-    output += `variantSelection: ${JSON.stringify(variants.slice(0, 3).map(v => v.name))}\n`;
-
-    return output;
-}
-
-/**
  * Generate comprehensive component analysis report
  */
 export function generateComponentAnalysisReport(
     analysis: ComponentAnalysis,
-    variantAnalysis?: ComponentVariant[],
-    selectedVariants?: ComponentVariant[],
     parsedInput?: any
 ): string {
     let output = `Component Analysis Report\n\n`;
@@ -65,21 +28,6 @@ export function generateComponentAnalysisReport(
     output += `\n`;
     output += formatComponentProperties(analysis.metadata.componentProperties);
     output += formatInteractions(analysis.metadata.interactions, '');
-
-    // Variant information
-    if (variantAnalysis && variantAnalysis.length > 0) {
-        output += `Variants Analysis:\n`;
-        if (selectedVariants && selectedVariants.length > 0) {
-            output += `Analyzed variants (${selectedVariants.length} of ${variantAnalysis.length}):\n`;
-            selectedVariants.forEach(variant => {
-                const defaultMark = variant.isDefault ? ' (default)' : '';
-                output += `- ${variant.name}${defaultMark}\n`;
-            });
-        } else {
-            output += `Total variants: ${variantAnalysis.length}\n`;
-        }
-        output += `\n`;
-    }
 
     // Layout information
     output += `Layout Structure:\n`;

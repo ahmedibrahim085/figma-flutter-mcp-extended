@@ -1,7 +1,7 @@
 // src/extractors/components/variant-analyzer.mts
 
 import type {FigmaNode} from '../../types/figma.js';
-import type {ComponentVariant} from './types.js';
+import type {ComponentVariant, VariantAxis} from './types.js';
 
 /**
  * Variant analysis for ComponentSets
@@ -30,13 +30,11 @@ export class VariantAnalyzer {
             }
         });
 
-        // Determine default variant
-        const defaultVariant = this.determineDefaultVariant(variants);
-        if (defaultVariant) {
-            variants.forEach(variant => {
-                variant.isDefault = variant.nodeId === defaultVariant.nodeId;
-            });
-        }
+        // The default variant is the one whose values equal every axis's Figma default.
+        const axes = this.getVariantAxes(componentSetNode);
+        variants.forEach(variant => {
+            variant.isDefault = axes.length > 0 && axes.every(axis => variant.properties[axis.name] === axis.defaultValue);
+        });
 
         return variants;
     }
@@ -45,13 +43,11 @@ export class VariantAnalyzer {
      * Extract variant information from a component node
      */
     private extractVariantInfo(componentNode: FigmaNode): ComponentVariant {
-        const nodeAny = componentNode as any;
-
         return {
             nodeId: componentNode.id,
             name: componentNode.name,
             properties: this.parseVariantProperties(componentNode.name),
-            isDefault: false // Will be set later by determineDefaultVariant
+            isDefault: false // Set from the axes' Figma defaults in analyzeComponentSet
         };
     }
 
@@ -87,104 +83,16 @@ export class VariantAnalyzer {
     }
 
     /**
-     * Determine which variant should be considered the default
+     * The VARIANT entries of the set's componentPropertyDefinitions, in Figma's order.
      */
-    determineDefaultVariant(variants: ComponentVariant[]): ComponentVariant | null {
-        if (variants.length === 0) {
-            return null;
-        }
-
-        // Strategy 1: Look for variants with "default" in name or properties
-        const defaultByName = variants.find(variant =>
-            variant.name.toLowerCase().includes('default') ||
-            Object.values(variant.properties).some(value =>
-                value.toLowerCase().includes('default')
-            )
-        );
-
-        if (defaultByName) {
-            return defaultByName;
-        }
-
-        // Strategy 2: Look for variants with "primary" in name or properties
-        const primaryVariant = variants.find(variant =>
-            variant.name.toLowerCase().includes('primary') ||
-            Object.values(variant.properties).some(value =>
-                value.toLowerCase().includes('primary')
-            )
-        );
-
-        if (primaryVariant) {
-            return primaryVariant;
-        }
-
-        // Strategy 3: Look for common default-like values
-        const defaultValues = ['normal', 'regular', 'medium', 'enabled', 'active', 'standard'];
-        const defaultByValue = variants.find(variant =>
-            Object.values(variant.properties).some(value =>
-                defaultValues.includes(value.toLowerCase())
-            )
-        );
-
-        if (defaultByValue) {
-            return defaultByValue;
-        }
-
-        // Strategy 4: Look for first variant that has state=enabled, type=primary, etc.
-        const prioritizedVariant = variants.find(variant => {
-            const props = variant.properties;
-            return (
-                (props.state && props.state.toLowerCase() === 'enabled') ||
-                (props.type && props.type.toLowerCase() === 'primary') ||
-                (props.size && props.size.toLowerCase() === 'medium')
-            );
-        });
-
-        if (prioritizedVariant) {
-            return prioritizedVariant;
-        }
-
-        // Fallback: Return first variant
-        return variants[0];
-    }
-
-    /**
-     * Check if variant selection should be prompted to user
-     */
-    shouldPromptForVariantSelection(variants: ComponentVariant[]): boolean {
-        return variants.length > 3;
-    }
-
-    /**
-     * Get variant selection prompt information
-     */
-    getVariantSelectionInfo(variants: ComponentVariant[]): {
-        totalCount: number;
-        variantNames: string[];
-        variantProperties: Record<string, Set<string>>;
-        defaultVariant?: ComponentVariant;
-    } {
-        const variantNames = variants.map(v => v.name);
-        const defaultVariant = variants.find(v => v.isDefault);
-
-        // Collect all unique property keys and their possible values
-        const variantProperties: Record<string, Set<string>> = {};
-
-        variants.forEach(variant => {
-            Object.entries(variant.properties).forEach(([key, value]) => {
-                if (!variantProperties[key]) {
-                    variantProperties[key] = new Set();
-                }
-                variantProperties[key].add(value);
-            });
-        });
-
-        return {
-            totalCount: variants.length,
-            variantNames,
-            variantProperties,
-            defaultVariant
-        };
+    getVariantAxes(componentSetNode: FigmaNode): VariantAxis[] {
+        return Object.entries(componentSetNode.componentPropertyDefinitions ?? {})
+            .filter(([, definition]) => definition.type === 'VARIANT')
+            .map(([name, definition]) => ({
+                name,
+                options: definition.variantOptions ?? [],
+                defaultValue: String(definition.defaultValue ?? '')
+            }));
     }
 
     /**
@@ -231,101 +139,30 @@ export class VariantAnalyzer {
     }
 
     /**
-     * Compare variants to identify differences
-     * Useful for understanding what changes between variants
+     * Generate summary of variant analysis: the variants, then the axes and defaults Figma defines
      */
-    compareVariants(variants: ComponentVariant[]): {
-        commonProperties: Record<string, string>;
-        differentProperties: Record<string, Set<string>>;
-        uniqueProperties: Record<string, Record<string, string>>;
-    } {
-        const commonProperties: Record<string, string> = {};
-        const differentProperties: Record<string, Set<string>> = {};
-        const uniqueProperties: Record<string, Record<string, string>> = {};
-
-        if (variants.length === 0) {
-            return {commonProperties, differentProperties, uniqueProperties};
-        }
-
-        // Get all property keys from all variants
-        const allPropertyKeys = new Set<string>();
-        variants.forEach(variant => {
-            Object.keys(variant.properties).forEach(key => allPropertyKeys.add(key));
-        });
-
-        // Analyze each property
-        allPropertyKeys.forEach(propertyKey => {
-            const values = new Set<string>();
-            const variantsByValue: Record<string, string[]> = {};
-
-            variants.forEach(variant => {
-                const value = variant.properties[propertyKey];
-                if (value) {
-                    values.add(value);
-                    if (!variantsByValue[value]) {
-                        variantsByValue[value] = [];
-                    }
-                    variantsByValue[value].push(variant.name);
-                }
-            });
-
-            // If all variants have the same value for this property, it's common
-            if (values.size === 1 && variants.every(v => v.properties[propertyKey])) {
-                commonProperties[propertyKey] = Array.from(values)[0];
-            }
-            // If variants have different values, it's a differentiating property
-            else if (values.size > 1) {
-                differentProperties[propertyKey] = values;
-            }
-            // If only some variants have this property, it's unique to those variants
-            else {
-                variants.forEach(variant => {
-                    if (variant.properties[propertyKey]) {
-                        if (!uniqueProperties[variant.name]) {
-                            uniqueProperties[variant.name] = {};
-                        }
-                        uniqueProperties[variant.name][propertyKey] = variant.properties[propertyKey];
-                    }
-                });
-            }
-        });
-
-        return {commonProperties, differentProperties, uniqueProperties};
-    }
-
-    /**
-     * Generate summary of variant analysis
-     */
-    generateVariantSummary(variants: ComponentVariant[]): string {
+    generateVariantSummary(variants: ComponentVariant[], axes: VariantAxis[]): string {
         if (variants.length === 0) {
             return 'No variants found in component set.';
         }
 
-        const defaultVariant = variants.find(v => v.isDefault);
-        const comparison = this.compareVariants(variants);
-
         let summary = `Found ${variants.length} variants:\n`;
-
-        // List all variants
         variants.forEach((variant, index) => {
             const defaultMark = variant.isDefault ? ' (default)' : '';
             summary += `${index + 1}. ${variant.name}${defaultMark}\n`;
         });
 
-        // Show differentiating properties
-        if (Object.keys(comparison.differentProperties).length > 0) {
-            summary += '\nVariant properties:\n';
-            Object.entries(comparison.differentProperties).forEach(([prop, values]) => {
-                summary += `- ${prop}: ${Array.from(values).join(', ')}\n`;
+        if (axes.length > 0) {
+            summary += '\nVariant axes (Figma componentPropertyDefinitions):\n';
+            axes.forEach(axis => {
+                summary += `- ${axis.name}: ${axis.options.join(', ')} (default: ${axis.defaultValue})\n`;
             });
         }
 
-        // Show common properties
-        if (Object.keys(comparison.commonProperties).length > 0) {
-            summary += '\nShared properties:\n';
-            Object.entries(comparison.commonProperties).forEach(([prop, value]) => {
-                summary += `- ${prop}: ${value}\n`;
-            });
+        if (!variants.some(variant => variant.isDefault)) {
+            summary += axes.length > 0
+                ? "\nFigma's defaults match no variant; none is marked default.\n"
+                : '\nThis set has no VARIANT property definitions; no default variant is marked.\n';
         }
 
         return summary;

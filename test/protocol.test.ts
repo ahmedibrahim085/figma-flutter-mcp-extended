@@ -1,6 +1,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {existsSync, mkdtempSync, readFileSync} from 'node:fs';
+import {rm} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
@@ -67,8 +68,9 @@ test('stdio: server identifies as figma-flutter and lists exactly the registered
     assert.deepEqual(tools, EXPECTED_TOOLS);
 });
 
-test('stdio: generate_golden_file_test reports "Golden file test written to" the file it wrote', async () => {
+test('stdio: generate_golden_file_test reports "Golden file test written to" the file it wrote', async (t) => {
     const dir = mkdtempSync(join(tmpdir(), 'golden-'));
+    t.after(() => rm(dir, {recursive: true, force: true}));
     const {text, isError} = await callToolOffline({}, 'generate_golden_file_test',
         {widgetName: 'ContinueButton', widgetImportPath: 'widgets/continue_button.dart', projectPath: dir});
     assert.equal(isError, false);

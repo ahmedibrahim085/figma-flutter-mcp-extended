@@ -8,9 +8,9 @@ export interface MaterialBreakpoints {
     height: string;
 }
 
-/** The last step whose lower bound (inclusive) the value reaches. */
+/** The step with the largest lower bound (inclusive) the value reaches; the config's step order does not matter. */
 function classOf(value: number, steps: Step[]): string {
-    return steps.filter(step => value >= step.min).pop()!.name;
+    return steps.filter(step => value >= step.min).reduce((best, step) => (step.min > best.min ? step : best)).name;
 }
 
 export function materialBreakpoints(width: number, height: number): MaterialBreakpoints {

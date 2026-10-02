@@ -65,7 +65,6 @@ test('report headings use Figma and Flutter terms', async () => {
     assert.match(plain.text, /Child layers \(1 analyzed\)/);
     assert.match(screen.text, /Layout sizing \(FIXED\/HUG\/FILL\)/);
     assert.match(screen.text, /Screen layout map for AI Implementation/);
-    assert.match(screen.text, /Name-based layer classification/);
     assert.match(screen.text, /Child widgets:/);
     assert.match(status.text, /Cached styles/);
     for (const old of [/Child Layers \(/, /Child Widgets:/, /Screen Layout map/, /child elements/i, /Child Elements/, /Layout Sizing Semantics/, /Visual Context/, /Enhanced Semantic Detection/, /Section Widgets/, /Style Library/]) {

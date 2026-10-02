@@ -118,25 +118,17 @@ const SCREEN = {
     ],
 };
 
-const NO_APP_BAR_SCREEN = {
-    id: '1:2',
-    name: 'Screen',
-    type: 'FRAME',
-    absoluteBoundingBox: {x: 0, y: 0, width: 375, height: 812},
-    children: [{id: '1:3', name: 'Body Content', type: 'FRAME', absoluteBoundingBox: {x: 0, y: 0, width: 375, height: 700}}],
-};
-
 const analyzeScreen = (node: {id: string}) => callOnNode(node, 'analyze_frame_as_screen', {extractAssets: false});
 
-test('analyze_frame_as_screen reports each section with sizing, border and shadow', async () => {
+test('analyze_frame_as_screen reports each child layer in layer order with sizing, border and shadow', async () => {
     const {text, requests} = await analyzeScreen(SCREEN);
 
     assert.deepEqual(requests.map((r) => ({path: r.path, query: r.query})),
         [{path: `/files/${FILE_KEY}/nodes`, query: {ids: '4:1'}}]);
     assert.ok(text.includes(`Child layers (2 identified):
-1. Header (HEADER)
-   Priority: 8/10
+1. Header (FRAME, 4:2)
    Size: 375×56px
+   Position: (0, 0) in parent
    Horizontal Sizing: FILL
    Vertical Sizing: FIXED
    Parent Alignment: STRETCH
@@ -144,9 +136,9 @@ test('analyze_frame_as_screen reports each section with sizing, border and shado
    - Drop shadow 1: #000000 opacity 5% offset(0, 3) blur 100px
    Contains: 1 elements
    - Title: 200×24px
-2. Body Content (CONTENT)
-   Priority: 8/10
+2. Body Content (FRAME, 4:3)
    Size: 375×700px
+   Position: (0, 56) in parent
    Horizontal Sizing: FILL
    Vertical Sizing: FILL
    Parent Alignment: STRETCH
@@ -155,13 +147,13 @@ test('analyze_frame_as_screen reports each section with sizing, border and shado
 `), text);
 });
 
-test('inspect_frame_structure reports padding, border and shadow per section', async () => {
+test('inspect_frame_structure reports padding, border and shadow per child layer', async () => {
     const {text} = await callOnNode(SCREEN, 'inspect_frame_structure', {showAllChildren: true});
 
     assert.ok(text.includes(`Screen Structure:
-1. Header (FRAME) [HEADER]
+1. Header (FRAME, 4:2)
    Size: 375×56px
-   Position: (0, 0)
+   Position: (0, 0) in parent
    Horizontal Sizing: FILL
    Vertical Sizing: FIXED
    Parent Alignment: STRETCH
@@ -169,9 +161,9 @@ test('inspect_frame_structure reports padding, border and shadow per section', a
    - Padding: 8px 16px 8px 16px (TRBL)
    - Border: 1px solid #000000 align INSIDE
    - Drop shadow 1: #000000 opacity 5% offset(0, 3) blur 100px
-2. Body Content (FRAME)
+2. Body Content (FRAME, 4:3)
    Size: 375×700px
-   Position: (0, 56)
+   Position: (0, 56) in parent
    Horizontal Sizing: FILL
    Vertical Sizing: FILL
    Parent Alignment: STRETCH
@@ -179,20 +171,114 @@ test('inspect_frame_structure reports padding, border and shadow per section', a
 `), text);
 });
 
-// Upstream PR #53: SafeArea keeps the top edge only when no App Bar occupies it.
-test('with an App Bar header, the SafeArea leaves the top edge to it', async () => {
-    const {text} = await analyzeScreen(SCREEN);
+// Ticket 04: layers are listed in Figma order with parent-relative bounds; no role is guessed from a name or a position.
+const frame = (id: string, name: string, x: number, y: number, width: number, height: number, extra: object = {}) =>
+    ({id, name, type: 'FRAME', absoluteBoundingBox: {x, y, width, height}, ...extra});
+const screenOf = (children: object[], y = 0) => ({
+    id: '6:1', name: 'Home', type: 'FRAME', absoluteBoundingBox: {x: 0, y, width: 375, height: 812}, children,
+});
+const BOTH_TOOLS = [['analyze_frame_as_screen', {extractAssets: false}], ['inspect_frame_structure', {}]] as const;
 
-    assert.ok(text.includes(`  body: SafeArea(
-    top: false, // the App Bar already occupies the top edge
-    child: Column(`), text);
+const moveDown = (node: any, dy: number): any => ({
+    ...node,
+    ...(node.absoluteBoundingBox ? {absoluteBoundingBox: {...node.absoluteBoundingBox, y: node.absoluteBoundingBox.y + dy}} : {}),
+    ...(node.children ? {children: node.children.map((child: any) => moveDown(child, dy))} : {}),
 });
 
-test('without an App Bar, the top safe area is required and SafeArea keeps the top edge', async () => {
-    const {text} = await analyzeScreen(NO_APP_BAR_SCREEN);
+for (const [tool, args] of BOTH_TOOLS) {
+    test(`${tool}: the same screen moved 5000 px down gives identical output`, async () => {
+        const at = await callOnNode(SCREEN, tool, args);
+        const moved = await callOnNode(moveDown(SCREEN, 5000), tool, args);
 
-    assert.match(text, /^- Top Safe Area: Required at runtime \(no App Bar present\)$/m);
+        assert.equal(moved.text, at.text);
+    });
+
+    test(`${tool}: a child's position is relative to its parent`, async () => {
+        const node = screenOf([frame('6:2', 'Card', 150, 300, 100, 50)], 200);
+        node.absoluteBoundingBox.x = 50;
+        const {text} = await callOnNode(node, tool, args);
+
+        assert.match(text, /Card \(FRAME, 6:2\)[^]*?Position: \(100, 100\) in parent/);
+    });
+
+    test(`${tool}: a 40×40 "Back button" and a frame named "Nav Bar" are listed, not dropped`, async () => {
+        const node = screenOf([frame('6:2', 'Back button', 8, 8, 40, 40), frame('6:3', 'Nav Bar', 0, 0, 375, 44)]);
+        const {text} = await callOnNode(node, tool, args);
+
+        assert.match(text, /1\. Back button \(FRAME, 6:2\)/);
+        assert.match(text, /2\. Nav Bar \(FRAME, 6:3\)/);
+        assert.doesNotMatch(text, /filtered|device UI/i);
+    });
+
+    test(`${tool}: children are listed in layer order, not sorted by size`, async () => {
+        const node = screenOf([frame('6:2', 'B', 0, 600, 20, 20), frame('6:3', 'Header', 0, 0, 375, 300)]);
+        const {text} = await callOnNode(node, tool, args);
+
+        assert.match(text, /1\. B \(FRAME, 6:2\)/);
+        assert.match(text, /2\. Header \(FRAME, 6:3\)/);
+        assert.doesNotMatch(text, /Priority|\[HEADER\]|\(HEADER\)/);
+    });
+
+    test(`${tool}: a layer with scrollBehavior FIXED is listed as a child and again under "Fixed on scroll"`, async () => {
+        const node = screenOf([
+            frame('6:2', 'Status Bar', 0, 0, 375, 44, {scrollBehavior: 'FIXED'}),
+            frame('6:3', 'Body', 0, 44, 375, 700, {scrollBehavior: 'SCROLLS'}),
+            frame('6:4', 'Menu', 0, 744, 375, 68, {scrollBehavior: 'FIXED'}),
+        ]);
+        const {text} = await callOnNode(node, tool, args);
+
+        assert.match(text, /1\. Status Bar \(FRAME, 6:2\)/);
+        assert.match(text, /3\. Menu \(FRAME, 6:4\)/);
+        assert.match(text, /Fixed on scroll \(Figma scrollBehavior: FIXED\):\n- Status Bar \(FRAME, 6:2\)\n- Menu \(FRAME, 6:4\)\n/);
+    });
+
+    test(`${tool}: no "Fixed on scroll" heading when no layer is FIXED`, async () => {
+        const {text} = await callOnNode(SCREEN, tool, args);
+
+        assert.doesNotMatch(text, /Fixed on scroll/);
+    });
+}
+
+test('analyze_frame_as_screen: a nested text named "Section Header" gives no appBar', async () => {
+    const node = screenOf([{...frame('6:2', 'Card list', 0, 0, 375, 400), children: [
+        {id: '6:3', name: 'Section Header', type: 'TEXT', characters: 'Section Header', absoluteBoundingBox: {x: 0, y: 0, width: 100, height: 20}},
+    ]}]);
+    const {text} = await analyzeScreen(node);
+
+    assert.doesNotMatch(text, /appBar:/);
+});
+
+test('analyze_frame_as_screen: the scaffold is always Scaffold(body: SafeArea(Column(children in order)))', async () => {
+    const node = screenOf([
+        frame('6:2', 'Header', 0, 0, 375, 56), frame('6:3', 'Tab bar', 0, 756, 375, 56), frame('6:4', 'Drawer', 0, 100, 200, 400),
+    ]);
+    const {text} = await analyzeScreen(node);
+
     assert.ok(text.includes(`Scaffold(
   body: SafeArea(
-    child: Column(`), text);
+    child: Column(
+      children: [
+        Header(),
+        TabBar(),
+        Drawer(),
+      ],
+    ),
+  ),
+)`), text);
+    assert.doesNotMatch(text, /top: false|bottom: false|appBar:|drawer:|bottomNavigationBar:|Top Safe Area|Has (Header|Footer|Navigation)/);
+});
+
+test('analyze_frame_as_screen: a layer named "Login" or "Next" yields no button or tab widget guidance', async () => {
+    const node = screenOf([frame('6:2', 'Login button', 0, 0, 100, 40), frame('6:3', 'Tab Home', 0, 50, 100, 40)]);
+    const {text} = await analyzeScreen(node);
+
+    assert.doesNotMatch(text, /ElevatedButton|TextButton|BottomNavigationBar|Icons\.(placeholder|home)|Navigation Items|extractNavigation/);
+});
+
+test('analyze_frame_as_screen: more child layers than maxChildNodes are named as skipped, in layer order', async () => {
+    const node = screenOf([frame('6:2', 'One', 0, 0, 10, 10), frame('6:3', 'Two', 0, 20, 10, 10), frame('6:4', 'Three', 0, 40, 10, 10)]);
+    const {text} = await callOnNode(node, 'analyze_frame_as_screen', {extractAssets: false, maxChildNodes: 2});
+
+    assert.match(text, /1\. One \(FRAME, 6:2\)[^]*2\. Two \(FRAME, 6:3\)/);
+    assert.match(text, /1 child layers were skipped due to limits:\n1\. Three \(FRAME\) - max_child_nodes/);
 });

@@ -33,18 +33,17 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
         "analyze_frame_as_screen",
         {
             title: "Analyze Frame as Screen",
-            description: "Analyze a Figma frame treated as a screen to extract layout, child layers, navigation, and structure information for Flutter screen implementation",
+            description: "Analyze a Figma frame treated as a screen to extract layout, child layers, and structure information for Flutter screen implementation",
             inputSchema: {
                 input: z.string().describe("Figma frame URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
                 maxChildNodes: z.number().optional().describe("Maximum child layers to analyze (default: 15)"),
-                extractNavigation: z.boolean().optional().describe("Extract navigation elements (default: true)"),
                 extractAssets: z.boolean().optional().describe("Extract and export screen assets (default: true)"),
                 projectPath: z.string().optional().describe("Path to Flutter project for asset export (defaults to current directory)"),
                 deviceTypeDetection: z.boolean().optional().describe("Detect device type and orientation (default: true)")
             }
         },
-        async ({input, nodeId, maxChildNodes = 15, extractNavigation = true, extractAssets = true, projectPath = process.cwd(), deviceTypeDetection = true}) => {
+        async ({input, nodeId, maxChildNodes = 15, extractAssets = true, projectPath = process.cwd(), deviceTypeDetection = true}) => {
             const token = figmaApiKey;
             if (!token) {
                 return {
@@ -71,7 +70,6 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
                 const figmaService = new FigmaService(token);
                 const screenExtractor = new ScreenExtractor({
                     maxChildNodes,
-                    extractNavigation,
                     deviceTypeDetection
                 });
 
@@ -135,7 +133,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
         "inspect_frame_structure",
         {
             title: "Inspect Frame Structure",
-            description: "Get a quick overview of a frame's structure, child layers, and navigation elements",
+            description: "Get a quick overview of a frame's structure and child layers",
             inputSchema: {
                 input: z.string().describe("Figma frame URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),

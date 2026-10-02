@@ -1,6 +1,6 @@
 // src/tools/flutter/screens/helpers.mts
 
-import type {ScreenAnalysis, ScreenSection, NavigationElement} from "../../../extractors/screens/types.js";
+import type {ScreenAnalysis} from "../../../extractors/screens/types.js";
 import type {ComponentChild} from "../../../extractors/components/types.js";
 import {generateScreenVisualContext} from "../visual-context.js";
 import {filterEffectivelyVisibleChildren} from "../../../utils/visibility.js";
@@ -91,82 +91,47 @@ export function generateScreenAnalysisReport(
     if (analysis.layout.scrollable) {
         output += `- Scrollable: Yes\n`;
     }
-    if (analysis.layout.hasHeader) {
-        output += `- Has Header: Yes\n`;
-    }
-    if (analysis.layout.hasFooter) {
-        output += `- Has Footer: Yes\n`;
-    }
-    if (analysis.layout.hasNavigation) {
-        output += `- Has Navigation: Yes\n`;
-    }
-    if (analysis.layout.contentArea) {
-        const area = analysis.layout.contentArea;
-        output += `- Content Area: ${Math.round(area.width)}×${Math.round(area.height)}px at (${Math.round(area.x)}, ${Math.round(area.y)})\n`;
-    }
-    const topSafeArea = analysis.layout.safeArea?.top;
-    if (topSafeArea?.required) {
-        output += `- Top Safe Area: Required at runtime (no App Bar present)\n`;
-    }
     output += `\n`;
 
-    // Screen sections
-    if (analysis.sections.length > 0) {
-        output += `Child layers (${analysis.sections.length} identified):\n`;
-        analysis.sections.forEach((section, index) => {
-            output += `${index + 1}. ${section.name} (${section.type.toUpperCase()})\n`;
-            output += `   Priority: ${section.importance}/10\n`;
-            
-            if (section.layout.dimensions) {
-                const dims = section.layout.dimensions;
+    // Child layers, in Figma layer order
+    if (analysis.children.length > 0) {
+        output += `Child layers (${analysis.children.length} identified):\n`;
+        analysis.children.forEach((child, index) => {
+            output += `${index + 1}. ${child.name} (${child.type}, ${child.nodeId})\n`;
+
+            if (child.layout.dimensions) {
+                const dims = child.layout.dimensions;
                 output += `   Size: ${Math.round(dims.width)}×${Math.round(dims.height)}px\n`;
             }
+            if (child.bounds) {
+                output += `   Position: (${Math.round(child.bounds.x)}, ${Math.round(child.bounds.y)}) in parent\n`;
+            }
             output += formatSizingAlignment({
-                horizontal: section.layout.sizingHorizontal,
-                vertical: section.layout.sizingVertical,
-                align: section.layout.layoutAlign
+                horizontal: child.layout.sizingHorizontal,
+                vertical: child.layout.sizingVertical,
+                align: child.layout.layoutAlign
             }, '   ');
 
-            output += formatVisualBoxEvidence(section.styling, section.layout, '   ');
-            output += formatCategorizedEffects(section.styling?.effects, '   ');
-            
-            if (section.children.length > 0) {
-                output += `   Contains: ${section.children.length} elements\n`;
-                output += generateChildLayoutEvidence(section.children);
+            output += formatVisualBoxEvidence(child.styling, child.layout, '   ');
+            output += formatCategorizedEffects(child.styling?.effects, '   ');
+
+            if (child.children.length > 0) {
+                output += `   Contains: ${child.children.length} elements\n`;
+                output += generateChildLayoutEvidence(child.children);
             }
-            
-            if (section.components.length > 0) {
-                output += `   Components: ${section.components.length} nested component(s)\n`;
+
+            if (child.components.length > 0) {
+                output += `   Components: ${child.components.length} nested component(s)\n`;
             }
         });
         output += `\n`;
+        output += formatFixedOnScroll(analysis.children);
     }
 
     output += `Layout sizing (FIXED/HUG/FILL):\n`;
     output += `- FILL / STRETCH: adapt to the parent's available space; do not hardcode the measured width. Use parent padding, stretch, or Expanded as appropriate.\n`;
     output += `- FIXED: preserve the explicit Figma dimension.\n`;
     output += `- HUG: size to the child content.\n\n`;
-
-    // Navigation information
-    if (analysis.navigation.navigationElements.length > 0) {
-        output += `Navigation Elements:\n`;
-        
-        if (analysis.navigation.hasTabBar) output += `- Has Tab Bar\n`;
-        if (analysis.navigation.hasAppBar) output += `- Has App Bar\n`;
-        if (analysis.navigation.hasDrawer) output += `- Has Drawer\n`;
-        if (analysis.navigation.hasBottomSheet) output += `- Has Bottom Sheet\n`;
-        
-        output += `\nNavigation Items (${analysis.navigation.navigationElements.length}):\n`;
-        analysis.navigation.navigationElements.forEach((nav, index) => {
-            const activeMark = nav.isActive ? ' [ACTIVE]' : '';
-            const iconMark = nav.icon ? ' 🎯' : '';
-            output += `${index + 1}. ${nav.name} (${nav.type.toUpperCase()})${activeMark}${iconMark}\n`;
-            if (nav.text) {
-                output += `   Text: "${nav.text}"\n`;
-            }
-        });
-        output += `\n`;
-    }
 
     // Nested components for separate analysis
     if (analysis.components.length > 0) {
@@ -186,27 +151,11 @@ export function generateScreenAnalysisReport(
     // Skipped nodes report
     if (analysis.skippedNodes && analysis.skippedNodes.length > 0) {
         output += `Analysis Limitations:\n`;
-        
-        const deviceUISkipped = analysis.skippedNodes.filter(node => node.reason === 'device_ui_element');
-        const limitSkipped = analysis.skippedNodes.filter(node => node.reason === 'max_sections');
-        
-        if (deviceUISkipped.length > 0) {
-            output += `${deviceUISkipped.length} device UI elements were automatically filtered out:\n`;
-            deviceUISkipped.forEach((skipped, index) => {
-                output += `${index + 1}. ${skipped.name} (${skipped.type}) - device UI placeholder\n`;
-            });
-            output += `\n`;
-        }
-        
-        if (limitSkipped.length > 0) {
-            output += `${limitSkipped.length} child layers were skipped due to limits:\n`;
-            limitSkipped.forEach((skipped, index) => {
-                output += `${index + 1}. ${skipped.name} (${skipped.type}) - ${skipped.reason}\n`;
-            });
-            output += `\nTo analyze all child layers, increase the maxChildNodes parameter.\n`;
-        }
-        
-        output += `\n`;
+        output += `${analysis.skippedNodes.length} child layers were skipped due to limits:\n`;
+        analysis.skippedNodes.forEach((skipped, index) => {
+            output += `${index + 1}. ${skipped.name} (${skipped.type}) - ${skipped.reason}\n`;
+        });
+        output += `\nTo analyze all child layers, increase the maxChildNodes parameter.\n\n`;
     }
 
     // Visual context for AI implementation
@@ -272,16 +221,14 @@ export function generateScreenStructureReport(node: any, showAllChildren: boolea
         const componentMark = isComponent ? ' [COMPONENT]' : '';
         const hiddenMark = section.visible === false ? ' [HIDDEN]' : '';
         
-        // Detect section type
-        const sectionType = detectSectionTypeFromName(section.name);
-        const typeMark = sectionType !== 'content' ? ` [${sectionType.toUpperCase()}]` : '';
-
-        output += `${index + 1}. ${section.name} (${section.type})${componentMark}${typeMark}${hiddenMark}\n`;
+        output += `${index + 1}. ${section.name} (${section.type}, ${section.id})${componentMark}${hiddenMark}\n`;
 
         if (section.absoluteBoundingBox) {
             const bbox = section.absoluteBoundingBox;
             output += `   Size: ${Math.round(bbox.width)}×${Math.round(bbox.height)}px\n`;
-            output += `   Position: (${Math.round(bbox.x)}, ${Math.round(bbox.y)})\n`;
+            if (node.absoluteBoundingBox) {
+                output += `   Position: (${Math.round(bbox.x - node.absoluteBoundingBox.x)}, ${Math.round(bbox.y - node.absoluteBoundingBox.y)}) in parent\n`;
+            }
         }
         output += formatSizingAlignment({
             horizontal: section.layoutSizingHorizontal,
@@ -314,6 +261,10 @@ export function generateScreenStructureReport(node: any, showAllChildren: boolea
         output += formatFigmaEffects(section.effects, '   ');
     });
 
+    output += formatFixedOnScroll(sectionsSource.map((section: any) => ({
+        name: section.name, type: section.type, nodeId: section.id, scrollBehavior: section.scrollBehavior
+    })));
+
     if (hasMore) {
         output += `\n... and ${sectionsSource.length - sectionsToShow.length} more child layers.\n`;
         output += `Use showAllChildren: true to see all child layers.\n`;
@@ -341,16 +292,6 @@ export function generateScreenStructureReport(node: any, showAllChildren: boolea
         output += `- Screen has ${largeSections.length} large child layers - consider increasing maxChildNodes\n`;
     }
 
-    // Detect navigation elements
-    const navSections = node.children.filter((section: any) => {
-        const name = section.name.toLowerCase();
-        return name.includes('nav') || name.includes('tab') || name.includes('menu') || 
-               name.includes('header') || name.includes('footer');
-    });
-    if (navSections.length > 0) {
-        output += `- Found ${navSections.length} navigation-related child layers\n`;
-    }
-
     return output;
 }
 
@@ -368,145 +309,35 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
     guidance += `- Use private widgets (prefix with _) for internal screen component breakdown\n`;
     guidance += `- Avoid functional widgets - always use StatelessWidget classes\n\n`;
     
-    guidance += `📱 Device UI Filtering:\n`;
-    guidance += `- Status bars, battery icons, wifi indicators are automatically filtered out\n`;
-    guidance += `- Home indicators, notches, and device bezels are ignored during analysis\n`;
-    guidance += `- Only actual app design content is analyzed for Flutter implementation\n`;
+    guidance += `📱 Safe area:\n`;
     guidance += `- Safe-area insets belong to screen composition, not reusable component heights\n`;
-    guidance += `- Use Flutter SafeArea for reported screen edges; never hardcode the design inset\n\n`;
+    guidance += `- Use Flutter SafeArea for the screen edges; never hardcode the design inset\n\n`;
 
-    // Main scaffold structure
+    // Main scaffold structure: the child layers in Figma order, no role guessed from a name or a position
     guidance += `Main Screen Structure:\n`;
     guidance += `Scaffold(\n`;
-    
-    // App bar
-    if (analysis.navigation.hasAppBar) {
-        guidance += `  appBar: AppBar(\n`;
-        guidance += `    title: Text('${analysis.metadata.name}'),\n`;
-        guidance += `    // Add app bar actions and styling\n`;
-        guidance += `  ),\n`;
-    }
-    
-    // Drawer
-    if (analysis.navigation.hasDrawer) {
-        guidance += `  drawer: Drawer(\n`;
-        guidance += `    // Add drawer content\n`;
-        guidance += `  ),\n`;
-    }
-    
-    // Body structure
-    const footerSections = analysis.sections.filter(section => section.type === 'footer');
-    const bodySections = analysis.sections.filter(section => section.type !== 'footer');
-
-    // Body owns whichever edge its neighboring slot does not already absorb:
-    // top is unhandled without an AppBar, bottom is unhandled without a footer/bottomNavigationBar.
-    const needsTopSafeArea = analysis.layout.safeArea?.top?.required ?? false;
-    const needsBottomSafeArea = footerSections.length === 0;
-    const wrapBodyInSafeArea = needsTopSafeArea || needsBottomSafeArea;
-    const bodyIndent = wrapBodyInSafeArea ? '  ' : '';
-
-    guidance += `  body: `;
-    if (wrapBodyInSafeArea) {
-        guidance += `SafeArea(\n`;
-        if (!needsTopSafeArea) {
-            guidance += `    top: false, // the App Bar already occupies the top edge\n`;
-        }
-        if (!needsBottomSafeArea) {
-            guidance += `    bottom: false, // bottomNavigationBar already occupies the bottom edge\n`;
-        }
-        guidance += `    child: `;
-    }
-
-    if (analysis.layout.scrollable) {
-        guidance += `SingleChildScrollView(\n`;
-        guidance += `${bodyIndent}    child: Column(\n`;
-        guidance += `${bodyIndent}      children: [\n`;
-    } else {
-        guidance += `Column(\n`;
-        guidance += `${bodyIndent}    children: [\n`;
-    }
-
-    // Add non-footer sections to the body
-    bodySections.forEach(section => {
-        const widgetName = toPascalCase(section.name);
-        guidance += `${bodyIndent}        ${widgetName}(), // ${section.type} child widget\n`;
+    guidance += `  body: SafeArea(\n`;
+    guidance += `    child: Column(\n`;
+    guidance += `      children: [\n`;
+    analysis.children.forEach(child => {
+        guidance += `        ${toPascalCase(child.name)}(),\n`;
     });
-    
-    guidance += `${bodyIndent}      ],\n`;
-    guidance += `${bodyIndent}    ),\n`;
-    
-    if (analysis.layout.scrollable) {
-        guidance += `${bodyIndent}  ),\n`;
-    }
-
-    if (wrapBodyInSafeArea) {
-        guidance += `  ),\n`;
-    }
-    
-    // Bottom screen section
-    if (footerSections.length > 0) {
-        const footerWidgetName = toPascalCase(footerSections[0].name);
-        guidance += `  bottomNavigationBar: ${footerWidgetName}(),\n`;
-    } else if (analysis.navigation.hasTabBar) {
-        guidance += `  bottomNavigationBar: BottomNavigationBar(\n`;
-        guidance += `    items: [\n`;
-        
-        const tabItems = analysis.navigation.navigationElements.filter(nav => nav.type === 'tab');
-        tabItems.slice(0, 5).forEach(tab => {
-            guidance += `      BottomNavigationBarItem(\n`;
-            guidance += `        icon: Icon(Icons.${tab.icon ? 'placeholder' : 'home'}),\n`;
-            guidance += `        label: '${tab.text || tab.name}',\n`;
-            guidance += `      ),\n`;
-        });
-        
-        guidance += `    ],\n`;
-        guidance += `  ),\n`;
-    }
-    
+    guidance += `      ],\n`;
+    guidance += `    ),\n`;
+    guidance += `  ),\n`;
     guidance += `)\n\n`;
 
-    // Section widgets guidance
-    if (analysis.sections.length > 0) {
+    // Child widgets guidance
+    if (analysis.children.length > 0) {
         guidance += `Child widgets:\n`;
-        analysis.sections.forEach((section, index) => {
-            const widgetName = toPascalCase(section.name);
-            guidance += `${index + 1}. ${widgetName}() - ${section.type} child widget\n`;
-            guidance += `   Elements: ${section.children.length} child layers\n`;
-            if (section.components.length > 0) {
-                guidance += `   Components: ${section.components.length} nested components\n`;
+        analysis.children.forEach((child, index) => {
+            const widgetName = toPascalCase(child.name);
+            guidance += `${index + 1}. ${widgetName}()\n`;
+            guidance += `   Elements: ${child.children.length} child layers\n`;
+            if (child.components.length > 0) {
+                guidance += `   Components: ${child.components.length} nested components\n`;
             }
         });
-        guidance += `\n`;
-    }
-
-    // Navigation guidance
-    if (analysis.navigation.navigationElements.length > 0) {
-        guidance += `Navigation Implementation:\n`;
-        
-        const buttons = analysis.navigation.navigationElements.filter(nav => nav.type === 'button');
-        const tabs = analysis.navigation.navigationElements.filter(nav => nav.type === 'tab');
-        const links = analysis.navigation.navigationElements.filter(nav => nav.type === 'link');
-        
-        if (buttons.length > 0) {
-            guidance += `Buttons (${buttons.length}):\n`;
-            buttons.forEach(button => {
-                guidance += `- ElevatedButton(onPressed: () {}, child: Text('${button.text || button.name}'))\n`;
-            });
-        }
-        
-        if (tabs.length > 0) {
-            guidance += `Tab Navigation (${tabs.length}):\n`;
-            guidance += `- Use TabBar with ${tabs.length} tabs\n`;
-            guidance += `- Consider TabBarView for content switching\n`;
-        }
-        
-        if (links.length > 0) {
-            guidance += `Links (${links.length}):\n`;
-            links.forEach(link => {
-                guidance += `- TextButton(onPressed: () {}, child: Text('${link.text || link.name}'))\n`;
-            });
-        }
-        
         guidance += `\n`;
     }
 
@@ -527,16 +358,11 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
 }
 
 // Helper functions
-function detectSectionTypeFromName(name: string): string {
-    const lowerName = name.toLowerCase();
-    
-    if (lowerName.includes('header') || lowerName.includes('app bar')) return 'header';
-    if (lowerName.includes('footer') || lowerName.includes('bottom')) return 'footer';
-    if (lowerName.includes('nav') || lowerName.includes('menu')) return 'navigation';
-    if (lowerName.includes('modal') || lowerName.includes('dialog')) return 'modal';
-    if (lowerName.includes('sidebar')) return 'sidebar';
-    
-    return 'content';
+/** Layers Figma marks scrollBehavior FIXED (they stay put when the parent scrolls), named with their node id. */
+function formatFixedOnScroll(children: Array<{name: string; type: string; nodeId: string; scrollBehavior?: string}>): string {
+    const fixed = children.filter(child => child.scrollBehavior === 'FIXED');
+    if (fixed.length === 0) return '';
+    return `Fixed on scroll (Figma scrollBehavior: FIXED):\n${fixed.map(child => `- ${child.name} (${child.type}, ${child.nodeId})\n`).join('')}\n`;
 }
 
 function toPascalCase(str: string): string {

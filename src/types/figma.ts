@@ -39,6 +39,10 @@ export interface FigmaNode {
     constraints?: FigmaConstraints;
     layoutPositioning?: 'AUTO' | 'ABSOLUTE';
     clipsContent?: boolean;
+    /** How a child behaves when its parent frame scrolls (Figma REST, on the child). */
+    scrollBehavior?: 'SCROLLS' | 'FIXED' | 'STICKY_SCROLLS';
+    /** Scroll direction of a frame that scrolls (Figma REST). */
+    overflowDirection?: string;
     interactions?: FigmaInteraction[];
     rotation?: number;
     itemReverseZIndex?: boolean;

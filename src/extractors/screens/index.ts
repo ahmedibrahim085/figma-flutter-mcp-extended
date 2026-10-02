@@ -9,8 +9,7 @@ export {
 export {
     extractScreenMetadata,
     extractScreenLayoutInfo,
-    analyzeScreenSections,
-    extractNavigationInfo
+    analyzeScreenChildren
 } from './extractor.js';
 
 // Types
@@ -18,9 +17,7 @@ export type {
     ScreenAnalysis,
     ScreenMetadata,
     ScreenLayoutInfo,
-    ScreenSection,
-    NavigationInfo,
-    NavigationElement,
+    ScreenChild,
     SkippedNodeInfo,
     ScreenExtractionOptions
 } from './types.js';

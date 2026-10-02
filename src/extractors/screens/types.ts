@@ -1,6 +1,6 @@
 // src/extractors/screens/types.mts
 
-import type {FigmaNode, FigmaColor} from '../../types/figma.js';
+import type {FigmaNode} from '../../types/figma.js';
 import type {ComponentChild, NestedComponentInfo, LayoutInfo, StylingInfo} from '../components/types.js';
 
 /**
@@ -9,9 +9,8 @@ import type {ComponentChild, NestedComponentInfo, LayoutInfo, StylingInfo} from 
 export interface ScreenAnalysis {
     metadata: ScreenMetadata;
     layout: ScreenLayoutInfo;
-    sections: ScreenSection[];
+    children: ScreenChild[];
     components: NestedComponentInfo[];
-    navigation: NavigationInfo;
     skippedNodes?: SkippedNodeInfo[];
 }
 
@@ -36,67 +35,24 @@ export interface ScreenMetadata {
  */
 export interface ScreenLayoutInfo extends LayoutInfo {
     scrollable?: boolean;
-    hasHeader?: boolean;
-    hasFooter?: boolean;
-    hasNavigation?: boolean;
-    safeArea?: ScreenSafeAreaInfo;
-    contentArea?: {
-        x: number;
-        y: number;
-        width: number;
-        height: number;
-    };
-}
-
-
-/**
- * Screen-owned runtime safe-area evidence.
- */
-export interface ScreenSafeAreaInfo {
-    top?: {
-        required: boolean;
-        reason: 'no-app-bar';
-    };
 }
 
 /**
- * Screen section (header, content, footer, etc.)
+ * A visible child layer of the screen frame, in Figma layer order.
  */
-export interface ScreenSection {
-    id: string;
-    name: string;
-    type: 'header' | 'navigation' | 'content' | 'footer' | 'sidebar' | 'modal' | 'other';
+export interface ScreenChild {
     nodeId: string;
+    name: string;
+    type: string;
+    /** Figma scrollBehavior of this child: FIXED layers stay put while the parent scrolls. */
+    scrollBehavior?: FigmaNode['scrollBehavior'];
+    /** Position and size relative to the parent frame (child bounds minus parent bounds). */
+    bounds?: {x: number; y: number; width: number; height: number};
     layout: Partial<LayoutInfo>;
     styling?: Partial<StylingInfo>;
     children: ComponentChild[];
     components: NestedComponentInfo[];
-    importance: number; // 1-10 score
 }
-
-/**
- * Navigation information
- */
-export interface NavigationInfo {
-    hasTabBar?: boolean;
-    hasAppBar?: boolean;
-    hasDrawer?: boolean;
-    hasBottomSheet?: boolean;
-    navigationElements: NavigationElement[];
-}
-
-/**
- * Navigation element
- */
-export interface NavigationElement {
-    nodeId: string;
-    name: string;
-    type: 'tab' | 'button' | 'link' | 'icon' | 'menu' | 'other';
-    text?: string;
-    icon?: boolean;
-    isActive?: boolean;
-}
-
 
 /**
  * Information about nodes that were skipped
@@ -105,7 +61,7 @@ export interface SkippedNodeInfo {
     nodeId: string;
     name: string;
     type: string;
-    reason: 'depth_limit' | 'complexity' | 'max_sections' | 'device_ui_element';
+    reason: 'max_child_nodes';
 }
 
 /**
@@ -115,6 +71,5 @@ export interface ScreenExtractionOptions {
     maxChildNodes?: number;
     maxDepth?: number;
     includeHiddenNodes?: boolean;
-    extractNavigation?: boolean;
     deviceTypeDetection?: boolean;
 }

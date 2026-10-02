@@ -8,8 +8,7 @@ import type {
 import {
     extractScreenMetadata,
     extractScreenLayoutInfo,
-    analyzeScreenSections,
-    extractNavigationInfo,
+    analyzeScreenChildren,
 } from './extractor.js';
 
 /**
@@ -23,7 +22,6 @@ export class ScreenExtractor {
             maxChildNodes: options.maxChildNodes ?? 15,
             maxDepth: options.maxDepth ?? 4,
             includeHiddenNodes: options.includeHiddenNodes ?? false,
-            extractNavigation: options.extractNavigation ?? true,
             deviceTypeDetection: options.deviceTypeDetection ?? true
         };
     }
@@ -35,18 +33,13 @@ export class ScreenExtractor {
         const metadata = extractScreenMetadata(node);
         const layout = extractScreenLayoutInfo(node);
         
-        const {sections, components, skippedNodes} = analyzeScreenSections(node, this.options);
-        
-        const navigation = this.options.extractNavigation 
-            ? extractNavigationInfo(node)
-            : { navigationElements: [] };
-            
+        const {children, components, skippedNodes} = analyzeScreenChildren(node, this.options);
+
         return {
             metadata,
             layout,
-            sections,
+            children,
             components,
-            navigation,
             skippedNodes: skippedNodes.length > 0 ? skippedNodes : undefined
         };
     }

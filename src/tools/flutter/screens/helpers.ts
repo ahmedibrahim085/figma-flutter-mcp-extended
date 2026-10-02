@@ -319,8 +319,9 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
     guidance += `  body: SafeArea(\n`;
     guidance += `    child: Column(\n`;
     guidance += `      children: [\n`;
-    analysis.children.forEach(child => {
-        guidance += `        ${toPascalCase(child.name)}(),\n`;
+    const widgetNames = childWidgetNames(analysis.children);
+    widgetNames.forEach(widgetName => {
+        guidance += `        ${widgetName}(),\n`;
     });
     guidance += `      ],\n`;
     guidance += `    ),\n`;
@@ -331,8 +332,7 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
     if (analysis.children.length > 0) {
         guidance += `Child widgets:\n`;
         analysis.children.forEach((child, index) => {
-            const widgetName = toPascalCase(child.name);
-            guidance += `${index + 1}. ${widgetName}()\n`;
+            guidance += `${index + 1}. ${widgetNames[index]}()\n`;
             guidance += `   Elements: ${child.children.length} child layers\n`;
             if (child.components.length > 0) {
                 guidance += `   Components: ${child.components.length} nested components\n`;
@@ -363,6 +363,18 @@ function formatFixedOnScroll(children: Array<{name: string; type: string; nodeId
     const fixed = children.filter(child => child.scrollBehavior === 'FIXED');
     if (fixed.length === 0) return '';
     return `Fixed on scroll (Figma scrollBehavior: FIXED):\n${fixed.map(child => `- ${child.name} (${child.type}, ${child.nodeId})\n`).join('')}\n`;
+}
+
+/** One valid, distinct Dart class name per child: a letter first, and a count suffix when a name repeats. */
+function childWidgetNames(children: Array<{name: string}>): string[] {
+    const used = new Set<string>();
+    return children.map(child => {
+        const base = /^[A-Za-z]/.test(toPascalCase(child.name)) ? toPascalCase(child.name) : `W${toPascalCase(child.name)}`;
+        let name = base;
+        for (let count = 2; used.has(name); count++) name = `${base}${count}`;
+        used.add(name);
+        return name;
+    });
 }
 
 function toPascalCase(str: string): string {

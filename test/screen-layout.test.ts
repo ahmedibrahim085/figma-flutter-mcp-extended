@@ -190,6 +190,10 @@ for (const [tool, args] of BOTH_TOOLS) {
         const at = await callOnNode(SCREEN, tool, args);
         const moved = await callOnNode(moveDown(SCREEN, 5000), tool, args);
 
+        for (const result of [at, moved]) {
+            assert.equal(result.isError, false, result.text);
+            assert.match(result.text, /^Screen (Analysis Report|Structure Inspection)\n/);
+        }
         assert.equal(moved.text, at.text);
     });
 
@@ -281,4 +285,16 @@ test('analyze_frame_as_screen: more child layers than maxChildNodes are named as
 
     assert.match(text, /1\. One \(FRAME, 6:2\)[^]*2\. Two \(FRAME, 6:3\)/);
     assert.match(text, /1 child layers were skipped due to limits:\n1\. Three \(FRAME\) - max_child_nodes/);
+});
+
+test('analyze_frame_as_screen: scaffold and child widget names are valid, distinct Dart class names', async () => {
+    const node = screenOf([frame('6:2', '2FA code', 0, 0, 100, 40), frame('6:3', 'Card', 0, 50, 100, 40), frame('6:4', 'Card', 0, 100, 100, 40), frame('6:5', 'Card2', 0, 150, 100, 40)]);
+    const {text} = await analyzeScreen(node);
+
+    const scaffold = [...text.matchAll(/^ {8}(\w+)\(\),$/gm)].map((m) => m[1]);
+    const listed = [...text.matchAll(/^\d+\. (\w+)\(\)$/gm)].map((m) => m[1]);
+    assert.equal(scaffold.length, 4, text);
+    for (const name of scaffold) assert.match(`${name}()`, /^[A-Za-z][A-Za-z0-9]*\(\)/);
+    assert.equal(new Set(scaffold).size, 4, scaffold.join());
+    assert.deepEqual(listed, scaffold);
 });

@@ -147,10 +147,10 @@ function detectDeviceType(dimensions: {width: number; height: number}): ScreenMe
 
     // Mobile devices (typical ranges)
     if (maxDimension <= 900 && minDimension <= 500) return 'mobile';
-
+    
     // Tablet devices
     if (maxDimension <= 1400 && minDimension <= 1000) return 'tablet';
-
+    
     // Desktop
     if (maxDimension > 1400) return 'desktop';
 

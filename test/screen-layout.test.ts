@@ -126,9 +126,9 @@ const NO_APP_BAR_SCREEN = {
     children: [{id: '1:3', name: 'Body Content', type: 'FRAME', absoluteBoundingBox: {x: 0, y: 0, width: 375, height: 700}}],
 };
 
-const analyzeScreen = (node: {id: string}) => callOnNode(node, 'analyze_full_screen', {extractAssets: false});
+const analyzeScreen = (node: {id: string}) => callOnNode(node, 'analyze_frame_as_screen', {extractAssets: false});
 
-test('analyze_full_screen reports each section with sizing, border and shadow', async () => {
+test('analyze_frame_as_screen reports each section with sizing, border and shadow', async () => {
     const {text, requests} = await analyzeScreen(SCREEN);
 
     assert.deepEqual(requests.map((r) => ({path: r.path, query: r.query})),
@@ -155,8 +155,8 @@ test('analyze_full_screen reports each section with sizing, border and shadow', 
 `), text);
 });
 
-test('inspect_screen_structure reports padding, border and shadow per section', async () => {
-    const {text} = await callOnNode(SCREEN, 'inspect_screen_structure', {showAllSections: true});
+test('inspect_frame_structure reports padding, border and shadow per section', async () => {
+    const {text} = await callOnNode(SCREEN, 'inspect_frame_structure', {showAllSections: true});
 
     assert.ok(text.includes(`Screen Structure:
 1. Header (FRAME) [HEADER]

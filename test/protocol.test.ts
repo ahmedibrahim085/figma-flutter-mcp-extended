@@ -10,7 +10,7 @@ import {withServer, type JsonRpcMessage} from './helpers/mcp-stdio.ts';
 // Independent source of truth: the tool names registered in src/tools.
 const EXPECTED_TOOLS = [
     'analyze_figma_component',
-    'analyze_full_screen',
+    'analyze_frame_as_screen',
     'export_flutter_assets',
     'export_svg_flutter_assets',
     'extract_theme_colors',
@@ -21,9 +21,9 @@ const EXPECTED_TOOLS = [
     'ff_get_variable_defs',
     'ff_whoami',
     'generate_flutter_implementation',
-    'generate_golden_test_scaffold',
+    'generate_golden_file_test',
     'inspect_component_structure',
-    'inspect_screen_structure',
+    'inspect_frame_structure',
     'inspect_theme_frame',
     'inspect_typography_frame',
     'list_component_variants',
@@ -64,6 +64,16 @@ test('stdio: server identifies as figma-flutter and lists exactly the registered
     const pkg = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf-8'));
     assert.equal(init.result.serverInfo.version, pkg.version);
     assert.deepEqual(tools, EXPECTED_TOOLS);
+});
+
+test('stdio: tools/list serves the renamed tools and none of the old names', async () => {
+    const {tools} = await serve();
+    for (const name of ['analyze_frame_as_screen', 'inspect_frame_structure', 'generate_golden_file_test']) {
+        assert.ok(tools.includes(name), `tools/list must include ${name}`);
+    }
+    for (const old of ['analyze_full_screen', 'inspect_screen_structure', 'generate_golden_test_scaffold']) {
+        assert.ok(!tools.includes(old), `tools/list must not include ${old}`);
+    }
 });
 
 test('stdio: README lists exactly the tools the server serves', async () => {

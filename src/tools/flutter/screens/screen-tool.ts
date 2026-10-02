@@ -30,10 +30,10 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
 
     // Main screen analysis tool
     server.registerTool(
-        "analyze_full_screen",
+        "analyze_frame_as_screen",
         {
-            title: "Analyze Full Screen",
-            description: "Analyze a complete Figma screen/frame to extract layout, sections, navigation, and structure information for Flutter screen implementation",
+            title: "Analyze Frame as Screen",
+            description: "Analyze a Figma frame treated as a screen to extract layout, sections, navigation, and structure information for Flutter screen implementation",
             inputSchema: {
                 input: z.string().describe("Figma screen URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
@@ -132,10 +132,10 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
 
     // Screen structure inspection tool
     server.registerTool(
-        "inspect_screen_structure",
+        "inspect_frame_structure",
         {
-            title: "Inspect Screen Structure",
-            description: "Get a quick overview of screen structure, sections, and navigation elements",
+            title: "Inspect Frame Structure",
+            description: "Get a quick overview of a frame's structure, sections, and navigation elements",
             inputSchema: {
                 input: z.string().describe("Figma screen URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),

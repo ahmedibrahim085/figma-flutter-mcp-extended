@@ -48,7 +48,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
         "analyze_figma_component",
         {
             title: "Analyze Figma Component",
-            description: "Analyze a Figma component or component set to extract layout, styling, and structure information for Flutter widget creation. Use analyze_full_screen for complete screen layouts.",
+            description: "Analyze a Figma component or component set to extract layout, styling, and structure information for Flutter widget creation. Use analyze_frame_as_screen for complete screen layouts.",
             inputSchema: {
                 input: z.string().describe("Figma component URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
@@ -124,14 +124,14 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                         return {
                             content: [{
                                 type: "text",
-                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For analyzing complete screens, use the analyze_full_screen tool instead.`
+                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For analyzing complete screens, use the analyze_frame_as_screen tool instead.`
                             }]
                         };
                     } else {
                         return {
                             content: [{
                                 type: "text",
-                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For analyzing full screens, use the analyze_full_screen tool instead.`
+                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For analyzing full screens, use the analyze_frame_as_screen tool instead.`
                             }]
                         };
                     }
@@ -386,7 +386,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
         "inspect_component_structure",
         {
             title: "Inspect Component Structure",
-            description: "Get a quick overview of component structure, children, and nested components. Use inspect_screen_structure for full screens.",
+            description: "Get a quick overview of component structure, children, and nested components. Use inspect_frame_structure for full screens.",
             inputSchema: {
                 input: z.string().describe("Figma component URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
@@ -438,14 +438,14 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                         return {
                             content: [{
                                 type: "text",
-                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For inspecting complete screens, use the inspect_screen_structure tool instead.`
+                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For inspecting complete screens, use the inspect_frame_structure tool instead.`
                             }]
                         };
                     } else {
                         return {
                             content: [{
                                 type: "text",
-                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For inspecting full screens, use the inspect_screen_structure tool instead.`
+                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For inspecting full screens, use the inspect_frame_structure tool instead.`
                             }]
                         };
                     }

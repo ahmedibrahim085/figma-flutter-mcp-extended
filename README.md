@@ -87,15 +87,15 @@ The key can also be passed as `--figma-api-key=YOUR-API-KEY`, or loaded from a f
 | `inspect_component_structure` | Quick overview of a component's children and nested components |
 | `generate_flutter_implementation` | Flutter widget code from the cached style definitions |
 | `style_library_status` | Status of the cached style library |
-| `analyze_full_screen` | Layout, sections, navigation and assets of a full screen |
-| `inspect_screen_structure` | Quick overview of a screen's sections and navigation |
+| `analyze_frame_as_screen` | Layout, sections, navigation and assets of a frame treated as a screen |
+| `inspect_frame_structure` | Quick overview of a frame's sections and navigation |
 | `extract_theme_colors` | Colors from a theme frame of labelled swatches, optionally as `ThemeData` |
 | `inspect_theme_frame` | Preview of a theme frame before extraction |
 | `extract_theme_typography` | Text styles from a typography frame, optionally as a `TextTheme` |
 | `inspect_typography_frame` | Preview of a typography frame before extraction |
 | `export_flutter_assets` | Exports images into the Flutter assets folder and updates `pubspec.yaml` |
 | `export_svg_flutter_assets` | Exports SVG assets (nodes with at least 30% vector content) |
-| `generate_golden_test_scaffold` | Golden-test boilerplate for a widget; it does not render or compare |
+| `generate_golden_file_test` | Writes a `matchesGoldenFile` widget test file; it does not render or compare |
 <!-- tools:end -->
 
 ## Workflow

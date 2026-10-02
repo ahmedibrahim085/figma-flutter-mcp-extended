@@ -126,7 +126,7 @@ export function formatVisualBoxEvidence(
 }
 
 /**
- * Format raw Figma node stroke/padding for inspect_screen_structure.
+ * Format raw Figma node stroke/padding for inspect_frame_structure.
  */
 export function formatFigmaNodeBoxEvidence(
     node: FigmaNode,

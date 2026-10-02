@@ -14,12 +14,12 @@ function toSnakeCase(name: string): string {
 
 export function registerGoldenTestTools(server: McpServer, _figmaApiKey: string) {
     server.registerTool(
-        "generate_golden_test_scaffold",
+        "generate_golden_file_test",
         {
-            title: "Generate Golden Test Scaffold",
+            title: "Generate Golden File Test",
             description:
-                "Generate a golden/snapshot test scaffold file for a Flutter widget (testWidgets + " +
-                "matchesGoldenFile boilerplate). Does not render, compare, or run anything itself — " +
+                "Generate a golden file test for a Flutter widget (testWidgets + " +
+                "matchesGoldenFile). Does not render, compare, or run anything itself — " +
                 "run `flutter test --update-goldens` once to create the reference image, then " +
                 "`flutter test` on later runs to check against it.",
             inputSchema: {

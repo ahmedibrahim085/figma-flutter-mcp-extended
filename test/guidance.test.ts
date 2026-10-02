@@ -25,7 +25,7 @@ const WIDE = {
     ],
 };
 
-const BANNED = /~\d+ lines|top 15%|priority: \d+\/10|high-priority|visual weight|Consider MediaQuery|confidence scoring|Styles with relationships|No text info|NavigationRail|increasing maxChildNodes/i;
+const BANNED = /~\d+ lines|top 15%|priority: \d+\/10|high-priority|visual weight|Consider MediaQuery|confidence scoring|Styles with relationships|No text info|NavigationRail|increasing maxChildNodes|always use (proper )?StatelessWidget|prefix with _|private widgets|functional widgets/i;
 
 test('no tool output carries an invented rule, ranking or advice', async () => {
     const input = url(WIDE.id);

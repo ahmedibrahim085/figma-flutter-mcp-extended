@@ -740,8 +740,7 @@ function generateWidgetClass(componentNodeId: string, widgetName: string, styles
     // Widget composition best practices
     output += `🏗️  Widget Composition Guidelines:\n`;
     WIDGET_SPLIT_ADVICE.forEach(line => { output += `- ${line}\n`; });
-    output += `- Use private widgets (prefix with _) for internal breakdown\n`;
-    output += `- Avoid functional widgets - always use StatelessWidget classes\n\n`;
+    output += `\n`;
     
     output += `class ${widgetName} extends StatelessWidget {\n`;
     output += `  const ${widgetName}({Key? key}) : super(key: key);\n\n`;

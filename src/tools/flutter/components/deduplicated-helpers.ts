@@ -85,8 +85,7 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   // Widget composition guidance
   implementation += `🏗️  Widget Composition Guidelines:\n`;
   WIDGET_SPLIT_ADVICE.forEach(line => { implementation += `- ${line}\n`; });
-  implementation += `- Use private StatelessWidget classes (prefix with _) for breakdown\n`;
-  implementation += `- Avoid functional widgets - always use proper StatelessWidget classes\n\n`;
+  implementation += `\n`;
   
   // Widget structure
   const widgetName = toPascalCase(analysis.metadata.name);
@@ -653,7 +652,6 @@ export function generateComprehensiveDeduplicatedReport(
   
   output += `🏗️  Widget Composition Reminder:\n`;
   WIDGET_SPLIT_ADVICE.forEach(line => { output += `   • ${line}\n`; });
-  output += `   • Avoid functional widgets - use proper StatelessWidget classes\n`;
 
   return output;
 }

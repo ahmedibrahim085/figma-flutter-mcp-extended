@@ -297,8 +297,7 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
     // Widget composition best practices
     guidance += `🏗️  Widget Composition Best Practices:\n`;
     WIDGET_SPLIT_ADVICE.forEach(line => { guidance += `- ${line}\n`; });
-    guidance += `- Use private widgets (prefix with _) for internal screen component breakdown\n`;
-    guidance += `- Avoid functional widgets - always use StatelessWidget classes\n\n`;
+    guidance += `\n`;
     
     guidance += `📱 Safe area:\n`;
     guidance += `- Safe-area insets belong to screen composition, not reusable component heights\n`;

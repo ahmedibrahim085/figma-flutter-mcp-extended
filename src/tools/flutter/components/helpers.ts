@@ -232,8 +232,7 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
     // Widget composition best practices
     guidance += `🏗️  Widget Composition Best Practices:\n`;
     WIDGET_SPLIT_ADVICE.forEach(line => { guidance += `- ${line}\n`; });
-    guidance += `- Use private widgets (prefix with _) for internal component breakdown\n`;
-    guidance += `- Avoid functional widgets - always use StatelessWidget classes\n\n`;
+    guidance += `\n`;
 
     // Main container guidance
     guidance += `Main Widget Structure:\n`;

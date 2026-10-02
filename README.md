@@ -17,7 +17,7 @@ This repository is a fork of [mhmzdev/figma-flutter-mcp](https://github.com/mhmz
   - in stdio mode, stdout carries JSON-RPC only;
   - after a Figma 429, the component, screen, theme and asset tools and `ff_get_variable_defs` say how long to wait; `analyze_figma_component` and `ff_get_variable_defs` also mark Figma errors as tool errors;
   - asset export no longer corrupts `pubspec.yaml`.
-- **A golden-test scaffold tool** and a test suite (`npm test`).
+- **A golden file test tool** and a test suite (`npm test`).
 
 ## Requirements
 

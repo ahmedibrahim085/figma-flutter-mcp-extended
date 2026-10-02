@@ -33,7 +33,7 @@ export function registerAllTools(server: McpServer, figmaApiKey: string) {
     Logger.diag("  🏞️ Export assets - Images, SVGs");
     Logger.diag("  🎨 Theme tools - Colors, Typography");
     Logger.diag("  📝 Typography tools - Fonts, Sizes");
-    Logger.diag("  🧪 Testing tools - Golden test scaffolds");
+    Logger.diag("  🧪 Testing tools - Golden file tests");
 
     console.error('🛠️ Tools Debug - All tools registration complete');
 }

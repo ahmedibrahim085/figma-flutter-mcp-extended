@@ -1,11 +1,12 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync, readFileSync} from 'node:fs';
+import {existsSync, mkdtempSync, readFileSync} from 'node:fs';
 import {spawnSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {withServer, type JsonRpcMessage} from './helpers/mcp-stdio.ts';
+import {callToolOffline} from './helpers/offline-tool.ts';
 
 // Independent source of truth: the tool names registered in src/tools.
 const EXPECTED_TOOLS = [
@@ -66,14 +67,13 @@ test('stdio: server identifies as figma-flutter and lists exactly the registered
     assert.deepEqual(tools, EXPECTED_TOOLS);
 });
 
-test('stdio: tools/list serves the renamed tools and none of the old names', async () => {
-    const {tools} = await serve();
-    for (const name of ['analyze_frame_as_screen', 'inspect_frame_structure', 'generate_golden_file_test']) {
-        assert.ok(tools.includes(name), `tools/list must include ${name}`);
-    }
-    for (const old of ['analyze_full_screen', 'inspect_screen_structure', 'generate_golden_test_scaffold']) {
-        assert.ok(!tools.includes(old), `tools/list must not include ${old}`);
-    }
+test('stdio: generate_golden_file_test reports "Golden file test written to" the file it wrote', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'golden-'));
+    const {text, isError} = await callToolOffline({}, 'generate_golden_file_test',
+        {widgetName: 'ContinueButton', widgetImportPath: 'widgets/continue_button.dart', projectPath: dir});
+    assert.equal(isError, false);
+    assert.match(text, /^Golden file test written to /);
+    assert.ok(existsSync(join(dir, 'test', 'continue_button_golden_test.dart')), text);
 });
 
 test('stdio: README lists exactly the tools the server serves', async () => {

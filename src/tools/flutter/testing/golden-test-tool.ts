@@ -66,14 +66,14 @@ void main() {
                     content: [{
                         type: "text",
                         text:
-                            `Golden test scaffold written to ${testFilePath}\n\n` +
+                            `Golden file test written to ${testFilePath}\n\n` +
                             `This only sets up the test structure — it does not render or compare anything.\n` +
                             `Run \`flutter test --update-goldens\` once to create the reference image at ` +
                             `${goldenFilePath}, then \`flutter test\` on later runs to check against it.`
                     }]
                 };
             } catch (err: any) {
-                return {content: [{type: "text", text: `Error generating golden test scaffold: ${err.message}`}]};
+                return {content: [{type: "text", text: `Error generating golden file test: ${err.message}`}]};
             }
         }
     );

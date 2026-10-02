@@ -35,7 +35,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
             title: "Analyze Frame as Screen",
             description: "Analyze a Figma frame treated as a screen to extract layout, sections, navigation, and structure information for Flutter screen implementation",
             inputSchema: {
-                input: z.string().describe("Figma screen URL or file ID"),
+                input: z.string().describe("Figma frame URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
                 maxSections: z.number().optional().describe("Maximum sections to analyze (default: 15)"),
                 extractNavigation: z.boolean().optional().describe("Extract navigation elements (default: true)"),
@@ -137,7 +137,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
             title: "Inspect Frame Structure",
             description: "Get a quick overview of a frame's structure, sections, and navigation elements",
             inputSchema: {
-                input: z.string().describe("Figma screen URL or file ID"),
+                input: z.string().describe("Figma frame URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
                 showAllSections: z.boolean().optional().describe("Show all sections regardless of limits (default: false)")
             }

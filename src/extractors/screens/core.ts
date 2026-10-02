@@ -20,7 +20,7 @@ export class ScreenExtractor {
 
     constructor(options: ScreenExtractionOptions = {}) {
         this.options = {
-            maxSections: options.maxSections ?? 15,
+            maxChildNodes: options.maxChildNodes ?? 15,
             maxDepth: options.maxDepth ?? 4,
             includeHiddenNodes: options.includeHiddenNodes ?? false,
             extractNavigation: options.extractNavigation ?? true,

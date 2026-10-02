@@ -119,8 +119,8 @@ export function analyzeScreenSections(
     // Sort by importance
     sectionsWithImportance.sort((a, b) => b.importance - a.importance);
 
-    // Process up to maxSections
-    const processedCount = Math.min(sectionsWithImportance.length, options.maxSections);
+    // Process up to maxChildNodes
+    const processedCount = Math.min(sectionsWithImportance.length, options.maxChildNodes);
 
     for (let i = 0; i < sectionsWithImportance.length; i++) {
         const {node: child, importance, sectionType} = sectionsWithImportance[i];

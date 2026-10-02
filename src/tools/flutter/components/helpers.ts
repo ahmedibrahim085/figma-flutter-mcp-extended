@@ -134,7 +134,7 @@ export function generateComponentAnalysisReport(
 
     // Children information
     if (analysis.children.length > 0) {
-        output += `Child Elements (${analysis.children.length} analyzed):\n`;
+        output += `Child layers (${analysis.children.length} analyzed):\n`;
         analysis.children.forEach((child, index) => {
             const componentMark = child.isNestedComponent ? ' [COMPONENT]' : '';
             const importanceMark = ` (priority: ${child.visualImportance}/10)`;

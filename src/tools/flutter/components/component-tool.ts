@@ -48,7 +48,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
         "analyze_figma_component",
         {
             title: "Analyze Figma Component",
-            description: "Analyze a Figma component or component set to extract layout, styling, and structure information for Flutter widget creation. Use analyze_frame_as_screen for complete screen layouts.",
+            description: "Analyze a Figma component or component set to extract layout, styling, and structure information for Flutter widget creation. Use analyze_frame_as_screen for top-level frames.",
             inputSchema: {
                 input: z.string().describe("Figma component URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
@@ -60,10 +60,10 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 exportAssets: z.boolean().optional().describe("Automatically export image assets found in component (default: true)"),
                 useDeduplication: z.boolean().optional().describe("Use style deduplication for token efficiency (default: true)"),
                 generateFlutterCode: z.boolean().optional().describe("Generate full Flutter implementation code (default: false)"),
-                resetStyleLibrary: z.boolean().optional().describe("Reset style library before analysis (default: false)")
+                resetCachedStyles: z.boolean().optional().describe("Reset cached styles before analysis (default: false)")
             }
         },
-        async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true, useDeduplication = true, generateFlutterCode = false, resetStyleLibrary = false}) => {
+        async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true, useDeduplication = true, generateFlutterCode = false, resetCachedStyles = false}) => {
             const token = figmaApiKey;
             if (!token) {
                 return {
@@ -78,7 +78,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 // Reset style library if requested
                 const styleLibrary = FlutterStyleLibrary.getInstance();
                 
-                if (resetStyleLibrary) {
+                if (resetCachedStyles) {
                     styleLibrary.reset();
                 }
                 
@@ -86,7 +86,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                     input: input.substring(0, 50) + '...',
                     nodeId,
                     useDeduplication,
-                    resetStyleLibrary
+                    resetCachedStyles
                 });
 
                 // Parse input to get file ID and node ID
@@ -124,14 +124,14 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                         return {
                             content: [{
                                 type: "text",
-                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For analyzing complete screens, use the analyze_frame_as_screen tool instead.`
+                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For analyzing top-level frames, use the analyze_frame_as_screen tool instead.`
                             }]
                         };
                     } else {
                         return {
                             content: [{
                                 type: "text",
-                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For analyzing full screens, use the analyze_frame_as_screen tool instead.`
+                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For analyzing top-level frames, use the analyze_frame_as_screen tool instead.`
                             }]
                         };
                     }
@@ -386,7 +386,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
         "inspect_component_structure",
         {
             title: "Inspect Component Structure",
-            description: "Get a quick overview of component structure, children, and nested components. Use inspect_frame_structure for full screens.",
+            description: "Get a quick overview of component structure, children, and nested components. Use inspect_frame_structure for top-level frames.",
             inputSchema: {
                 input: z.string().describe("Figma component URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
@@ -438,14 +438,14 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                         return {
                             content: [{
                                 type: "text",
-                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For inspecting complete screens, use the inspect_frame_structure tool instead.`
+                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For inspecting top-level frames, use the inspect_frame_structure tool instead.`
                             }]
                         };
                     } else {
                         return {
                             content: [{
                                 type: "text",
-                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For inspecting full screens, use the inspect_frame_structure tool instead.`
+                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For inspecting top-level frames, use the inspect_frame_structure tool instead.`
                             }]
                         };
                     }
@@ -504,7 +504,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 
                 // Add usage summary
                 if (styles.length > 0) {
-                    output += "\n\n📊 Style Library Summary:\n";
+                    output += "\n\n📊 Cached styles summary:\n";
                     output += `${'─'.repeat(30)}\n`;
                     output += `• Total unique styles: ${styles.length}\n`;
                     
@@ -540,10 +540,10 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
 
     // Style library status tool
     server.registerTool(
-        "style_library_status",
+        "cached_styles_status",
         {
-            title: "Style Library Status",
-            description: "Get comprehensive status report of the cached style library",
+            title: "Cached Styles Status",
+            description: "Get comprehensive status report of the cached styles",
             inputSchema: {}
         },
         async () => {
@@ -558,7 +558,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 return {
                     content: [{
                         type: "text",
-                        text: `Error generating style library report: ${error instanceof Error ? error.message : String(error)}`
+                        text: `Error generating cached styles report: ${error instanceof Error ? error.message : String(error)}`
                     }]
                 };
             }

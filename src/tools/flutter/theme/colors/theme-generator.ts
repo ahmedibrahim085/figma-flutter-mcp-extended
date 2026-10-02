@@ -39,7 +39,7 @@ export class SimpleThemeGenerator {
 
     private generateDartContent(colors: ThemeColor[]): string {
 
-        let content = `// Generated AppColors from Figma theme frame
+        let content = `// Generated AppColors from a Figma frame of color samples
 
 import 'package:flutter/material.dart';
 
@@ -63,7 +63,7 @@ class AppColors {
         const timestamp = new Date().toISOString().split('T')[0];
         const colorMap = this.createColorMap(colors);
 
-        let content = `// Generated Flutter ThemeData from Figma theme frame
+        let content = `// Generated Flutter ThemeData from a Figma frame of color samples
 
 import 'package:flutter/material.dart';
 import '${defaults.output.colorsFile}';

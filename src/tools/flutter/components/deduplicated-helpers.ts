@@ -621,7 +621,7 @@ export function generateComprehensiveDeduplicatedReport(
     const styleLibrary = FlutterStyleLibrary.getInstance();
     const allStyles = styleLibrary.getAllStyles();
     
-    output += `📚 Style Library Summary:\n`;
+    output += `📚 Cached styles summary:\n`;
     output += `   • Total unique styles: ${allStyles.length}\n`;
     
     if (allStyles.length > 0) {
@@ -648,8 +648,8 @@ export function generateComprehensiveDeduplicatedReport(
   // Quick actions
   output += `🚀 Quick Actions:\n`;
   output += `   • Use 'generate_flutter_implementation' tool for complete Flutter code\n`;
-  output += `   • Use 'analyze_figma_component' with different components to build style library\n`;
-  output += `   • Use 'resetStyleLibrary: true' to start fresh analysis\n\n`;
+  output += `   • Use 'analyze_figma_component' with different components to build cached styles\n`;
+  output += `   • Use 'resetCachedStyles: true' to start fresh analysis\n\n`;
   
   output += `🏗️  Widget Composition Reminder:\n`;
   output += `   • Build complete widget tree inline first (~200 lines max)\n`;
@@ -715,13 +715,13 @@ export function generateStyleLibraryReport(): string {
   const styleLibrary = FlutterStyleLibrary.getInstance();
   const allStyles = styleLibrary.getAllStyles();
   
-  let output = `📚 Style Library Status Report\n`;
+  let output = `📚 Cached styles status report\n`;
   output += `${'='.repeat(40)}\n\n`;
 
   if (allStyles.length === 0) {
-    output += `⚠️  Style library is empty.\n`;
+    output += `⚠️  Cached styles are empty.\n`;
     output += `   • Analyze components with 'useDeduplication: true' to populate\n`;
-    output += `   • Use 'analyze_figma_component' tool to start building your style library\n`;
+    output += `   • Use 'analyze_figma_component' tool to start building your cached styles\n`;
     return output;
   }
 

@@ -112,7 +112,7 @@ export function generateScreenAnalysisReport(
 
     // Screen sections
     if (analysis.sections.length > 0) {
-        output += `Screen Sections (${analysis.sections.length} identified):\n`;
+        output += `Child Layers (${analysis.sections.length} identified):\n`;
         analysis.sections.forEach((section, index) => {
             output += `${index + 1}. ${section.name} (${section.type.toUpperCase()})\n`;
             output += `   Priority: ${section.importance}/10\n`;
@@ -142,7 +142,7 @@ export function generateScreenAnalysisReport(
         output += `\n`;
     }
 
-    output += `Layout Sizing Semantics:\n`;
+    output += `Layout sizing (FIXED/HUG/FILL):\n`;
     output += `- FILL / STRETCH: adapt to the parent's available space; do not hardcode the measured width. Use parent padding, stretch, or Expanded as appropriate.\n`;
     output += `- FIXED: preserve the explicit Figma dimension.\n`;
     output += `- HUG: size to the child content.\n\n`;
@@ -199,11 +199,11 @@ export function generateScreenAnalysisReport(
         }
         
         if (limitSkipped.length > 0) {
-            output += `${limitSkipped.length} sections were skipped due to limits:\n`;
+            output += `${limitSkipped.length} child layers were skipped due to limits:\n`;
             limitSkipped.forEach((skipped, index) => {
                 output += `${index + 1}. ${skipped.name} (${skipped.type}) - ${skipped.reason}\n`;
             });
-            output += `\nTo analyze all sections, increase the maxSections parameter.\n`;
+            output += `\nTo analyze all child layers, increase the maxChildNodes parameter.\n`;
         }
         
         output += `\n`;
@@ -226,13 +226,13 @@ export function generateScreenAnalysisReport(
 /**
  * Generate screen structure inspection report
  */
-export function generateScreenStructureReport(node: any, showAllSections: boolean): string {
+export function generateScreenStructureReport(node: any, showAllChildren: boolean): string {
     let output = `Screen Structure Inspection\n\n`;
 
     output += `Screen: ${node.name}\n`;
     output += `Type: ${node.type}\n`;
     output += `Node ID: ${node.id}\n`;
-    output += `Sections: ${node.children?.length || 0}\n`;
+    output += `Child layers: ${node.children?.length || 0}\n`;
 
     if (node.absoluteBoundingBox) {
         const bbox = node.absoluteBoundingBox;
@@ -253,18 +253,18 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
     output += `\n`;
 
     if (!node.children || node.children.length === 0) {
-        output += `This screen has no sections.\n`;
+        output += `This screen has no child layers.\n`;
         return output;
     }
 
-    const sectionsSource = showAllSections
+    const sectionsSource = showAllChildren
         ? node.children
         : filterEffectivelyVisibleChildren(node.children, false);
     const hiddenSkipped = (node.children?.length || 0) - sectionsSource.length;
 
     output += `Screen Structure:\n`;
 
-    const sectionsToShow = showAllSections ? sectionsSource : sectionsSource.slice(0, 20);
+    const sectionsToShow = showAllChildren ? sectionsSource : sectionsSource.slice(0, 20);
     const hasMore = sectionsSource.length > sectionsToShow.length;
 
     sectionsToShow.forEach((section: any, index: number) => {
@@ -315,12 +315,12 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
     });
 
     if (hasMore) {
-        output += `\n... and ${sectionsSource.length - sectionsToShow.length} more sections.\n`;
-        output += `Use showAllSections: true to see all sections.\n`;
+        output += `\n... and ${sectionsSource.length - sectionsToShow.length} more child layers.\n`;
+        output += `Use showAllChildren: true to see all child layers.\n`;
     }
 
-    if (!showAllSections && hiddenSkipped > 0) {
-        output += `\nSkipped ${hiddenSkipped} hidden / empty-slot section(s). Use showAllSections: true to include them.\n`;
+    if (!showAllChildren && hiddenSkipped > 0) {
+        output += `\nSkipped ${hiddenSkipped} hidden / empty-slot child layer(s). Use showAllChildren: true to include them.\n`;
     }
 
     // Analysis recommendations
@@ -330,7 +330,7 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
         section.type === 'COMPONENT' || section.type === 'INSTANCE'
     );
     if (componentSections.length > 0) {
-        output += `- Found ${componentSections.length} component sections for separate analysis\n`;
+        output += `- Found ${componentSections.length} component child layers for separate analysis\n`;
     }
 
     const largeSections = node.children.filter((section: any) => {
@@ -338,7 +338,7 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
         return bbox && (bbox.width * bbox.height) > 20000;
     });
     if (largeSections.length > 5) {
-        output += `- Screen has ${largeSections.length} large sections - consider increasing maxSections\n`;
+        output += `- Screen has ${largeSections.length} large child layers - consider increasing maxChildNodes\n`;
     }
 
     // Detect navigation elements
@@ -348,7 +348,7 @@ export function generateScreenStructureReport(node: any, showAllSections: boolea
                name.includes('header') || name.includes('footer');
     });
     if (navSections.length > 0) {
-        output += `- Found ${navSections.length} navigation-related sections\n`;
+        output += `- Found ${navSections.length} navigation-related child layers\n`;
     }
 
     return output;
@@ -364,7 +364,7 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
     guidance += `🏗️  Widget Composition Best Practices:\n`;
     guidance += `- Start by building the complete screen widget tree in a single build() method\n`;
     guidance += `- Keep composing widgets inline until you reach ~250 lines of code\n`;
-    guidance += `- Only then break down into private StatelessWidget classes for sections\n`;
+    guidance += `- Only then break down into private StatelessWidget classes for child widgets\n`;
     guidance += `- Use private widgets (prefix with _) for internal screen component breakdown\n`;
     guidance += `- Avoid functional widgets - always use StatelessWidget classes\n\n`;
     
@@ -429,7 +429,7 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
     // Add non-footer sections to the body
     bodySections.forEach(section => {
         const widgetName = toPascalCase(section.name);
-        guidance += `${bodyIndent}        ${widgetName}(), // ${section.type} section\n`;
+        guidance += `${bodyIndent}        ${widgetName}(), // ${section.type} child widget\n`;
     });
     
     guidance += `${bodyIndent}      ],\n`;
@@ -467,10 +467,10 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
 
     // Section widgets guidance
     if (analysis.sections.length > 0) {
-        guidance += `Section Widgets:\n`;
+        guidance += `Child Widgets:\n`;
         analysis.sections.forEach((section, index) => {
             const widgetName = toPascalCase(section.name);
-            guidance += `${index + 1}. ${widgetName}() - ${section.type} section\n`;
+            guidance += `${index + 1}. ${widgetName}() - ${section.type} child widget\n`;
             guidance += `   Elements: ${section.children.length} child elements\n`;
             if (section.components.length > 0) {
                 guidance += `   Components: ${section.components.length} nested components\n`;

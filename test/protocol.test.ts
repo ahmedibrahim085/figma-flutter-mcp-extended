@@ -13,6 +13,7 @@ import {callToolOffline} from './helpers/offline-tool.ts';
 const EXPECTED_TOOLS = [
     'analyze_figma_component',
     'analyze_frame_as_screen',
+    'cached_styles_status',
     'export_flutter_assets',
     'export_svg_flutter_assets',
     'extract_theme_colors',
@@ -24,12 +25,11 @@ const EXPECTED_TOOLS = [
     'ff_whoami',
     'generate_flutter_implementation',
     'generate_golden_file_test',
+    'inspect_color_frame',
     'inspect_component_structure',
     'inspect_frame_structure',
-    'inspect_theme_frame',
-    'inspect_typography_frame',
+    'inspect_text_style_frame',
     'list_component_variants',
-    'style_library_status',
 ];
 
 test('stdio: every stdout line is a JSON-RPC message', async () => {

@@ -11,7 +11,7 @@ export function generateComponentVisualContext(
     figmaUrl?: string,
     nodeId?: string
 ): string {
-    let context = `📐 Visual Context for AI Implementation:\n`;
+    let context = `📐 Layout map for AI Implementation:\n`;
     context += `${'='.repeat(50)}\n\n`;
 
     // Design reference
@@ -45,7 +45,7 @@ export function generateComponentVisualContext(
     context += generateComponentImplementationHints(analysis);
     
     // Semantic detection information
-    context += `\n🧠 Enhanced Semantic Detection:\n`;
+    context += `\n🧠 Name-based layer classification:\n`;
     context += `   • Multi-factor analysis with confidence scoring\n`;
     context += `   • Context-aware classification using position and parent information\n`;
     context += `   • Design pattern recognition for improved accuracy\n`;
@@ -63,7 +63,7 @@ export function generateScreenVisualContext(
     figmaUrl?: string,
     nodeId?: string
 ): string {
-    let context = `📱 Screen Visual Context for AI Implementation:\n`;
+    let context = `📱 Screen Layout map for AI Implementation:\n`;
     context += `${'='.repeat(55)}\n\n`;
 
     // Design reference
@@ -102,8 +102,8 @@ export function generateScreenVisualContext(
     context += generateScreenImplementationHints(analysis);
     
     // Semantic detection information
-    context += `\n🧠 Enhanced Semantic Detection:\n`;
-    context += `   • Advanced section type detection with confidence scoring\n`;
+    context += `\n🧠 Name-based layer classification:\n`;
+    context += `   • Advanced child layer type detection with confidence scoring\n`;
     context += `   • Multi-factor analysis for text element classification\n`;
     context += `   • Context-aware position and styling analysis\n`;
     context += `   • Improved navigation and interactive element detection\n`;
@@ -287,14 +287,14 @@ function generateScreenSpatialDescription(analysis: ScreenAnalysis): string {
         description += `   • Content position: (${Math.round(area.x)}, ${Math.round(area.y)})\n`;
     }
 
-    // Section distribution
+    // Child layer distribution
     if (analysis.sections.length > 0) {
         const sectionsByType = analysis.sections.reduce((acc, section) => {
             acc[section.type] = (acc[section.type] || 0) + 1;
             return acc;
         }, {} as Record<string, number>);
         
-        description += `   • Section distribution: `;
+        description += `   • Child layer distribution: `;
         Object.entries(sectionsByType).forEach(([type, count], index) => {
             description += `${count} ${type}${index < Object.keys(sectionsByType).length - 1 ? ', ' : ''}`;
         });
@@ -494,7 +494,7 @@ function generateScreenImplementationHints(analysis: ScreenAnalysis): string {
     
     // Section breakdown
     if (analysis.sections.length > 3) {
-        hints += `   • Widget organization: Break into ${analysis.sections.length} section widgets\n`;
+        hints += `   • Widget organization: Break into ${analysis.sections.length} child widgets\n`;
     }
     
     // Device considerations

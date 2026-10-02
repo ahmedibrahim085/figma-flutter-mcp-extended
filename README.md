@@ -80,19 +80,19 @@ The key can also be passed as `--figma-api-key=YOUR-API-KEY`, or loaded from a f
 | `ff_get_metadata` | Node tree of a file or node: IDs, names, types, bounding boxes |
 | `ff_get_screenshot` | PNG, JPG, SVG or PDF image of one node |
 | `ff_get_design_context` | Layout tree, components, styles, text and properties of a node |
-| `ff_get_variable_defs` | Design tokens from the Variables panel: colors, spacing, typography, radii |
+| `ff_get_variable_defs` | Variables from the Variables panel: colors, spacing, typography, radii |
 | `ff_whoami` | The authenticated Figma user; checks that the key works |
 | `analyze_figma_component` | Structure, styles and (optionally) Flutter code for a component or component set |
 | `list_component_variants` | The variants in a component set |
 | `inspect_component_structure` | Quick overview of a component's children and nested components |
 | `generate_flutter_implementation` | Flutter widget code from the cached style definitions |
-| `style_library_status` | Status of the cached style library |
-| `analyze_frame_as_screen` | Layout, sections, navigation and assets of a frame treated as a screen |
-| `inspect_frame_structure` | Quick overview of a frame's sections and navigation |
-| `extract_theme_colors` | Colors from a theme frame of labelled swatches, optionally as `ThemeData` |
-| `inspect_theme_frame` | Preview of a theme frame before extraction |
-| `extract_theme_typography` | Text styles from a typography frame, optionally as a `TextTheme` |
-| `inspect_typography_frame` | Preview of a typography frame before extraction |
+| `cached_styles_status` | Status of the cached styles |
+| `analyze_frame_as_screen` | Layout, child layers, navigation and assets of a frame treated as a screen |
+| `inspect_frame_structure` | Quick overview of a frame's child layers and navigation |
+| `extract_theme_colors` | Colors from a frame of labelled color samples, optionally as `ThemeData` |
+| `inspect_color_frame` | Preview of a frame of color samples before extraction |
+| `extract_theme_typography` | Text styles from a frame of text samples, optionally as a `TextTheme` |
+| `inspect_text_style_frame` | Preview of a frame of text samples before extraction |
 | `export_flutter_assets` | Exports images into the Flutter assets folder and updates `pubspec.yaml` |
 | `export_svg_flutter_assets` | Exports SVG assets (nodes with at least 30% vector content) |
 | `generate_golden_file_test` | Writes a `matchesGoldenFile` widget test file; it does not render or compare |

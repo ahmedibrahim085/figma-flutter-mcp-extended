@@ -8,7 +8,7 @@ import type {
 } from './types.js';
 
 /**
- * Extract typography styles from a theme frame containing text samples
+ * Extract typography styles from a frame of text samples
  */
 export function extractTypographyFromThemeFrame(frameNode: FigmaNode): TypographyStyle[] {
     const typography: TypographyStyle[] = [];

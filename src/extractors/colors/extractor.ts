@@ -7,7 +7,7 @@ import type {
 } from './types.js';
 
 /**
- * Extract colors from a theme frame containing color swatches with text labels
+ * Extract colors from a frame of color samples (swatches with text labels)
  */
 export function extractColorsFromThemeFrame(frameNode: FigmaNode): ThemeColor[] {
     const colors: ThemeColor[] = [];
@@ -29,7 +29,7 @@ export function extractColorsFromThemeFrame(frameNode: FigmaNode): ThemeColor[] 
 }
 
 /**
- * Extract color from a single node (used by theme frame extraction)
+ * Extract color from a single node (used by color frame extraction)
  */
 function extractColorFromNode(node: FigmaNode): ThemeColor | null {
     // Skip typography-related nodes — but a node holding a swatch shape is a colour swatch even when

@@ -78,7 +78,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
             description:
                 'Get the node tree structure of a Figma file or a specific node. ' +
                 'Returns page/frame hierarchy with IDs, names, types, and bounding boxes. ' +
-                'Use this to discover all screens before extracting individual ones.',
+                'Use this to discover all top-level frames before extracting individual ones.',
             inputSchema: {
                 fileKey: z.string().describe('Figma file key (from the URL)'),
                 nodeId: z
@@ -146,7 +146,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
             description:
                 'Capture a PNG/JPG/SVG screenshot of a specific Figma node. ' +
                 'Returns the image as a base64-encoded image content block or a URL. ' +
-                'Target individual screen frames, not sections or pages.',
+                'Target individual top-level frames, not sections or pages.',
             inputSchema: {
                 fileKey: z.string().describe('Figma file key'),
                 nodeId: z.string().describe('Node ID to screenshot (e.g. "12:3458")'),
@@ -219,7 +219,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
         {
             title: 'Get Figma Design Context',
             description:
-                'Extract the full design context for a Figma node: layout tree, component structure, ' +
+                'Extract the design context for a Figma node: layout tree, component structure, ' +
                 'styles, text content, and design properties. This is the primary tool for understanding ' +
                 'what a screen or component looks like and how it is structured. ' +
                 'Prefer this over separate ff_get_screenshot + ff_get_variable_defs calls (1 call vs 2).',
@@ -309,8 +309,8 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
         {
             title: 'Get Figma Variable Definitions',
             description:
-                'Export design tokens (variables) from a Figma file: colors, spacing, typography, ' +
-                'radii, and other tokens defined in the Variables panel. ' +
+                'Read the variables of a Figma file: colors, spacing, typography, ' +
+                'radii, and other values defined in the Variables panel. ' +
                 'Maps to the Figma REST API /v1/files/:key/variables/local endpoint.',
             inputSchema: {
                 fileKey: z.string().describe('Figma file key'),

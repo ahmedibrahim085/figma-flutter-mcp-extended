@@ -13,7 +13,7 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
         "extract_theme_colors",
         {
             title: "Extract Theme Colors from Frame",
-            description: "Extract colors from a Figma theme frame containing color swatches with labels",
+            description: "Extract colors from a Figma frame of color samples (swatches with labels)",
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
                 nodeId: z.string().describe("Theme frame node ID containing color swatches"),
@@ -37,7 +37,7 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                 const figmaService = new FigmaService(token);
                 const generator = new SimpleThemeGenerator();
 
-                // Get the specific theme frame node
+                // Get the specific frame node
                 nodeId = validateAndConvertNodeId(nodeId);
                 const themeFrame = await figmaService.getNode(fileId, nodeId);
 
@@ -50,14 +50,14 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                     };
                 }
 
-                // Extract colors from the theme frame
+                // Extract colors from the frame
                 const themeColors = extractThemeColors(themeFrame);
 
                 if (themeColors.length === 0) {
                     return {
                         content: [{
                             type: "text",
-                            text: `No colors found in theme frame "${themeFrame.name}". Make sure the frame contains color swatches with text labels.`
+                            text: `No colors found in frame "${themeFrame.name}". Make sure the frame contains color swatches with text labels.`
                         }]
                     };
                 }
@@ -122,10 +122,10 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
 
     // Helper tool to inspect a frame structure
     server.registerTool(
-        "inspect_theme_frame",
+        "inspect_color_frame",
         {
-            title: "Inspect Theme Frame Structure",
-            description: "Inspect the structure of a theme frame to understand its contents before extraction",
+            title: "Inspect Color Frame",
+            description: "Inspect the structure of a frame of color samples to understand its contents before extraction",
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
                 nodeId: z.string().describe("Frame node ID to inspect")

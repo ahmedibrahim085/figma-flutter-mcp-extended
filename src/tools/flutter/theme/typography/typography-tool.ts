@@ -14,7 +14,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
         "extract_theme_typography",
         {
             title: "Extract Theme Typography from Frame",
-            description: "Extract typography styles from a Figma theme frame containing text samples with different styles",
+            description: "Extract typography styles from a Figma frame of text samples with different styles",
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
                 nodeId: z.string().describe("Theme frame node ID containing text style samples"),
@@ -39,7 +39,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 const figmaService = new FigmaService(token);
                 const generator = new TypographyGenerator();
 
-                // Get the specific theme frame node
+                // Get the specific frame node
                 nodeId = validateAndConvertNodeId(nodeId);
                 const themeFrame = await figmaService.getNode(fileId, nodeId);
 
@@ -52,14 +52,14 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                     };
                 }
 
-                // Extract typography from the theme frame
+                // Extract typography from the frame
                 const themeTypography = extractThemeTypography(themeFrame);
 
                 if (themeTypography.length === 0) {
                     return {
                         content: [{
                             type: "text",
-                            text: `No typography styles found in theme frame "${themeFrame.name}". Make sure the frame contains text nodes with different styles.`
+                            text: `No typography styles found in frame "${themeFrame.name}". Make sure the frame contains text nodes with different styles.`
                         }]
                     };
                 }
@@ -155,10 +155,10 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
 
     // Helper tool to inspect a frame structure for typography
     server.registerTool(
-        "inspect_typography_frame",
+        "inspect_text_style_frame",
         {
-            title: "Inspect Typography Frame Structure",
-            description: "Inspect the structure of a typography frame to understand its text contents before extraction",
+            title: "Inspect Text Style Frame",
+            description: "Inspect the structure of a frame of text samples to understand its text contents before extraction",
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
                 nodeId: z.string().describe("Frame node ID to inspect")

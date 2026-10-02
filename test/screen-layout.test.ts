@@ -133,7 +133,7 @@ test('analyze_frame_as_screen reports each section with sizing, border and shado
 
     assert.deepEqual(requests.map((r) => ({path: r.path, query: r.query})),
         [{path: `/files/${FILE_KEY}/nodes`, query: {ids: '4:1'}}]);
-    assert.ok(text.includes(`Screen Sections (2 identified):
+    assert.ok(text.includes(`Child Layers (2 identified):
 1. Header (HEADER)
    Priority: 8/10
    Size: 375×56px
@@ -156,7 +156,7 @@ test('analyze_frame_as_screen reports each section with sizing, border and shado
 });
 
 test('inspect_frame_structure reports padding, border and shadow per section', async () => {
-    const {text} = await callOnNode(SCREEN, 'inspect_frame_structure', {showAllSections: true});
+    const {text} = await callOnNode(SCREEN, 'inspect_frame_structure', {showAllChildren: true});
 
     assert.ok(text.includes(`Screen Structure:
 1. Header (FRAME) [HEADER]

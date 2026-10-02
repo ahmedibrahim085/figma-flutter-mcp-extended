@@ -32,7 +32,7 @@ export interface ScreenMetadata {
 }
 
 /**
- * Screen layout information optimized for full screens
+ * Screen layout information optimized for top-level frames
  */
 export interface ScreenLayoutInfo extends LayoutInfo {
     scrollable?: boolean;
@@ -112,7 +112,7 @@ export interface SkippedNodeInfo {
  * Screen extraction options
  */
 export interface ScreenExtractionOptions {
-    maxSections?: number;
+    maxChildNodes?: number;
     maxDepth?: number;
     includeHiddenNodes?: boolean;
     extractNavigation?: boolean;

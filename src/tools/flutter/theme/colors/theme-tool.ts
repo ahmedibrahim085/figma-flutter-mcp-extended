@@ -13,10 +13,10 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
         "extract_theme_colors",
         {
             title: "Extract Theme Colors from Frame",
-            description: "Extract colors from a Figma frame of color samples (swatches with labels)",
+            description: "Extract colors from a Figma frame of color samples with labels",
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
-                nodeId: z.string().describe("Theme frame node ID containing color swatches"),
+                nodeId: z.string().describe("Node ID of the frame of color samples"),
                 projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)"),
                 generateThemeData: z.boolean().optional().describe("Generate Flutter ThemeData class (defaults to false)")
             }
@@ -45,7 +45,7 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                     return {
                         content: [{
                             type: "text",
-                            text: `Theme frame with node ID "${nodeId}" not found.`
+                            text: `Frame with node ID "${nodeId}" not found.`
                         }]
                     };
                 }
@@ -57,7 +57,7 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                     return {
                         content: [{
                             type: "text",
-                            text: `No colors found in frame "${themeFrame.name}". Make sure the frame contains color swatches with text labels.`
+                            text: `No colors found in frame "${themeFrame.name}". Make sure the frame contains color samples with text labels.`
                         }]
                     };
                 }
@@ -72,7 +72,7 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
 
                 // Create success report
                 let output = `Successfully extracted theme colors!\n\n`;
-                output += `Theme Frame: ${themeFrame.name}\n`;
+                output += `Frame: ${themeFrame.name}\n`;
                 output += `Node ID: ${nodeId}\n`;
                 output += `Colors found: ${themeColors.length}\n`;
                 output += `Generated: ${generatedFilePath}\n`;

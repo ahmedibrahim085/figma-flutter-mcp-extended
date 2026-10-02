@@ -102,10 +102,10 @@ The key can also be passed as `--figma-api-key=YOUR-API-KEY`, or loaded from a f
 
 Copy a link to a frame or component (Figma desktop: select it and press Cmd+L or Ctrl+L; web: copy the URL). A valid link contains a file ID and a node ID. Then ask your agent, for example:
 
-1. **Theme and typography.** Put two frames in Figma, one with labelled color swatches and one with text samples:
+1. **Theme and typography.** Put two frames in Figma, one with labelled color samples and one with text samples:
 
-   ![Theme frame example](docs/images/theme-frame.png)
-   ![Typography frame example](docs/images/text-style-frame.png)
+   ![Frame of color samples example](docs/images/theme-frame.png)
+   ![Frame of text samples example](docs/images/text-style-frame.png)
 
    > "Set up the Flutter theme from <figma_link>, including colors and typography."
 

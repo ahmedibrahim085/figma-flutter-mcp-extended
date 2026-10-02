@@ -63,7 +63,7 @@ export function generateScreenVisualContext(
     figmaUrl?: string,
     nodeId?: string
 ): string {
-    let context = `📱 Screen Layout map for AI Implementation:\n`;
+    let context = `📱 Screen layout map for AI Implementation:\n`;
     context += `${'='.repeat(55)}\n\n`;
 
     // Design reference
@@ -258,7 +258,7 @@ function generateComponentSpatialDescription(analysis: ComponentAnalysis): strin
 
     // Children positioning
     if (analysis.children.length > 0) {
-        description += `   • Contains ${analysis.children.length} child elements\n`;
+        description += `   • Contains ${analysis.children.length} child layers\n`;
         const highImportanceChildren = analysis.children.filter(c => c.visualImportance >= 7);
         if (highImportanceChildren.length > 0) {
             description += `   • ${highImportanceChildren.length} high-priority elements (visual weight ≥7)\n`;

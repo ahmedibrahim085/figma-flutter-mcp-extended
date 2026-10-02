@@ -37,7 +37,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
             inputSchema: {
                 input: z.string().describe("Figma frame URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
-                maxChildNodes: z.number().optional().describe("Maximum sections to analyze (default: 15)"),
+                maxChildNodes: z.number().optional().describe("Maximum child layers to analyze (default: 15)"),
                 extractNavigation: z.boolean().optional().describe("Extract navigation elements (default: true)"),
                 extractAssets: z.boolean().optional().describe("Extract and export screen assets (default: true)"),
                 projectPath: z.string().optional().describe("Path to Flutter project for asset export (defaults to current directory)"),
@@ -139,7 +139,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
             inputSchema: {
                 input: z.string().describe("Figma frame URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
-                showAllChildren: z.boolean().optional().describe("Show all sections regardless of limits (default: false)")
+                showAllChildren: z.boolean().optional().describe("Show all child layers regardless of limits (default: false)")
             }
         },
         async ({input, nodeId, showAllChildren = false}) => {

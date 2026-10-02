@@ -518,7 +518,7 @@ function sizedBox(sizeProps: string[]): string {
 }
 
 /**
- * Generate comprehensive deduplicated report with style library statistics
+ * Generate comprehensive deduplicated report with cached styles statistics
  */
 export function generateComprehensiveDeduplicatedReport(
   analysis: DeduplicatedComponentAnalysis,
@@ -616,7 +616,7 @@ export function generateComprehensiveDeduplicatedReport(
     output += `\n`;
   }
 
-  // Style library statistics (if requested)
+  // Cached styles statistics (if requested)
   if (includeStyleStats) {
     const styleLibrary = FlutterStyleLibrary.getInstance();
     const allStyles = styleLibrary.getAllStyles();
@@ -709,7 +709,7 @@ export function addVisualContextToDeduplicatedReport(
 }
 
 /**
- * Generate style library status report
+ * Generate cached styles status report
  */
 export function generateStyleLibraryReport(): string {
   const styleLibrary = FlutterStyleLibrary.getInstance();

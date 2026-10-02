@@ -17,7 +17,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
             description: "Extract typography styles from a Figma frame of text samples with different styles",
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
-                nodeId: z.string().describe("Theme frame node ID containing text style samples"),
+                nodeId: z.string().describe("Node ID of the frame of text samples"),
                 projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)"),
                 generateTextTheme: z.boolean().optional().describe("Generate Flutter TextTheme class (defaults to false)"),
                 familyVariableName: z.string().optional().describe("Name for shared font family variable (defaults to 'fontFamily')")
@@ -47,7 +47,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                     return {
                         content: [{
                             type: "text",
-                            text: `Theme frame with node ID "${nodeId}" not found.`
+                            text: `Frame with node ID "${nodeId}" not found.`
                         }]
                     };
                 }
@@ -82,7 +82,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
 
                 // Create success report
                 let output = `Successfully extracted theme typography!\n\n`;
-                output += `Theme Frame: ${themeFrame.name}\n`;
+                output += `Frame: ${themeFrame.name}\n`;
                 output += `Node ID: ${nodeId}\n`;
                 output += `Typography styles found: ${themeTypography.length}\n`;
                 output += `Primary font family: ${primaryFontFamily}\n`;
@@ -189,7 +189,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                     };
                 }
 
-                let output = `Typography Frame Inspection Report\n\n`;
+                let output = `Text Style Frame Inspection Report\n\n`;
                 output += `Frame Name: ${frameNode.name}\n`;
                 output += `Frame Type: ${frameNode.type}\n`;
                 output += `Node ID: ${nodeId}\n`;

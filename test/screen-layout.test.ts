@@ -133,7 +133,7 @@ test('analyze_frame_as_screen reports each section with sizing, border and shado
 
     assert.deepEqual(requests.map((r) => ({path: r.path, query: r.query})),
         [{path: `/files/${FILE_KEY}/nodes`, query: {ids: '4:1'}}]);
-    assert.ok(text.includes(`Child Layers (2 identified):
+    assert.ok(text.includes(`Child layers (2 identified):
 1. Header (HEADER)
    Priority: 8/10
    Size: 375×56px
@@ -165,7 +165,7 @@ test('inspect_frame_structure reports padding, border and shadow per section', a
    Horizontal Sizing: FILL
    Vertical Sizing: FIXED
    Parent Alignment: STRETCH
-   Contains: 1 child elements
+   Contains: 1 child layers
    - Padding: 8px 16px 8px 16px (TRBL)
    - Border: 1px solid #000000 align INSIDE
    - Drop shadow 1: #000000 opacity 5% offset(0, 3) blur 100px
@@ -175,7 +175,7 @@ test('inspect_frame_structure reports padding, border and shadow per section', a
    Horizontal Sizing: FILL
    Vertical Sizing: FILL
    Parent Alignment: STRETCH
-   Contains: 1 child elements
+   Contains: 1 child layers
 `), text);
 });
 

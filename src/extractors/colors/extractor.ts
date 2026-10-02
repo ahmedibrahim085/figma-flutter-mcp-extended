@@ -7,7 +7,7 @@ import type {
 } from './types.js';
 
 /**
- * Extract colors from a frame of color samples (swatches with text labels)
+ * Extract colors from a frame of color samples with text labels
  */
 export function extractColorsFromThemeFrame(frameNode: FigmaNode): ThemeColor[] {
     const colors: ThemeColor[] = [];

@@ -1,6 +1,10 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {callToolOffline, callToolsOffline, nodeRoute, FILE_KEY} from './helpers/offline-tool.ts';
+import {mkdtempSync} from 'node:fs';
+import {rm} from 'node:fs/promises';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
 import {withServer} from './helpers/mcp-stdio.ts';
 
 // Independent source of truth: Figma and Flutter documentation terms (research-terms.md, ticket 19).
@@ -24,9 +28,9 @@ test('maxChildNodes limits the child layers analyze_frame_as_screen reports; max
     const limited = await call(SCREEN, 'analyze_frame_as_screen', {extractAssets: false, maxChildNodes: 1});
     const old = await call(SCREEN, 'analyze_frame_as_screen', {extractAssets: false, maxSections: 1});
 
-    assert.match(limited.text, /Child Layers \(1 identified\)/);
+    assert.match(limited.text, /Child layers \(1 identified\)/);
     assert.match(limited.text, /increase the maxChildNodes parameter/);
-    assert.match(old.text, /Child Layers \(2 identified\)/);
+    assert.match(old.text, /Child layers \(2 identified\)/);
 });
 
 test('showAllChildren includes hidden child layers in inspect_frame_structure; showAllSections no longer does', async () => {
@@ -60,23 +64,25 @@ test('report headings use Figma and Flutter terms', async () => {
 
     assert.match(plain.text, /Child layers \(1 analyzed\)/);
     assert.match(screen.text, /Layout sizing \(FIXED\/HUG\/FILL\)/);
-    assert.match(screen.text, /Layout map for AI Implementation/);
+    assert.match(screen.text, /Screen layout map for AI Implementation/);
     assert.match(screen.text, /Name-based layer classification/);
-    assert.match(screen.text, /Child Widgets:/);
+    assert.match(screen.text, /Child widgets:/);
     assert.match(status.text, /Cached styles/);
-    for (const old of [/Child Elements/, /Layout Sizing Semantics/, /Visual Context/, /Enhanced Semantic Detection/, /Section Widgets/, /Style Library/]) {
+    for (const old of [/Child Layers \(/, /Child Widgets:/, /Screen Layout map/, /child elements/i, /Child Elements/, /Layout Sizing Semantics/, /Visual Context/, /Enhanced Semantic Detection/, /Section Widgets/, /Style Library/]) {
         for (const {text} of [plain, screen, status]) assert.doesNotMatch(text, old);
     }
 });
 
-test('tool descriptions use Figma and Flutter terms', async () => {
-    let descriptions: Record<string, string> = {};
+const INVENTED_TERMS = /theme frame|typography frame|\bsections?\b|child elements|style library|design tokens|full screens|complete screen layouts|screen frames|full design context|swatch/i;
+
+test('tool descriptions and input descriptions use Figma and Flutter terms', async () => {
+    let tools: any[] = [];
     await withServer(async (s) => {
         await s.initialize();
         const list: any = await s.request('tools/list');
-        descriptions = Object.fromEntries(list.result.tools.map((t: any) => [t.name, t.description]));
+        tools = list.result.tools;
     });
-    const all = Object.values(descriptions).join('\n');
+    const descriptions: Record<string, string> = Object.fromEntries(tools.map((t) => [t.name, t.description]));
 
     assert.match(descriptions.ff_get_variable_defs, /^Read the variables/);
     assert.match(descriptions.inspect_color_frame, /frame of color samples/);
@@ -84,9 +90,37 @@ test('tool descriptions use Figma and Flutter terms', async () => {
     assert.match(descriptions.ff_get_screenshot, /top-level frames/);
     for (const tool of ['analyze_frame_as_screen', 'inspect_frame_structure']) {
         assert.match(descriptions[tool], /child layers/);
-        assert.doesNotMatch(descriptions[tool], /sections/);
     }
-    for (const old of [/design tokens/i, /theme frame/i, /typography frame/i, /full screens/i, /complete screen/i, /screen frames/i, /full design context/i, /style library/i]) {
-        assert.doesNotMatch(all, old);
+    // Every description of a tool and of each of its inputs, case-insensitive. Figma's own SECTION
+    // node is documented, so ff_get_screenshot may say "not sections or pages".
+    const texts: string[] = [];
+    for (const t of tools) {
+        if (t.name !== 'ff_get_screenshot') texts.push(`${t.name}: ${t.description}`);
+        else texts.push(`${t.name}: ${t.description.replace('not sections or pages', '')}`);
+        for (const [key, prop] of Object.entries<any>(t.inputSchema?.properties ?? {})) texts.push(`${t.name}.${key}: ${prop.description ?? ''}`);
+    }
+    for (const text of texts) assert.doesNotMatch(text, INVENTED_TERMS, text);
+    const byKey = (tool: string, key: string) => tools.find((t) => t.name === tool).inputSchema.properties[key].description;
+    assert.equal(byKey('analyze_frame_as_screen', 'maxChildNodes'), 'Maximum child layers to analyze (default: 15)');
+    assert.equal(byKey('inspect_frame_structure', 'showAllChildren'), 'Show all child layers regardless of limits (default: false)');
+    assert.equal(byKey('extract_theme_colors', 'nodeId'), 'Node ID of the frame of color samples');
+    assert.equal(byKey('extract_theme_typography', 'nodeId'), 'Node ID of the frame of text samples');
+});
+
+test('extract_theme_colors and extract_theme_typography name the frame, not a theme frame', async (t) => {
+    const colors = {id: '40:1', name: 'Palette', type: 'FRAME', children: [
+        {id: '40:2', name: 'Primary', type: 'RECTANGLE', fills: [{type: 'SOLID', color: {r: 0.1, g: 0.2, b: 0.3, a: 1}}], absoluteBoundingBox: box(40, 40)},
+        {id: '40:3', name: 'Primary label', type: 'TEXT', characters: 'Primary', absoluteBoundingBox: box(40, 20)},
+    ]};
+    const dir = mkdtempSync(join(tmpdir(), 'theme-'));
+    t.after(() => rm(dir, {recursive: true, force: true}));
+    const base = {fileId: FILE_KEY, projectPath: dir};
+    const c = await callToolOffline(nodeRoute(colors.id, colors), 'extract_theme_colors', {...base, nodeId: colors.id});
+    const y = await callToolOffline(nodeRoute(TEXT_FRAME.id, TEXT_FRAME), 'extract_theme_typography', {...base, nodeId: TEXT_FRAME.id});
+
+    for (const {text} of [c, y]) {
+        assert.match(text, /^Successfully extracted/);
+        assert.match(text, /\nFrame: /);
+        assert.doesNotMatch(text, INVENTED_TERMS);
     }
 });

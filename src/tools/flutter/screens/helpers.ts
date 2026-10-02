@@ -112,7 +112,7 @@ export function generateScreenAnalysisReport(
 
     // Screen sections
     if (analysis.sections.length > 0) {
-        output += `Child Layers (${analysis.sections.length} identified):\n`;
+        output += `Child layers (${analysis.sections.length} identified):\n`;
         analysis.sections.forEach((section, index) => {
             output += `${index + 1}. ${section.name} (${section.type.toUpperCase()})\n`;
             output += `   Priority: ${section.importance}/10\n`;
@@ -290,7 +290,7 @@ export function generateScreenStructureReport(node: any, showAllChildren: boolea
         }, '   ');
 
         if (section.children && section.children.length > 0) {
-            output += `   Contains: ${section.children.length} child elements\n`;
+            output += `   Contains: ${section.children.length} child layers\n`;
             
             // Show component count
             const componentCount = section.children.filter((child: any) => 
@@ -467,11 +467,11 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
 
     // Section widgets guidance
     if (analysis.sections.length > 0) {
-        guidance += `Child Widgets:\n`;
+        guidance += `Child widgets:\n`;
         analysis.sections.forEach((section, index) => {
             const widgetName = toPascalCase(section.name);
             guidance += `${index + 1}. ${widgetName}() - ${section.type} child widget\n`;
-            guidance += `   Elements: ${section.children.length} child elements\n`;
+            guidance += `   Elements: ${section.children.length} child layers\n`;
             if (section.components.length > 0) {
                 guidance += `   Components: ${section.components.length} nested components\n`;
             }

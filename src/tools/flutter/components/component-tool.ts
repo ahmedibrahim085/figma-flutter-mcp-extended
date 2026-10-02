@@ -75,7 +75,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
             }
 
             try {
-                // Reset style library if requested
+                // Reset cached styles if requested
                 const styleLibrary = FlutterStyleLibrary.getInstance();
                 
                 if (resetCachedStyles) {
@@ -538,7 +538,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
         }
     );
 
-    // Style library status tool
+    // Cached styles status tool
     server.registerTool(
         "cached_styles_status",
         {

@@ -168,17 +168,11 @@ export function analyzeChildren(
     );
 
     // Children stay in Figma layer order: no score or type decides which come first.
-    const childrenWithImportance = visibleChildren.map(child => ({
-        node: child,
-        importance: calculateVisualImportance(child),
-        isComponent: isComponentNode(child)
-    }));
+    const processedCount = Math.min(visibleChildren.length, options.maxChildNodes);
 
-    // Process up to maxChildNodes
-    const processedCount = Math.min(childrenWithImportance.length, options.maxChildNodes);
-
-    for (let i = 0; i < childrenWithImportance.length; i++) {
-        const {node: child, importance, isComponent} = childrenWithImportance[i];
+    for (let i = 0; i < visibleChildren.length; i++) {
+        const child = visibleChildren[i];
+        const isComponent = isComponentNode(child);
 
         if (i < processedCount) {
             // Check if this is a nested component
@@ -188,7 +182,7 @@ export function analyzeChildren(
 
             // Pass parent and siblings for better semantic detection
             const siblings = visibleChildren.filter(sibling => sibling.id !== child.id);
-            children.push(createComponentChild(child, importance, isComponent, options, node, siblings));
+            children.push(createComponentChild(child, isComponent, options, node, siblings));
         } else {
             // Track skipped nodes
             skippedNodes.push({
@@ -214,7 +208,7 @@ export function createNestedComponentInfo(node: FigmaNode): NestedComponentInfo 
         masterComponent: (node as any).masterComponent?.key,
         isComponentInstance: node.type === 'INSTANCE',
         needsSeparateAnalysis: true,
-        instanceType: node.type === 'INSTANCE' ? 'COMPONENT' : node.type as 'COMPONENT' | 'COMPONENT_SET'
+        instanceType: node.type as 'COMPONENT' | 'COMPONENT_SET' | 'INSTANCE'
     };
 }
 
@@ -223,7 +217,6 @@ export function createNestedComponentInfo(node: FigmaNode): NestedComponentInfo 
  */
 export function createComponentChild(
     node: FigmaNode,
-    importance: number,
     isNestedComponent: boolean,
     options: Required<ComponentExtractionOptions>,
     parent?: FigmaNode,
@@ -238,7 +231,6 @@ export function createComponentChild(
         name: node.name,
         type: node.type,
         isNestedComponent,
-        visualImportance: importance,
         basicInfo,
         ...(node.interactions?.length ? {interactions: node.interactions} : {})
     };
@@ -262,7 +254,6 @@ export function createComponentChild(
             .slice(0, options.maxChildNodes)
             .map(nestedChild => createComponentChild(
                 nestedChild,
-                calculateVisualImportance(nestedChild),
                 isComponentNode(nestedChild),
                 options,
                 node,
@@ -272,35 +263,6 @@ export function createComponentChild(
     }
 
     return child;
-}
-
-/**
- * Calculate visual importance score (1-10)
- */
-export function calculateVisualImportance(node: FigmaNode): number {
-    let score = 0;
-
-    // Size importance (0-4 points)
-    const area = (node.absoluteBoundingBox?.width || 0) * (node.absoluteBoundingBox?.height || 0);
-    if (area > 10000) score += 4;
-    else if (area > 5000) score += 3;
-    else if (area > 1000) score += 2;
-    else if (area > 100) score += 1;
-
-    // Type importance (0-3 points)
-    if (node.type === 'COMPONENT' || node.type === 'INSTANCE') score += 3;
-    else if (node.type === 'FRAME') score += 2;
-    else if (node.type === 'TEXT') score += 2;
-    else if (node.type === 'VECTOR') score += 1;
-
-    // Styling importance (0-2 points)
-    if (node.fills && node.fills.length > 0) score += 1;
-    if (node.effects && node.effects.length > 0) score += 1;
-
-    // Has children importance (0-1 point)
-    if (node.children && node.children.length > 0) score += 1;
-
-    return Math.min(score, 10);
 }
 
 /**

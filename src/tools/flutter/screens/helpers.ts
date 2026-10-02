@@ -1,5 +1,6 @@
 // src/tools/flutter/screens/helpers.mts
 
+import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
 import type {ScreenAnalysis} from "../../../extractors/screens/types.js";
 import type {ComponentChild} from "../../../extractors/components/types.js";
 import {generateScreenVisualContext} from "../visual-context.js";
@@ -140,7 +141,7 @@ export function generateScreenAnalysisReport(
         analysis.components.forEach((comp, index) => {
             output += `${index + 1}. ${comp.name}\n`;
             output += `   Node ID: ${comp.nodeId}\n`;
-            output += `   Type: ${comp.instanceType || 'COMPONENT'}\n`;
+            output += `   Type: ${comp.instanceType}\n`;
             if (comp.componentKey) {
                 output += `   Component Key: ${comp.componentKey}\n`;
             }
@@ -284,14 +285,6 @@ export function generateScreenStructureReport(node: any, showAllChildren: boolea
         output += `- Found ${componentSections.length} component child layers for separate analysis\n`;
     }
 
-    const largeSections = node.children.filter((section: any) => {
-        const bbox = section.absoluteBoundingBox;
-        return bbox && (bbox.width * bbox.height) > 20000;
-    });
-    if (largeSections.length > 5) {
-        output += `- Screen has ${largeSections.length} large child layers - consider increasing maxChildNodes\n`;
-    }
-
     return output;
 }
 
@@ -303,9 +296,7 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
 
     // Widget composition best practices
     guidance += `🏗️  Widget Composition Best Practices:\n`;
-    guidance += `- Start by building the complete screen widget tree in a single build() method\n`;
-    guidance += `- Keep composing widgets inline until you reach ~250 lines of code\n`;
-    guidance += `- Only then break down into private StatelessWidget classes for child widgets\n`;
+    WIDGET_SPLIT_ADVICE.forEach(line => { guidance += `- ${line}\n`; });
     guidance += `- Use private widgets (prefix with _) for internal screen component breakdown\n`;
     guidance += `- Avoid functional widgets - always use StatelessWidget classes\n\n`;
     
@@ -345,14 +336,6 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
     guidance += `Responsive Design:\n`;
     guidance += `- Device Type: ${analysis.metadata.deviceType}\n`;
     guidance += `- Orientation: ${analysis.metadata.orientation}\n`;
-    
-    if (analysis.metadata.deviceType === 'mobile') {
-        guidance += `- Optimize for mobile: Use SingleChildScrollView, consider bottom navigation\n`;
-    } else if (analysis.metadata.deviceType === 'tablet') {
-        guidance += `- Tablet layout: Consider using NavigationRail or side navigation\n`;
-    } else if (analysis.metadata.deviceType === 'desktop') {
-        guidance += `- Desktop layout: Use NavigationRail, consider multi-column layouts\n`;
-    }
 
     return guidance;
 }

@@ -1,5 +1,6 @@
 // src/tools/flutter/components/deduplicated-helpers.mts
 
+import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
 import { MAX_CHILD_DEPTH, NESTED_COMPONENT_TYPES, type DeduplicatedComponentAnalysis, type DeduplicatedComponentChild } from '../../../extractors/components/deduplicated-extractor.js';
 import { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
 import { dartString, indentTail, textWidgetCode } from '../../../extractors/flutter/text-style.js';
@@ -83,8 +84,7 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   
   // Widget composition guidance
   implementation += `🏗️  Widget Composition Guidelines:\n`;
-  implementation += `- Build the complete widget tree inline in build() method first\n`;
-  implementation += `- Keep composing until you reach ~200 lines, then extract private widgets\n`;
+  WIDGET_SPLIT_ADVICE.forEach(line => { implementation += `- ${line}\n`; });
   implementation += `- Use private StatelessWidget classes (prefix with _) for breakdown\n`;
   implementation += `- Avoid functional widgets - always use proper StatelessWidget classes\n\n`;
   
@@ -652,8 +652,7 @@ export function generateComprehensiveDeduplicatedReport(
   output += `   • Use 'resetCachedStyles: true' to start fresh analysis\n\n`;
   
   output += `🏗️  Widget Composition Reminder:\n`;
-  output += `   • Build complete widget tree inline first (~200 lines max)\n`;
-  output += `   • Extract to private StatelessWidget classes only when needed\n`;
+  WIDGET_SPLIT_ADVICE.forEach(line => { output += `   • ${line}\n`; });
   output += `   • Avoid functional widgets - use proper StatelessWidget classes\n`;
 
   return output;
@@ -675,29 +674,25 @@ export function addVisualContextToDeduplicatedReport(
       fills: [],
       strokes: [],
       cornerRadius: undefined,
-      opacity: 1,
       effects: { dropShadows: [], innerShadows: [], blurs: [] }
     },
-    children: analysis.children.map((child, index) => ({
+    children: analysis.children.map(child => ({
       name: child.name,
       type: child.type,
-      nodeId: `node_${index}`,
+      nodeId: child.nodeId,
       isNestedComponent: false,
-      visualImportance: 5,
       basicInfo: {
         layout: child.layout,
         styling: { 
           fills: [], 
           strokes: [], 
-          opacity: 1,
           effects: { dropShadows: [], innerShadows: [], blurs: [] }
         },
         text: child.textContent ? {
           content: child.textContent,
           fontFamily: undefined,
           fontSize: undefined,
-          fontWeight: undefined,
-          textCase: 'mixed' as const
+          fontWeight: undefined
         } : undefined
       }
     })),
@@ -727,16 +722,6 @@ export function generateStyleLibraryReport(): string {
 
   output += `📊 Library Statistics:\n`;
   output += `   • Total unique styles: ${allStyles.length}\n`;
-  
-  // Show optimization info
-  const hierarchy = styleLibrary.getStyleHierarchy();
-  const hierarchyCount = Object.keys(hierarchy).filter(id => 
-    hierarchy[id].parentId || hierarchy[id].childIds.length > 0
-  ).length;
-  
-  if (hierarchyCount > 0) {
-    output += `   • Styles with relationships: ${hierarchyCount}\n`;
-  }
   
   // Category breakdown
   const categoryStats = allStyles.reduce((acc, style) => {

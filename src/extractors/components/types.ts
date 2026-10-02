@@ -186,7 +186,6 @@ export interface ComponentChild {
     name: string;
     type: string;
     isNestedComponent: boolean;
-    visualImportance: number; // 1-10 score for prioritization
     basicInfo?: {
         layout?: Partial<LayoutInfo>;
         styling?: Partial<StylingInfo>;
@@ -223,7 +222,8 @@ export interface NestedComponentInfo {
     masterComponent?: string;
     isComponentInstance: boolean;
     needsSeparateAnalysis: boolean;
-    instanceType?: 'COMPONENT' | 'COMPONENT_SET';
+    /** Figma's node.type of the nested component. */
+    instanceType?: 'COMPONENT' | 'COMPONENT_SET' | 'INSTANCE';
 }
 
 /**
@@ -243,7 +243,7 @@ export interface SkippedNodeInfo {
     nodeId: string;
     name: string;
     type: string;
-    reason: 'depth_limit' | 'visual_importance' | 'max_nodes';
+    reason: 'depth_limit' | 'max_nodes';
 }
 
 /**

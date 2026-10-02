@@ -1,16 +1,15 @@
 // src/extractors/flutter/global-vars.ts
 
-import { FlutterStyleLibrary, FlutterStyleDefinition, StyleRelationship, OptimizationReport, stableStringify } from './style-library.js';
+import { FlutterStyleLibrary, FlutterStyleDefinition, OptimizationReport, stableStringify } from './style-library.js';
 import { Logger } from '../../utils/logger.js';
 
 export interface GlobalVars {
   styles: Record<string, FlutterStyleDefinition>;
-  relationships: Record<string, StyleRelationship>;
   usage: Record<string, number>;
 }
 
 export class GlobalStyleManager {
-  private globalVars: GlobalVars = { styles: {}, relationships: {}, usage: {} };
+  private globalVars: GlobalVars = { styles: {}, usage: {} };
   private styleLibrary = FlutterStyleLibrary.getInstance();
   
   addStyle(properties: any, context?: string): string {
@@ -70,14 +69,6 @@ export class GlobalStyleManager {
     // Update global vars
     this.globalVars.styles[styleId] = newStyle;
     this.globalVars.usage[styleId] = newStyle.usageCount;
-    
-    if (newStyle.parentId || newStyle.childIds.length > 0) {
-      this.globalVars.relationships[styleId] = {
-        parentId: newStyle.parentId,
-        childIds: newStyle.childIds,
-        variance: newStyle.variance || 0
-      };
-    }
     
     return styleId;
   }
@@ -150,19 +141,10 @@ export class GlobalStyleManager {
     
     this.globalVars.styles = {};
     this.globalVars.usage = {};
-    this.globalVars.relationships = {};
     
     for (const style of allStyles) {
       this.globalVars.styles[style.id] = style;
       this.globalVars.usage[style.id] = style.usageCount;
-      
-      if (style.parentId || style.childIds.length > 0) {
-        this.globalVars.relationships[style.id] = {
-          parentId: style.parentId,
-          childIds: style.childIds,
-          variance: style.variance || 0
-        };
-      }
     }
   }
   
@@ -171,16 +153,12 @@ export class GlobalStyleManager {
     return { ...this.globalVars };
   }
   
-  getStyleHierarchy(): Record<string, StyleRelationship> {
-    return { ...this.globalVars.relationships };
-  }
-  
   getUsageStats(): Record<string, number> {
     return { ...this.globalVars.usage };
   }
   
   reset(): void {
-    this.globalVars = { styles: {}, relationships: {}, usage: {} };
+    this.globalVars = { styles: {}, usage: {} };
     this.styleLibrary.reset();
   }
   

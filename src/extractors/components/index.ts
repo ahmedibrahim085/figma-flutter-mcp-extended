@@ -14,7 +14,6 @@ export {
     analyzeChildren,
     createNestedComponentInfo,
     createComponentChild,
-    calculateVisualImportance,
     isComponentNode,
     determineLayoutType,
     hasPadding,

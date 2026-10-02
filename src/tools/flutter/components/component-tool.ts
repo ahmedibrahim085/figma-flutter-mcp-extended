@@ -1,5 +1,6 @@
 // src/tools/flutter/component/component-tool.mts
 
+import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
@@ -738,9 +739,7 @@ function generateWidgetClass(componentNodeId: string, widgetName: string, styles
     
     // Widget composition best practices
     output += `🏗️  Widget Composition Guidelines:\n`;
-    output += `- Start with inline widget tree composition in build() method\n`;
-    output += `- Continue composing inline until you reach ~200 lines of code\n`;
-    output += `- Only then extract parts into private StatelessWidget classes\n`;
+    WIDGET_SPLIT_ADVICE.forEach(line => { output += `- ${line}\n`; });
     output += `- Use private widgets (prefix with _) for internal breakdown\n`;
     output += `- Avoid functional widgets - always use StatelessWidget classes\n\n`;
     
@@ -808,11 +807,9 @@ function generateWidgetClass(componentNodeId: string, widgetName: string, styles
     // Add usage instructions
     output += `\n💡 Usage Instructions:\n`;
     output += `${'─'.repeat(30)}\n`;
-    output += `1. Start by building the complete widget tree inline in build() method\n`;
-    output += `2. Keep composing widgets inline until you reach ~200 lines\n`;
-    output += `3. Only then extract reusable parts into private StatelessWidget classes\n`;
-    output += `4. Replace 'Sample Text' with actual content from Figma\n`;
-    output += `5. Customize the widget structure and add any missing properties\n\n`;
+    WIDGET_SPLIT_ADVICE.forEach((line, index) => { output += `${index + 1}. ${line}\n`; });
+    output += `${WIDGET_SPLIT_ADVICE.length + 1}. Replace 'Sample Text' with actual content from Figma\n`;
+    output += `${WIDGET_SPLIT_ADVICE.length + 2}. Customize the widget structure and add any missing properties\n\n`;
 
     if (styles.length > 0) {
         output += `📦 Available Style References:\n`;

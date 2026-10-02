@@ -14,7 +14,6 @@ import {
     extractStylingInfo,
     createComponentChild,
     createNestedComponentInfo,
-    calculateVisualImportance,
     isComponentNode
 } from '../components/extractor.js';
 import {filterEffectivelyVisibleChildren} from '../../utils/visibility.js';
@@ -104,7 +103,6 @@ function createScreenChild(
         );
 
         visibleChildren.forEach(child => {
-            const childImportance = calculateVisualImportance(child);
             const isComponent = isComponentNode(child);
 
             if (isComponent) {
@@ -112,7 +110,7 @@ function createScreenChild(
             }
 
             const siblings = visibleChildren.filter(sibling => sibling.id !== child.id);
-            children.push(createComponentChild(child, childImportance, isComponent, {
+            children.push(createComponentChild(child, isComponent, {
                 maxChildNodes: 20, // Higher limit for screens
                 maxDepth: options.maxDepth,
                 includeHiddenNodes: options.includeHiddenNodes,

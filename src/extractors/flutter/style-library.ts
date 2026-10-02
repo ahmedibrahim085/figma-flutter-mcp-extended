@@ -11,22 +11,11 @@ export interface FlutterStyleDefinition {
   hash: string;
   semanticHash: string;
   usageCount: number;
-  parentId?: string;
-  childIds: string[];
-  variance?: number; // How different from parent (0-1)
-}
-
-export interface StyleRelationship {
-  parentId?: string;
-  childIds: string[];
-  variance: number; // How different from parent (0-1)
 }
 
 export interface OptimizationReport {
   totalStyles: number;
   duplicatesRemoved: number;
-  variantsCreated: number;
-  hierarchyDepth: number;
   memoryReduction: string;
 }
 
@@ -87,14 +76,6 @@ export class FlutterStyleLibrary {
       return existingId;
     }
     
-    // Check if this should be a variant of existing style
-    const parentStyle = this.findPotentialParent(properties);
-    
-    if (parentStyle) {
-      const variance = this.calculateVariance(properties, parentStyle.properties);
-      Logger.info(`🌳 Parent style found: ${parentStyle.id} (variance: ${(variance * 100).toFixed(1)}%)`);
-    }
-    
     const generatedId = this.generateId();
     const styleId = `${category}${generatedId.charAt(0).toUpperCase()}${generatedId.slice(1)}`;
     const definition: FlutterStyleDefinition = {
@@ -104,17 +85,8 @@ export class FlutterStyleLibrary {
       flutterCode: this.generateFlutterCode(category, properties),
       hash,
       semanticHash,
-      usageCount: 1,
-      parentId: parentStyle?.id,
-      childIds: [],
-      variance: parentStyle ? this.calculateVariance(properties, parentStyle.properties) : undefined
+      usageCount: 1
     };
-    
-    // Update parent-child relationships
-    if (parentStyle) {
-      parentStyle.childIds.push(styleId);
-      Logger.info(`🔗 Updated parent ${parentStyle.id} with child ${styleId}`);
-    }
     
     Logger.info(`✨ Created new style: ${styleId} (total styles: ${this.styles.size + 1})`);
     
@@ -134,25 +106,9 @@ export class FlutterStyleLibrary {
     return Array.from(this.styles.values());
   }
   
-  getStyleHierarchy(): Record<string, StyleRelationship> {
-    const hierarchy: Record<string, StyleRelationship> = {};
-    
-    for (const [id, style] of this.styles) {
-      hierarchy[id] = {
-        parentId: style.parentId,
-        childIds: style.childIds,
-        variance: style.variance || 0
-      };
-    }
-    
-    return hierarchy;
-  }
-  
   optimizeLibrary(): OptimizationReport {
     const beforeCount = this.styles.size;
     let duplicatesRemoved = 0;
-    let variantsCreated = 0;
-    let hierarchyDepth = 0;
     
     // Find and merge exact duplicates (shouldn't happen with current logic, but safety check)
     const hashGroups = new Map<string, string[]>();
@@ -184,23 +140,6 @@ export class FlutterStyleLibrary {
       }
     }
     
-    // Calculate hierarchy depth
-    for (const style of this.styles.values()) {
-      if (style.childIds.length > 0) {
-        variantsCreated += style.childIds.length;
-      }
-      
-      // Calculate depth from this node
-      let depth = 0;
-      let currentStyle = style;
-      while (currentStyle.parentId) {
-        depth++;
-        currentStyle = this.styles.get(currentStyle.parentId)!;
-        if (!currentStyle) break; // Safety check
-      }
-      hierarchyDepth = Math.max(hierarchyDepth, depth);
-    }
-    
     const afterCount = this.styles.size;
     const memoryReduction = beforeCount > 0 
       ? `${((beforeCount - afterCount) / beforeCount * 100).toFixed(1)}%`
@@ -209,8 +148,6 @@ export class FlutterStyleLibrary {
     return {
       totalStyles: afterCount,
       duplicatesRemoved,
-      variantsCreated,
-      hierarchyDepth,
       memoryReduction
     };
   }
@@ -331,70 +268,6 @@ export class FlutterStyleLibrary {
   
   private hashObject(obj: any): string {
     return stableStringify(obj);
-  }
-  
-  private findPotentialParent(properties: any, threshold: number = 0.8): FlutterStyleDefinition | undefined {
-    const allStyles = Array.from(this.styles.values());
-    
-    for (const style of allStyles) {
-      const similarity = this.calculateSimilarity(properties, style.properties);
-      if (similarity >= threshold && similarity < 1.0) {
-        return style;
-      }
-    }
-    
-    return undefined;
-  }
-  
-  private calculateSimilarity(props1: any, props2: any): number {
-    const keys1 = new Set(Object.keys(props1));
-    const keys2 = new Set(Object.keys(props2));
-    const allKeys = new Set([...keys1, ...keys2]);
-    
-    let matches = 0;
-    let total = allKeys.size;
-    
-    for (const key of allKeys) {
-      if (keys1.has(key) && keys2.has(key)) {
-        // Both have the key, check if values are similar
-        if (this.areValuesSimilar(props1[key], props2[key])) {
-          matches++;
-        }
-      }
-      // If only one has the key, it's a difference (no match)
-    }
-    
-    return total > 0 ? matches / total : 0;
-  }
-  
-  private areValuesSimilar(val1: any, val2: any): boolean {
-    if (val1 === val2) return true;
-    
-    // Handle arrays (like fills)
-    if (Array.isArray(val1) && Array.isArray(val2)) {
-      if (val1.length !== val2.length) return false;
-      return val1.every((item, index) => this.areValuesSimilar(item, val2[index]));
-    }
-    
-    // Handle objects
-    if (typeof val1 === 'object' && typeof val2 === 'object' && val1 !== null && val2 !== null) {
-      const keys1 = Object.keys(val1);
-      const keys2 = Object.keys(val2);
-      if (keys1.length !== keys2.length) return false;
-      return keys1.every(key => this.areValuesSimilar(val1[key], val2[key]));
-    }
-    
-    // Handle numbers with tolerance
-    if (typeof val1 === 'number' && typeof val2 === 'number') {
-      return Math.abs(val1 - val2) < 0.01;
-    }
-    
-    return false;
-  }
-  
-  private calculateVariance(childProps: any, parentProps: any): number {
-    const similarity = this.calculateSimilarity(childProps, parentProps);
-    return 1 - similarity; // Variance is inverse of similarity
   }
   
   private generateId(): string {

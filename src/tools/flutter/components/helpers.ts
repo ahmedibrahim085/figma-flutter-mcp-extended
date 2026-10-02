@@ -1,3 +1,4 @@
+import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
 import type {ComponentVariant} from "../../../extractors/components/types.js";
 import type {ComponentAnalysis} from "../../../extractors/components/types.js";
 import {generateFlutterTextWidget} from "../../../extractors/components/extractor.js";
@@ -137,8 +138,7 @@ export function generateComponentAnalysisReport(
         output += `Child layers (${analysis.children.length} analyzed):\n`;
         analysis.children.forEach((child, index) => {
             const componentMark = child.isNestedComponent ? ' [COMPONENT]' : '';
-            const importanceMark = ` (priority: ${child.visualImportance}/10)`;
-            output += `${index + 1}. ${child.name} (${child.type})${componentMark}${importanceMark}\n`;
+            output += `${index + 1}. ${child.name} (${child.type})${componentMark}\n`;
             output += formatInteractions(child.interactions, '   ');
             output += formatNestedInteractions(child.children, '   ');
 
@@ -191,7 +191,7 @@ export function generateComponentAnalysisReport(
         analysis.nestedComponents.forEach((comp, index) => {
             output += `${index + 1}. ${comp.name}\n`;
             output += `   Node ID: ${comp.nodeId}\n`;
-            output += `   Type: ${comp.instanceType || 'COMPONENT'}\n`;
+            output += `   Type: ${comp.instanceType}\n`;
             if (comp.componentKey) {
                 output += `   Component Key: ${comp.componentKey}\n`;
             }
@@ -231,9 +231,7 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
 
     // Widget composition best practices
     guidance += `🏗️  Widget Composition Best Practices:\n`;
-    guidance += `- Start by building the complete widget tree in a single build() method\n`;
-    guidance += `- Keep composing widgets inline until you reach ~200 lines of code\n`;
-    guidance += `- Only then extract reusable parts into private StatelessWidget classes\n`;
+    WIDGET_SPLIT_ADVICE.forEach(line => { guidance += `- ${line}\n`; });
     guidance += `- Use private widgets (prefix with _) for internal component breakdown\n`;
     guidance += `- Avoid functional widgets - always use StatelessWidget classes\n\n`;
 
@@ -354,7 +352,7 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
                 const indentedWidget = widgetSuggestion.split('\n').map(line => `   ${line}`).join('\n');
                 guidance += `${indentedWidget}\n\n`;
             } else {
-                guidance += `${index + 1}. Text('${textChild.name}') // No text info available\n\n`;
+                guidance += `${index + 1}. // TEXT layer "${textChild.name}" (${textChild.nodeId}): characters not read\n\n`;
             }
         });
     }
@@ -452,15 +450,6 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
 
     if (componentChildren.length > 0) {
         output += `- Found ${componentChildren.length} nested components for separate analysis\n`;
-    }
-
-    const largeChildren = childrenSource.filter((child: any) => {
-        const bbox = child.absoluteBoundingBox;
-        return bbox && (bbox.width * bbox.height) > 5000;
-    });
-
-    if (largeChildren.length > 3) {
-        output += `- Component has ${largeChildren.length} large children - consider increasing maxChildNodes\n`;
     }
 
     const textChildren = node.children.filter((child: any) => child.type === 'TEXT');

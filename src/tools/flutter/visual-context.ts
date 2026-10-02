@@ -43,14 +43,6 @@ export function generateComponentVisualContext(
     // Implementation guidance
     context += `💡 Implementation Guidance:\n`;
     context += generateComponentImplementationHints(analysis);
-    
-    // Semantic detection information
-    context += `\n🧠 Name-based layer classification:\n`;
-    context += `   • Multi-factor analysis with confidence scoring\n`;
-    context += `   • Context-aware classification using position and parent information\n`;
-    context += `   • Design pattern recognition for improved accuracy\n`;
-    context += `   • Fallback to legacy detection for low-confidence classifications\n`;
-    context += `   • Reduced false positives through evidence-based classification\n`;
 
     return context;
 }
@@ -84,29 +76,11 @@ export function generateScreenVisualContext(
 }
 
 /**
- * Generate ASCII layout for component
+ * Generate the size and layout lines for a component
  */
 function generateComponentAsciiLayout(analysis: ComponentAnalysis): string {
-    const width = Math.min(Math.max(Math.round(analysis.layout.dimensions.width / 20), 10), 50);
-    const height = Math.min(Math.max(Math.round(analysis.layout.dimensions.height / 20), 3), 10);
-    
-    let ascii = `┌${'─'.repeat(width)}┐\n`;
-    
-    // Add component name in the middle
-    const nameLines = Math.floor(height / 2);
-    for (let i = 0; i < height; i++) {
-        if (i === nameLines) {
-            const name = analysis.metadata.name.substring(0, width - 2);
-            const padding = Math.max(0, Math.floor((width - name.length) / 2));
-            ascii += `│${' '.repeat(padding)}${name}${' '.repeat(width - padding - name.length)}│\n`;
-        } else {
-            ascii += `│${' '.repeat(width)}│\n`;
-        }
-    }
-    
-    ascii += `└${'─'.repeat(width)}┘\n`;
-    ascii += `Dimensions: ${Math.round(analysis.layout.dimensions.width)}×${Math.round(analysis.layout.dimensions.height)}px\n`;
-    
+    let ascii = `Dimensions: ${Math.round(analysis.layout.dimensions.width)}×${Math.round(analysis.layout.dimensions.height)}px\n`;
+
     // Add layout type indicator
     if (analysis.layout.type === 'auto-layout') {
         const direction = analysis.layout.direction === 'horizontal' ? '↔' : '↕';
@@ -129,7 +103,7 @@ function generateComponentSpatialDescription(analysis: ComponentAnalysis): strin
     if (analysis.layout.type === 'auto-layout') {
         description += `   • Layout flow: ${analysis.layout.direction} auto-layout\n`;
         if (analysis.layout.spacing) {
-            description += `   • Element spacing: ${analysis.layout.spacing}px consistent\n`;
+            description += `   • Element spacing: ${analysis.layout.spacing}px\n`;
         }
         const crossAxisAlignment =
             analysis.layout.crossAxisAlignment ?? analysis.layout.justifyContent;
@@ -158,10 +132,6 @@ function generateComponentSpatialDescription(analysis: ComponentAnalysis): strin
     // Children positioning
     if (analysis.children.length > 0) {
         description += `   • Contains ${analysis.children.length} child layers\n`;
-        const highImportanceChildren = analysis.children.filter(c => c.visualImportance >= 7);
-        if (highImportanceChildren.length > 0) {
-            description += `   • ${highImportanceChildren.length} high-priority elements (visual weight ≥7)\n`;
-        }
     }
 
     return description;
@@ -178,20 +148,19 @@ function generateComponentPatternDescription(analysis: ComponentAnalysis): strin
     
     // Spacing pattern
     if (analysis.layout.spacing !== undefined) {
-        patterns += `   • Spacing system: ${analysis.layout.spacing}px consistent\n`;
+        patterns += `   • Spacing: ${analysis.layout.spacing}px\n`;
     }
     
     // Visual styling patterns
     if (analysis.styling.fills && analysis.styling.fills.length > 0) {
         const primaryColor = analysis.styling.fills[0].hex;
-        patterns += `   • Color pattern: Primary ${primaryColor}\n`;
+        patterns += `   • First fill: ${primaryColor}\n`;
     }
     
     if (analysis.styling.cornerRadius !== undefined) {
-        const radius = typeof analysis.styling.cornerRadius === 'number' 
-            ? analysis.styling.cornerRadius 
-            : `${analysis.styling.cornerRadius.topLeft}px mixed`;
-        patterns += `   • Border radius: ${radius}px consistent\n`;
+        const r = analysis.styling.cornerRadius;
+        const radius = typeof r === 'number' ? `${r}px` : `${r.topLeft}px ${r.topRight}px ${r.bottomRight}px ${r.bottomLeft}px`;
+        patterns += `   • Border radius: ${radius}\n`;
     }
     
     // Component grouping
@@ -202,7 +171,7 @@ function generateComponentPatternDescription(analysis: ComponentAnalysis): strin
         }
     }
 
-    // Visual weight
+    // Child counts by kind
     const textElements = analysis.children.filter(c => c.type === 'TEXT').length;
     const visualElements = analysis.children.length - textElements;
     patterns += `   • Content balance: ${textElements} text, ${visualElements} visual elements\n`;
@@ -220,9 +189,6 @@ function generateComponentImplementationHints(analysis: ComponentAnalysis): stri
     if (analysis.layout.type === 'auto-layout') {
         const widget = analysis.layout.direction === 'horizontal' ? 'Row' : 'Column';
         hints += `   • Main container: Use ${widget}() for ${analysis.layout.direction} layout\n`;
-        if (analysis.layout.spacing) {
-            hints += `   • Spacing: Add SizedBox gaps of ${analysis.layout.spacing}px\n`;
-        }
     } else {
         hints += `   • Main container: Use Stack() or Container() for absolute positioning\n`;
     }
@@ -242,11 +208,6 @@ function generateComponentImplementationHints(analysis: ComponentAnalysis): stri
     const nestedComponents = analysis.children.filter(c => c.isNestedComponent);
     if (nestedComponents.length > 0) {
         hints += `   • Component structure: Break down ${nestedComponents.length} nested components\n`;
-    }
-    
-    // Responsive considerations
-    if (analysis.layout.dimensions.width > 400) {
-        hints += `   • Responsive: Consider MediaQuery for larger screens\n`;
     }
 
     return hints;

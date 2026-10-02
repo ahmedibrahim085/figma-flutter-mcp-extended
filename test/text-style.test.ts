@@ -258,6 +258,28 @@ test('a text keeps its interactions: the report passes them through for the agen
     }
 });
 
+test('an interaction on a text nested two and three levels down is reported with its layer name and id, on both code paths', async () => {
+    const node = {id: '21:1', name: 'Card', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], children: [
+        {id: '21:2', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], children: [
+            {id: '21:3', name: 'Buy now', type: 'TEXT', characters: 'Buy now', fills: [{type: 'SOLID', color: TEAL}], style: restStyle(16, 400),
+                interactions: [{trigger: {type: 'ON_CLICK'}, actions: [{type: 'NODE', destinationId: '9:9', navigation: 'NAVIGATE'}]}]},
+            {id: '21:4', name: 'Inner', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], children: [
+                {id: '21:5', name: 'Cancel', type: 'TEXT', characters: 'Cancel', fills: [{type: 'SOLID', color: TEAL}], style: restStyle(16, 400),
+                    interactions: [{trigger: {type: 'ON_CLICK'}, actions: [{type: 'BACK'}]}]},
+            ]},
+        ]},
+    ]};
+    const args = {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true};
+    const dedup = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', args);
+    const plain = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component', {...args, useDeduplication: false});
+
+    for (const text of [dedup.text, plain.text]) {
+        assert.match(text, /Buy now \(21:3\)[^\n]*\n\s*Interactions: ON_CLICK → NODE NAVIGATE 9:9/);
+        assert.equal(text.match(/Interactions: ON_CLICK → NODE NAVIGATE 9:9/g)?.length, 1);
+        assert.match(text, /Cancel \(21:5\)[^\n]*\n\s*Interactions: ON_CLICK → BACK/);
+    }
+});
+
 test('an interaction with no trigger, no actions or an action without a target is still reported, on both code paths', async () => {
     const node = frameWithText('Open details', restStyle(16, 400));
     (node.children[0] as any).interactions = [

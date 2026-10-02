@@ -3,7 +3,7 @@ import type {ComponentAnalysis} from "../../../extractors/components/types.js";
 import {generateFlutterTextWidget} from "../../../extractors/components/extractor.js";
 import {generateComponentVisualContext} from "../visual-context.js";
 import {formatComponentProperties} from "../../../utils/component-properties.js";
-import {formatInteractions} from "../../../utils/interactions.js";
+import {formatInteractions, formatNestedInteractions} from "../../../utils/interactions.js";
 import {formatCategorizedEffects} from "../../../utils/effects-format.js";
 import {filterEffectivelyVisibleChildren, isEffectivelyVisible} from "../../../utils/visibility.js";
 import {formatPadding, formatStrokes, formatSizingAlignment} from "../../../utils/style-format.js";
@@ -140,6 +140,7 @@ export function generateComponentAnalysisReport(
             const importanceMark = ` (priority: ${child.visualImportance}/10)`;
             output += `${index + 1}. ${child.name} (${child.type})${componentMark}${importanceMark}\n`;
             output += formatInteractions(child.interactions, '   ');
+            output += formatNestedInteractions(child.children, '   ');
 
             if (child.basicInfo?.layout?.dimensions) {
                 const dims = child.basicInfo.layout.dimensions;

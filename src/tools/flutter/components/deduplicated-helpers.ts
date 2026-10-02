@@ -6,7 +6,7 @@ import { dartString, indentTail, textWidgetCode } from '../../../extractors/flut
 import { generateComponentVisualContext } from '../visual-context.js';
 import type { ComponentAnalysis, LayoutInfo } from '../../../extractors/components/types.js';
 import { formatComponentProperties } from '../../../utils/component-properties.js';
-import { formatInteractions } from '../../../utils/interactions.js';
+import { formatInteractions, formatNestedInteractions } from '../../../utils/interactions.js';
 import { formatSizingAlignment } from '../../../utils/style-format.js';
 
 export function generateDeduplicatedReport(analysis: DeduplicatedComponentAnalysis): string {
@@ -569,6 +569,7 @@ export function generateComprehensiveDeduplicatedReport(
     analysis.children.forEach((child, index) => {
       output += `   ${index + 1}. ${child.name} (${child.type})\n`;
       output += formatInteractions(child.interactions, '      ');
+      output += formatNestedInteractions(child.children, '      ');
       
       if (child.textContent) {
         output += `      📝 Text: "${child.textContent}"\n`;

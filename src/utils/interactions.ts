@@ -18,3 +18,20 @@ export function formatInteractions(interactions: FigmaInteraction[] | undefined,
         `${interaction.trigger?.type ?? 'no trigger'} → ${(interaction.actions ?? []).map(formatAction).join(', ') || 'no action'}`);
     return `${indent}Interactions: ${parts.join('; ')}\n`;
 }
+
+interface InteractionNode {
+    nodeId: string;
+    name: string;
+    interactions?: FigmaInteraction[];
+    children?: InteractionNode[];
+}
+
+/**
+ * Report the interactions of every descendant, each under its layer name and node id so the agent
+ * can find it. A direct child prints its own interactions in the child list; this covers below it.
+ */
+export function formatNestedInteractions(children: InteractionNode[] | undefined, indent: string): string {
+    return (children ?? []).map(child =>
+        (child.interactions?.length ? `${indent}${child.name} (${child.nodeId})\n${formatInteractions(child.interactions, indent + '  ')}` : '')
+        + formatNestedInteractions(child.children, indent)).join('');
+}

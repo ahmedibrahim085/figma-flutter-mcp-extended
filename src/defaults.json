@@ -22,5 +22,43 @@
     "goldenTestSuffix": "_golden_test.dart",
     "goldenImagesDir": "goldens",
     "goldenTestSubdir": "golden"
+  },
+  "breakpoints": {
+    "width": [
+      {
+        "name": "Compact",
+        "min": 0
+      },
+      {
+        "name": "Medium",
+        "min": 600
+      },
+      {
+        "name": "Expanded",
+        "min": 840
+      },
+      {
+        "name": "Large",
+        "min": 1200
+      },
+      {
+        "name": "Extra-large",
+        "min": 1600
+      }
+    ],
+    "height": [
+      {
+        "name": "Compact",
+        "min": 0
+      },
+      {
+        "name": "Medium",
+        "min": 480
+      },
+      {
+        "name": "Expanded",
+        "min": 900
+      }
+    ]
   }
 }

@@ -22,9 +22,8 @@ export interface ScreenMetadata {
     type: 'FRAME' | 'PAGE' | 'COMPONENT';
     nodeId: string;
     description?: string;
-    deviceType?: 'mobile' | 'tablet' | 'desktop' | 'unknown';
-    orientation?: 'portrait' | 'landscape';
-    dimensions: {
+    /** Absent when the frame has no bounding box. */
+    dimensions?: {
         width: number;
         height: number;
     };
@@ -71,5 +70,4 @@ export interface ScreenExtractionOptions {
     maxChildNodes?: number;
     maxDepth?: number;
     includeHiddenNodes?: boolean;
-    deviceTypeDetection?: boolean;
 }

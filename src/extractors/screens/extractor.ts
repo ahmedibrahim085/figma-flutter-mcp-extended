@@ -22,21 +22,13 @@ import {filterEffectivelyVisibleChildren} from '../../utils/visibility.js';
  * Extract screen metadata
  */
 export function extractScreenMetadata(node: FigmaNode): ScreenMetadata {
-    const dimensions = {
-        width: node.absoluteBoundingBox?.width || 0,
-        height: node.absoluteBoundingBox?.height || 0
-    };
-
-    const deviceType = detectDeviceType(dimensions);
-    const orientation = detectOrientation(dimensions);
+    const box = node.absoluteBoundingBox;
 
     return {
         name: node.name,
         type: node.type as 'FRAME' | 'PAGE' | 'COMPONENT',
         nodeId: node.id,
-        deviceType,
-        orientation,
-        dimensions
+        ...(box ? {dimensions: {width: box.width, height: box.height}} : {})
     };
 }
 
@@ -133,31 +125,4 @@ function createScreenChild(
         children,
         components
     };
-}
-
-/**
- * Detect device type based on dimensions
- */
-function detectDeviceType(dimensions: {width: number; height: number}): ScreenMetadata['deviceType'] {
-    const {width, height} = dimensions;
-    const maxDimension = Math.max(width, height);
-    const minDimension = Math.min(width, height);
-
-    // Mobile devices (typical ranges)
-    if (maxDimension <= 900 && minDimension <= 500) return 'mobile';
-    
-    // Tablet devices
-    if (maxDimension <= 1400 && minDimension <= 1000) return 'tablet';
-    
-    // Desktop
-    if (maxDimension > 1400) return 'desktop';
-
-    return 'unknown';
-}
-
-/**
- * Detect orientation
- */
-function detectOrientation(dimensions: {width: number; height: number}): ScreenMetadata['orientation'] {
-    return dimensions.width > dimensions.height ? 'landscape' : 'portrait';
 }

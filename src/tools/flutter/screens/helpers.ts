@@ -1,5 +1,7 @@
 // src/tools/flutter/screens/helpers.mts
 
+import {formatBreakpointLines} from "../../../extractors/screens/breakpoints.js";
+import {extractScreenMetadata} from "../../../extractors/screens/extractor.js";
 import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
 import type {ScreenAnalysis} from "../../../extractors/screens/types.js";
 import type {ComponentChild} from "../../../extractors/components/types.js";
@@ -78,9 +80,10 @@ export function generateScreenAnalysisReport(
     output += `Screen: ${analysis.metadata.name}\n`;
     output += `Type: ${analysis.metadata.type}\n`;
     output += `Node ID: ${analysis.metadata.nodeId}\n`;
-    output += `Device Type: ${analysis.metadata.deviceType}\n`;
-    output += `Orientation: ${analysis.metadata.orientation}\n`;
-    output += `Dimensions: ${Math.round(analysis.metadata.dimensions.width)}×${Math.round(analysis.metadata.dimensions.height)}px\n`;
+    if (analysis.metadata.dimensions) {
+        output += `Dimensions: ${Math.round(analysis.metadata.dimensions.width)}×${Math.round(analysis.metadata.dimensions.height)}px\n`;
+    }
+    output += formatBreakpointLines(analysis.metadata.dimensions);
     if (parsedInput) {
         output += `Source: ${parsedInput.source === 'url' ? 'Figma URL' : 'Direct input'}\n`;
     }
@@ -187,12 +190,7 @@ export function generateScreenStructureReport(node: any, showAllChildren: boolea
     if (node.absoluteBoundingBox) {
         const bbox = node.absoluteBoundingBox;
         output += `Dimensions: ${Math.round(bbox.width)}×${Math.round(bbox.height)}px\n`;
-        
-        // Device type detection
-        const deviceType = bbox.width > bbox.height ? 'Landscape' : 'Portrait';
-        const screenSize = Math.max(bbox.width, bbox.height) > 1200 ? 'Desktop' : 
-                          Math.max(bbox.width, bbox.height) > 800 ? 'Tablet' : 'Mobile';
-        output += `Device: ${screenSize} ${deviceType}\n`;
+        output += formatBreakpointLines(extractScreenMetadata(node).dimensions);
     }
     output += formatSizingAlignment({
         horizontal: node.layoutSizingHorizontal,
@@ -330,11 +328,6 @@ export function generateFlutterScreenGuidance(analysis: ScreenAnalysis): string 
         });
         guidance += `\n`;
     }
-
-    // Responsive design guidance
-    guidance += `Responsive Design:\n`;
-    guidance += `- Device Type: ${analysis.metadata.deviceType}\n`;
-    guidance += `- Orientation: ${analysis.metadata.orientation}\n`;
 
     return guidance;
 }

@@ -1,5 +1,6 @@
 // src/tools/flutter/visual-context.ts
 
+import { formatBreakpointLines } from '../../extractors/screens/breakpoints.js';
 import type { ComponentAnalysis } from '../../extractors/components/types.js';
 import type { ScreenAnalysis } from '../../extractors/screens/types.js';
 
@@ -66,7 +67,8 @@ export function generateScreenVisualContext(
             context += `   • Node ID: ${nodeId}\n`;
         }
         context += `   • Screen: ${analysis.metadata.name}\n`;
-        context += `   • Device: ${analysis.metadata.deviceType} (${analysis.metadata.orientation})\n\n`;
+        context += formatBreakpointLines(analysis.metadata.dimensions, '   • ');
+        context += `\n`;
         context += `🔗 Reference for Verification:\n`;
         context += `   View the original design at: ${figmaUrl}\n`;
         context += `   Use this to verify your implementation matches the intended visual design.\n`;

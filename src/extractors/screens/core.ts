@@ -22,7 +22,6 @@ export class ScreenExtractor {
             maxChildNodes: options.maxChildNodes ?? 15,
             maxDepth: options.maxDepth ?? 4,
             includeHiddenNodes: options.includeHiddenNodes ?? false,
-            deviceTypeDetection: options.deviceTypeDetection ?? true
         };
     }
 

@@ -39,11 +39,10 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
                 maxChildNodes: z.number().optional().describe("Maximum child layers to analyze (default: 15)"),
                 extractAssets: z.boolean().optional().describe("Extract and export screen assets (default: true)"),
-                projectPath: z.string().optional().describe("Path to Flutter project for asset export (defaults to current directory)"),
-                deviceTypeDetection: z.boolean().optional().describe("Detect device type and orientation (default: true)")
+                projectPath: z.string().optional().describe("Path to Flutter project for asset export (defaults to current directory)")
             }
         },
-        async ({input, nodeId, maxChildNodes = 15, extractAssets = true, projectPath = process.cwd(), deviceTypeDetection = true}) => {
+        async ({input, nodeId, maxChildNodes = 15, extractAssets = true, projectPath = process.cwd()}) => {
             const token = figmaApiKey;
             if (!token) {
                 return {
@@ -69,8 +68,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
 
                 const figmaService = new FigmaService(token);
                 const screenExtractor = new ScreenExtractor({
-                    maxChildNodes,
-                    deviceTypeDetection
+                    maxChildNodes
                 });
 
                 // Get the screen node

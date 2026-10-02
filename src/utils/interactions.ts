@@ -32,6 +32,6 @@ interface InteractionNode {
  */
 export function formatNestedInteractions(children: InteractionNode[] | undefined, indent: string): string {
     return (children ?? []).map(child =>
-        (child.interactions?.length ? `${indent}${child.name} (${child.nodeId})\n${formatInteractions(child.interactions, indent + '  ')}` : '')
+        (child.interactions?.length ? `${indent}${child.name.replace(/[\r\n]+/g, ' ')} (${child.nodeId})\n${formatInteractions(child.interactions, indent + '  ')}` : '')
         + formatNestedInteractions(child.children, indent)).join('');
 }

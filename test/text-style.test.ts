@@ -261,7 +261,7 @@ test('a text keeps its interactions: the report passes them through for the agen
 test('an interaction on a text nested two and three levels down is reported with its layer name and id, on both code paths', async () => {
     const node = {id: '21:1', name: 'Card', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], children: [
         {id: '21:2', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], children: [
-            {id: '21:3', name: 'Buy now', type: 'TEXT', characters: 'Buy now', fills: [{type: 'SOLID', color: TEAL}], style: restStyle(16, 400),
+            {id: '21:3', name: 'Buy\nnow', type: 'TEXT', characters: 'Buy now', fills: [{type: 'SOLID', color: TEAL}], style: restStyle(16, 400),
                 interactions: [{trigger: {type: 'ON_CLICK'}, actions: [{type: 'NODE', destinationId: '9:9', navigation: 'NAVIGATE'}]}]},
             {id: '21:4', name: 'Inner', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], children: [
                 {id: '21:5', name: 'Cancel', type: 'TEXT', characters: 'Cancel', fills: [{type: 'SOLID', color: TEAL}], style: restStyle(16, 400),

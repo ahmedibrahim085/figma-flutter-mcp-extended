@@ -205,3 +205,31 @@ test('ff_get_variable_defs: tools/list declares the budget to the client', async
         assert.equal(entry._meta['anthropic/maxResultSizeChars'], BUDGET);
     });
 });
+
+// The floor of the cut: the root alone. Decision 21: text is never cut, so a root whose own
+// text is over the budget is returned whole, over the budget, as valid JSON.
+for (const {tool, query, treeKey} of TREE_TOOLS) {
+    test(`${tool}: children that cannot fit are all omitted and the root is kept`, async () => {
+        const children = ['2:1', '2:2', '2:3'].map((id) => wideNode(id, {children: [], type: 'TEXT', characters: 'x'.repeat(BUDGET + 1)}));
+        const {text} = await callToolOffline(nodesRoute(query, wideNode('1:1', {children})),
+            tool, {fileKey: FILE_KEY, nodeId: '1:1'});
+
+        const out = JSON.parse(text);
+        assert.ok(text.length <= BUDGET, `response is ${text.length} characters`);
+        assert.equal(out[treeKey].id, '1:1');
+        assert.deepEqual(out[treeKey].children, []);
+        assert.equal(out.truncated, true);
+        assert.deepEqual(out.omittedNodeIds, ['2:1', '2:2', '2:3']);
+    });
+
+    test(`${tool}: a root whose own text is over the budget is returned whole (regression pin, decision 21)`, async () => {
+        const long = 'y'.repeat(BUDGET + 1);
+        const {text} = await callToolOffline(nodesRoute(query, wideNode('1:1', {type: 'TEXT', characters: long})),
+            tool, {fileKey: FILE_KEY, nodeId: '1:1'});
+
+        const out = JSON.parse(text);
+        assert.ok(text.length > BUDGET);
+        assert.equal(out[treeKey].text, long);
+        assert.equal('truncated' in out, false);
+    });
+}

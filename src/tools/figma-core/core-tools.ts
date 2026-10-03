@@ -386,9 +386,9 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 // Figma did not send is still listed, under its collection id.
                 const entries = Object.entries(variables) as any[];
                 const render = (count: number) => {
-                    const structured: any = {collectionCount: 0, variableCount: count, collections: {} as any};
+                    const byId: any = {};
                     for (const [collId, coll] of Object.entries(collections) as any[]) {
-                        structured.collections[collId] = {
+                        byId[collId] = {
                             name: coll.name,
                             modes: coll.modes?.map((m: any) => ({id: m.modeId, name: m.name})),
                             variables: [] as any[],
@@ -404,9 +404,10 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                         if (v.description) entry.description = v.description;
                         if (v.scopes) entry.scopes = v.scopes;
 
-                        (structured.collections[v.variableCollectionId] ??= {variables: []}).variables.push(entry);
+                        (byId[v.variableCollectionId] ??= {variables: []}).variables.push(entry);
                     }
-                    structured.collectionCount = Object.keys(structured.collections).length;
+                    // variableCount is the variables listed; the file's total is variableCount + omittedVariableIds.length.
+                    const structured: any = {collectionCount: Object.keys(byId).length, variableCount: count, collections: byId};
                     if (count < entries.length) {
                         structured.truncated = true;
                         structured.omittedVariableIds = entries.slice(count).map(([varId]) => varId);

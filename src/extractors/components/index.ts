@@ -47,8 +47,7 @@ export type {
     StrokeInfo,
     CornerRadii,
     PaddingInfo,
-    TextInfo,
-    ComponentExtractionOptions
+    TextInfo
 } from './types.js';
 
 // Convenience functions

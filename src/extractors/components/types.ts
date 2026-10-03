@@ -266,13 +266,3 @@ export interface SkippedNodeInfo {
     type: string;
     reason: 'depth_limit' | 'max_nodes';
 }
-
-/**
- * Component extraction options
- */
-export interface ComponentExtractionOptions {
-    maxChildNodes?: number;
-    maxDepth?: number;
-    includeHiddenNodes?: boolean;
-    extractTextContent?: boolean;
-}

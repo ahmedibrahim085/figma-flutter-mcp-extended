@@ -98,7 +98,6 @@ src/extractors/components/deduplicated-extractor.ts	string	decoration	arg(this.g
 src/extractors/components/deduplicated-extractor.ts	string	padding	arg(this.globalStyleManager.addStyle)	analyzeChildren	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/components/deduplicated-extractor.ts	string	padding	arg(this.globalStyleManager.addStyle)	analyzeComponent	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/components/deduplicated-extractor.ts	string	text	arg(this.globalStyleManager.addStyle)	analyzeChildren	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
-src/extractors/components/extractor.ts	number	0	arg(visibleChildren\n            .slice)	createComponentChild	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	0	binary(===)	detectTextCase	2	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	0	binary(>)	extractBasicStyling	2	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	0	binary(>)	extractMetadata	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
@@ -111,9 +110,7 @@ src/extractors/components/extractor.ts	number	0	binary(||)	extractPadding	4	K-CO
 src/extractors/components/extractor.ts	number	0	index	detectTextCase	4	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	0	index	textOverrides	1	F-HEUR	only fills[0] is read; decision 14 says the last fill is on top and this is not yet probed; B3.90
 src/extractors/components/extractor.ts	number	0	index	textStyleFields	1	F-HEUR	only fills[0] is read; decision 14 says the last fill is on top and this is not yet probed; B3.90
-src/extractors/components/extractor.ts	number	0	param-default(depth)	createComponentChild	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	1	binary(!==)	extractStylingInfo	1	K-API	node opacity 1 = fully opaque, Figma identity
-src/extractors/components/extractor.ts	number	1	binary(+)	createComponentChild	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	1	binary(??)	categorizeEffects	2	K-API	Figma Color: an absent alpha means fully opaque (1)
 src/extractors/components/extractor.ts	number	16	arg(b.toString)	rgbaToHex	1	K-CONV	rule R13: 8-bit colour / hex / string slicing / indentation width
 src/extractors/components/extractor.ts	number	16	arg(g.toString)	rgbaToHex	1	K-CONV	rule R13: 8-bit colour / hex / string slicing / indentation width

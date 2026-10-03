@@ -12,8 +12,7 @@ import type {
     StrokeInfo,
     CornerRadii,
     PaddingInfo,
-    TextInfo,
-    ComponentExtractionOptions
+    TextInfo
 } from './types.js';
 import {Logger} from '../../utils/logger.js';
 import {filterEffectivelyVisibleChildren} from '../../utils/visibility.js';
@@ -168,10 +167,9 @@ export function createNestedComponentInfo(node: FigmaNode): NestedComponentInfo 
 export function createComponentChild(
     node: FigmaNode,
     isNestedComponent: boolean,
-    options: Required<ComponentExtractionOptions>,
+    includeHiddenNodes: boolean,
     parent?: FigmaNode,
-    siblings?: FigmaNode[],
-    depth: number = 0
+    siblings?: FigmaNode[]
 ): ComponentChild {
     const basicInfo: NonNullable<ComponentChild['basicInfo']> = {
         layout: extractBasicLayout(node)
@@ -190,26 +188,20 @@ export function createComponentChild(
         basicInfo.styling = extractBasicStyling(node);
 
         // Extract text info for text nodes
-        if (node.type === 'TEXT' && options.extractTextContent) {
+        if (node.type === 'TEXT') {
             basicInfo.text = extractTextInfo(node, parent, siblings);
         }
     }
 
-    if (node.children && depth < options.maxDepth) {
-        const visibleChildren = filterEffectivelyVisibleChildren(
-            node.children,
-            options.includeHiddenNodes
-        );
-        child.children = visibleChildren
-            .slice(0, options.maxChildNodes)
-            .map(nestedChild => createComponentChild(
-                nestedChild,
-                isComponentNode(nestedChild),
-                options,
-                node,
-                visibleChildren.filter(sibling => sibling.id !== nestedChild.id),
-                depth + 1
-            ));
+    if (node.children) {
+        const visibleChildren = filterEffectivelyVisibleChildren(node.children, includeHiddenNodes);
+        child.children = visibleChildren.map(nestedChild => createComponentChild(
+            nestedChild,
+            isComponentNode(nestedChild),
+            includeHiddenNodes,
+            node,
+            visibleChildren.filter(sibling => sibling.id !== nestedChild.id)
+        ));
     }
 
     return child;

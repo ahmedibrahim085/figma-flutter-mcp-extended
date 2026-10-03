@@ -95,14 +95,7 @@ function createScreenChild(
             }
 
             const siblings = visibleChildren.filter(sibling => sibling.id !== child.id);
-            children.push(createComponentChild(child, isComponent, {
-                // SHORTCUT: the shared child walker still takes numeric limits (they go with the plain component path);
-                // a screen sets none. Upgrade path: remove both when component-path 04 deletes the plain path's numeric limits.
-                maxChildNodes: Infinity,
-                maxDepth: Infinity,
-                includeHiddenNodes: options.includeHiddenNodes,
-                extractTextContent: true
-            }, node, siblings));
+            children.push(createComponentChild(child, isComponent, options.includeHiddenNodes, node, siblings));
         });
     }
 

@@ -30,10 +30,10 @@ export class VariantAnalyzer {
             }
         });
 
-        // The default variant is the one whose values equal every axis's Figma default.
+        // The default variant is the one whose value for every axis equals that axis's Figma default.
         const axes = this.getVariantAxes(componentSetNode);
         variants.forEach(variant => {
-            variant.isDefault = axes.length > 0 && axes.every(axis => variant.properties[axis.name] === axis.defaultValue);
+            variant.isDefault = axes.length > 0 && axes.every(axis => this.optionIn(variant.name, axis) === axis.defaultValue);
         });
 
         return variants;
@@ -80,6 +80,23 @@ export class VariantAnalyzer {
         }
 
         return properties;
+    }
+
+    /**
+     * A variant's option for an axis: the longest of the axis's options that follows "<axis>=" in its name
+     * and ends at the name's end or at ", ". Matching against the options keeps options that contain "=" or "," whole.
+     */
+    private optionIn(variantName: string, axis: VariantAxis): string | undefined {
+        const hasOption = (option: string): boolean => {
+            const token = `${axis.name}=${option}`;
+            for (let at = variantName.indexOf(token); at !== -1; at = variantName.indexOf(token, at + 1)) {
+                const startsSegment = at === 0 || variantName.slice(at - 2, at) === ', ';
+                const rest = variantName.slice(at + token.length);
+                if (startsSegment && (rest === '' || rest.startsWith(', '))) return true;
+            }
+            return false;
+        };
+        return axis.options.filter(hasOption).sort((a, b) => b.length - a.length)[0];
     }
 
     /**

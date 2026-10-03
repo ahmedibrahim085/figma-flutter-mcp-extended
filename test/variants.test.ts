@@ -84,3 +84,40 @@ test('"(N of M)" equals the variants analysed, and no variant is fetched again',
         assert.equal(some.requests.length, 1);
     }
 });
+
+const optionSet = (axis: string, options: string[], defaultValue: string) => ({
+    id: '9:1', name: 'Chip', type: 'COMPONENT_SET', absoluteBoundingBox: {x: 0, y: 0, width: 200, height: 40},
+    componentPropertyDefinitions: {[axis]: {type: 'VARIANT', defaultValue, variantOptions: options}},
+    children: options.map((option, i) => ({
+        id: `9:${i + 2}`, name: `${axis}=${option}`, type: 'COMPONENT', absoluteBoundingBox: {x: 0, y: 0, width: 80, height: 40}, children: [],
+    })),
+});
+
+test('variant options that contain "=" or "," still match their Figma default', async () => {
+    for (const [options, defaultValue] of [[['a=b', 'c'], 'a=b'], [['a,b', 'c'], 'a,b']] as const) {
+        const set = optionSet('Size', [...options], defaultValue);
+        const {text} = await callToolOffline(nodeRoute(set.id, set), 'list_component_variants', {input: FILE_KEY, nodeId: set.id});
+
+        assert.deepEqual(defaultMarks(text), [`Size=${defaultValue}`], options.join('|'));
+    }
+});
+
+test('a variantSelection that matches no variant says so, instead of returning the default', async () => {
+    const set = buttonSet();
+    for (const useDeduplication of [true, false]) {
+        const {text} = await analyze(set, {useDeduplication, variantSelection: ['zzz']});
+
+        assert.match(text, /^No variant matches the selection/);
+        assert.doesNotMatch(text, /^Variant: /m);
+    }
+});
+
+test('the layout map is printed once per response, not once per variant', async () => {
+    const set = buttonSet();
+    const {text} = await callToolOffline(nodeRoute(set.id, set), 'analyze_figma_component', {
+        input: `https://www.figma.com/design/${FILE_KEY}/x?node-id=1-86`, exportAssets: false, useDeduplication: true,
+    });
+
+    assert.equal([...text.matchAll(/^Variant: /gm)].length, 4);
+    assert.equal([...text.matchAll(/Layout map for AI Implementation/g)].length, 1);
+});

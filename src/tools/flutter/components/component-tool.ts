@@ -145,17 +145,18 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 if (componentNode.type === 'COMPONENT_SET' && includeVariants) {
                     const variantAnalyzer = new VariantAnalyzer();
                     const variantAnalysis = await variantAnalyzer.analyzeComponentSet(componentNode);
-                    selectedVariants = variantSelection && variantSelection.length > 0
-                        ? variantAnalyzer.filterVariantsBySelection(variantAnalysis, {variantNames: variantSelection, includeDefault: true})
-                        : variantAnalysis;
+                    selectedVariants = variantAnalysis;
 
-                    if (variantSelection && variantSelection.length > 0 && selectedVariants.length === 0) {
-                        return {
-                            content: [{
-                                type: "text",
-                                text: `No variants found matching selection: ${variantSelection.join(', ')}`
-                            }]
-                        };
+                    if (variantSelection && variantSelection.length > 0) {
+                        if (variantAnalyzer.filterVariantsBySelection(variantAnalysis, {variantNames: variantSelection}).length === 0) {
+                            return {
+                                content: [{
+                                    type: "text",
+                                    text: `No variant matches the selection (${variantSelection.join(', ')}). Variants: ${variantAnalysis.map(variant => variant.name).join('; ')}`
+                                }]
+                            };
+                        }
+                        selectedVariants = variantAnalyzer.filterVariantsBySelection(variantAnalysis, {variantNames: variantSelection, includeDefault: true});
                     }
 
                     variantHeader = `Component Set: ${componentNode.name}\n\n`
@@ -175,6 +176,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                     extractTextContent: true
                 });
                 const reports: string[] = [];
+                let firstDeduplicatedAnalysis: DeduplicatedComponentAnalysis | undefined;
 
                 for (const {variant, node} of targets) {
                     let analysisReport: string;
@@ -192,16 +194,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
 
                         analysisReport = generateComprehensiveDeduplicatedReport(deduplicatedAnalysis, true);
 
-                        // Add visual context for deduplicated analysis
-                        if (parsedInput.source === 'url') {
-                            // Reconstruct the Figma URL from the parsed input
-                            const figmaUrl = generateFigmaUrl(parsedInput.fileId, parsedInput.nodeId);
-                            analysisReport += "\n\n" + addVisualContextToDeduplicatedReport(
-                                deduplicatedAnalysis,
-                                figmaUrl,
-                                parsedInput.nodeId
-                            );
-                        }
+                        firstDeduplicatedAnalysis ??= deduplicatedAnalysis;
 
                         if (generateFlutterCode) {
                             analysisReport += "\n\n" + generateFlutterImplementation(deduplicatedAnalysis);
@@ -214,7 +207,17 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                     reports.push(variant ? `Variant: ${variant.name}${variant.isDefault ? ' (default)' : ''}\n${'─'.repeat(30)}\n${analysisReport}` : analysisReport);
                 }
 
-                const analysisReport = variantHeader + reports.join('\n\n');
+                let analysisReport = variantHeader + reports.join('\n\n');
+
+                // The set's visual context (its URL and node id) is printed once, from the first analysed variant.
+                if (firstDeduplicatedAnalysis && parsedInput.source === 'url') {
+                    analysisReport += "\n\n" + addVisualContextToDeduplicatedReport(
+                        firstDeduplicatedAnalysis,
+                        generateFigmaUrl(parsedInput.fileId, parsedInput.nodeId),
+                        parsedInput.nodeId
+                    );
+                }
+
 
                 // Detect and export image assets if enabled
                 let assetExportInfo = '';

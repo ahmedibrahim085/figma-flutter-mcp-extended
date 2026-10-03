@@ -84,10 +84,10 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 themeTypography.forEach((style, index) => {
                     const {fields} = style;
                     output += `${index + 1}. ${style.name}:\n`;
-                    output += `   Font: ${fields.fontFamily ?? 'missing'}\n`;
-                    output += `   Size: ${fields.fontSize === undefined ? 'missing' : `${fields.fontSize}px`}\n`;
-                    output += `   Weight: ${fields.fontWeight ?? 'missing'}\n`;
-                    output += `   Height: ${fields.height ?? 'missing'}\n`;
+                    output += `   Font: ${fields.fontFamily ?? 'not set by Figma'}\n`;
+                    output += `   Size: ${fields.fontSize === undefined ? 'not set by Figma' : `${fields.fontSize}px`}\n`;
+                    output += `   Weight: ${fields.fontWeight ?? 'not set by Figma'}\n`;
+                    output += `   Height: ${fields.height ?? 'not set by Figma'}\n`;
                     output += `   Letter Spacing: ${fields.letterSpacing}px\n`;
                     if (style.unsupported.length > 0) {
                         output += `   Not in a Flutter TextStyle: ${style.unsupported.join(', ')}\n`;
@@ -97,8 +97,8 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 constantSet.skipped.forEach(({style, reason}) => {
                     output += `Note: not generated: "${style.name}": ${reason}.\n`;
                 });
-                constantSet.slotClashes.forEach(({style, slot}) => {
-                    output += `Note: "${style.name}" also equals the TextTheme slot ${slot}; the first style fills it.\n`;
+                constantSet.slotClashes.forEach(({slot, styles: clashing}) => {
+                    output += `Note: ${clashing.map(style => `"${style.name}"`).join(' and ')} both equal the TextTheme slot ${slot}: not filled.\n`;
                 });
                 if (generateTextTheme) {
                     if (constantSet.slots.length === 0) {
@@ -199,9 +199,9 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                         // Show text style if it has one
                         if (child.type === 'TEXT' && child.style) {
                             textNodesFound++;
-                            output += `   Font: ${child.style.fontFamily ?? 'missing'}\n`;
-                            output += `   Size: ${child.style.fontSize === undefined ? 'missing' : `${child.style.fontSize}px`}\n`;
-                            output += `   Weight: ${child.style.fontWeight ?? 'missing'}\n`;
+                            output += `   Font: ${child.style.fontFamily ?? 'not set by Figma'}\n`;
+                            output += `   Size: ${child.style.fontSize === undefined ? 'not set by Figma' : `${child.style.fontSize}px`}\n`;
+                            output += `   Weight: ${child.style.fontWeight ?? 'not set by Figma'}\n`;
                             if (child.style.lineHeightPx !== undefined) {
                                 output += `   Line Height: ${child.style.lineHeightPx}px\n`;
                             }
@@ -230,13 +230,6 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 );
 
                 output += `\nThis frame ${canExtract ? 'can' : 'cannot'} be used for typography extraction.\n`;
-
-                if (canExtract) {
-                    output += `\nRecommendations:\n`;
-                    output += `• Make sure text samples represent your design system typography\n`;
-                    output += `• Use meaningful names for text layers (e.g., "Heading Large", "Body Text")\n`;
-                    output += `• Include different font weights and sizes you want to capture\n`;
-                }
 
                 return {
                     content: [{type: "text", text: output}]

@@ -89,7 +89,7 @@ test('a letter spacing of -0.5 px is emitted as -0.5', async (t) => {
     assert.match(appText!, /letterSpacing: -0\.5\b/);
 });
 
-test('a style without a family gets no Roboto and no fontFamily, and inspect_text_style_frame says missing', async (t) => {
+test('a style without a family gets no Roboto and no fontFamily, and inspect_text_style_frame says not set by Figma', async (t) => {
     const noFamily = {fontSize: 14, fontWeight: 400, letterSpacing: 0};
     const root = frame(text('95:2', 'Plain', noFamily));
     const {report, appText} = await extract(t, root, {generateTextTheme: true});
@@ -97,8 +97,9 @@ test('a style without a family gets no Roboto and no fontFamily, and inspect_tex
 
     assert.doesNotMatch(report + appText!, /Roboto/);
     assert.doesNotMatch(appText!, /fontFamily/);
-    assert.match(report, /Font: missing/);
-    assert.match(inspect.text, /Font: missing/);
+    assert.match(report, /Font: not set by Figma/);
+    assert.match(inspect.text, /Font: not set by Figma/);
+    assert.doesNotMatch(report + inspect.text, /missing/);
     assert.doesNotMatch(inspect.text, /Roboto|default/);
 });
 
@@ -157,4 +158,34 @@ test('a 12 px style on a 16 px line emits its height at full precision', async (
     const {appText} = await extract(t, frame(text('95:2', 'Ratio', inter(12, {lineHeightPx: 16, lineHeightUnit: 'PIXELS'}))));
 
     assert.match(appText!, /height: 1\.3333333333333333,/);
+});
+
+test('two styles equal to one slot leave it unfilled, and the report names both', async (t) => {
+    const {report, textTheme} = await extract(t, frame(
+        text('95:2', 'a', inter(16), 'S:1'),
+        text('95:3', 'b', inter(18), 'S:2'),
+        text('95:4', 'c', inter(14), 'S:3'),
+    ), {styles: {'S:1': {name: 'Body/Large', styleType: 'TEXT'}, 'S:2': {name: 'Body Large', styleType: 'TEXT'}, 'S:3': {name: 'Title/Small', styleType: 'TEXT'}}, generateTextTheme: true});
+
+    assert.match(textTheme!, /titleSmall: AppText\.small,/);
+    assert.doesNotMatch(textTheme!, /bodyLarge/);
+    assert.match(report, /Note: "Body\/Large" and "Body Large" both equal the TextTheme slot bodyLarge: not filled/);
+    assert.match(report, /Unfilled TextTheme slots: .*bodyLarge/);
+});
+
+test('Figma float32 noise is cut to the shortest number that reads back the same in letterSpacing and fontSize', async (t) => {
+    const {appText, report} = await extract(t, frame(text('95:2', 'Note', {...inter(13.100000381469727), letterSpacing: 0.4000000059604645})));
+
+    assert.match(appText!, /fontSize: 13\.1,/);
+    assert.match(appText!, /letterSpacing: 0\.4[,)]/);
+    assert.match(report, /Size: 13\.1px/);
+    assert.match(report, /Letter Spacing: 0\.4px/);
+});
+
+test('inspect_text_style_frame gives no advice block', async () => {
+    const root = frame(text('95:2', 'Sample', inter(16)));
+    const inspect = await callToolOffline(nodeRoute(root.id, root), 'inspect_text_style_frame', {fileId: FILE_KEY, nodeId: root.id});
+
+    assert.match(inspect.text, /can be used for typography extraction/);
+    assert.doesNotMatch(inspect.text, /Recommendations|meaningful names/);
 });

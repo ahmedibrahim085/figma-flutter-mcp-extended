@@ -5,6 +5,7 @@
 // text renders the same whichever path runs. Conversion rules: research 03b.
 
 import {argbHex} from '../../utils/dart-color.js';
+import {shortestFloat32} from '../../utils/float32.js';
 import type {FigmaFill, FigmaTextStyle} from '../../types/figma.js';
 
 /** The Figma text properties the generated TextStyle is built from. */
@@ -79,12 +80,12 @@ export function convertTypeStyle(style: FigmaTextStyle, fill?: FigmaFill): TextS
   const decorations: Record<string, TextStyleFields['decoration']> = {UNDERLINE: 'underline', STRIKETHROUGH: 'lineThrough'};
   return {
     fontFamily: style.fontFamily,
-    fontSize,
+    fontSize: fontSize === undefined ? undefined : shortestFloat32(fontSize),
     fontWeight: style.fontWeight,
     italic: style.italic === true || undefined,
     color: fill ? argbHex(fill) : undefined,
     // Figma's default is 0; emitting it keeps Material 3's 0.25 from being inherited.
-    letterSpacing: style.letterSpacing ?? 0,
+    letterSpacing: shortestFloat32(style.letterSpacing ?? 0),
     height,
     decoration: style.textDecoration ? decorations[style.textDecoration] : undefined,
     fontFeatures: style.textCase === 'SMALL_CAPS' ? ['smcp']

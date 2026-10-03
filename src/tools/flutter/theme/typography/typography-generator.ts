@@ -14,8 +14,8 @@ export interface TypographyConstants {
     skipped: Array<{style: TypographyStyle; reason: string}>;
     /** TextTheme slots filled, in the order Flutter lists them, with the constant each points to. */
     slots: Array<{slot: string; name: string}>;
-    /** Generated styles whose full path equals a slot another style already filled. */
-    slotClashes: Array<{style: TypographyStyle; slot: string}>;
+    /** Slots that two or more generated styles equal: left unfilled, so the result does not depend on layer order. */
+    slotClashes: Array<{slot: string; styles: TypographyStyle[]}>;
 }
 
 /**
@@ -25,19 +25,16 @@ export interface TypographyConstants {
  */
 export function typographyConstants(styles: TypographyStyle[]): TypographyConstants {
     const {generated, skipped} = nameConstants(styles, style => JSON.stringify(style.fields), 'style');
-    const bySlot = new Map<string, string>();
-    const slotClashes: TypographyConstants['slotClashes'] = [];
+    const bySlot = new Map<string, Array<{style: TypographyStyle; name: string}>>();
     for (const {item, name} of generated) {
         const slot = lowerCamelCase(item.name);
-        if (!defaults.textThemeSlots.includes(slot)) continue;
-        if (bySlot.has(slot)) slotClashes.push({style: item, slot});
-        else bySlot.set(slot, name);
+        if (defaults.textThemeSlots.includes(slot)) bySlot.set(slot, [...(bySlot.get(slot) ?? []), {style: item, name}]);
     }
     return {
         generated: generated.map(({item, name}) => ({style: item, name})),
         skipped: skipped.map(({item, reason}) => ({style: item, reason})),
-        slots: defaults.textThemeSlots.filter(slot => bySlot.has(slot)).map(slot => ({slot, name: bySlot.get(slot)!})),
-        slotClashes,
+        slots: defaults.textThemeSlots.filter(slot => bySlot.get(slot)?.length === 1).map(slot => ({slot, name: bySlot.get(slot)![0].name})),
+        slotClashes: [...bySlot].filter(([, entries]) => entries.length > 1).map(([slot, entries]) => ({slot, styles: entries.map(entry => entry.style)})),
     };
 }
 

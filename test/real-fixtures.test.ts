@@ -30,7 +30,7 @@ async function widgetCode(routes: object, nodeId: string): Promise<string> {
 async function childDecorations(routes: object, nodeId: string): Promise<Map<string, {id: string; code: string}>> {
     const [analysis, generated] = await callToolsOffline(routes, [
         ['analyze_figma_component', {input: FILE_KEY, nodeId, ...ANALYZE_ARGS}],
-        ['generate_flutter_implementation', {componentNodeId: nodeId}],
+        ['generate_flutter_implementation', {input: FILE_KEY, nodeId: nodeId}],
     ]);
     const definitions = new Map([...generated.text.matchAll(/^final (decoration\w+) = (BoxDecoration\([^]*?\n\));$/gm)]
         .map(([, id, code]) => [id, code]));

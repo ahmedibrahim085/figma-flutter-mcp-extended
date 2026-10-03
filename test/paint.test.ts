@@ -20,7 +20,7 @@ async function outputs(node: {id: string}) {
     const base = {input: FILE_KEY, nodeId: node.id};
     const [dedup, definitions, plain, inspect] = await callToolsOffline(route, [
         ['analyze_figma_component', {...base, exportAssets: false, userDefinedComponent: true, generateFlutterCode: true}],
-        ['generate_flutter_implementation', {componentNodeId: node.id}],
+        ['generate_flutter_implementation', {input: FILE_KEY, nodeId: node.id}],
         ['analyze_figma_component', {...base, exportAssets: false, userDefinedComponent: true, useDeduplication: false}],
         ['inspect_frame_structure', base],
     ]);

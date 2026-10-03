@@ -25,7 +25,7 @@ async function widgetCode(node: {id: string}): Promise<string> {
 async function styleDefinitions(node: {id: string}): Promise<string> {
     const [, generated] = await callToolsOffline(nodeRoute(node.id, node), [
         ['analyze_figma_component', {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true}],
-        ['generate_flutter_implementation', {componentNodeId: node.id}],
+        ['generate_flutter_implementation', {input: FILE_KEY, nodeId: node.id}],
     ]);
     return normalizeStyleIds(generated.text);
 }

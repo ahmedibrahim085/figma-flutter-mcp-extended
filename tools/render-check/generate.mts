@@ -195,7 +195,7 @@ void main() {
 
 const [analysis, implementation] = await callToolsOffline(nodeRoute(node.id, node), [
     ['analyze_figma_component', {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, generateFlutterCode: true}],
-    ['generate_flutter_implementation', {componentNodeId: node.id}],
+    ['generate_flutter_implementation', {input: FILE_KEY, nodeId: node.id}],
 ]);
 // The widget class comes from the analysis; the style constants it refers to come from the implementation.
 const styleDefinitions = [...implementation.text.matchAll(/^final \w+ = [\s\S]*?;$/gm)].map((m) => m[0]).join('\n');

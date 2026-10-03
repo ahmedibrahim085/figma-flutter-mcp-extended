@@ -33,7 +33,7 @@ test('no tool output carries an invented rule, ranking or advice', async () => {
     const results = await callToolsOffline(nodeRoute(WIDE.id, WIDE), [
         ['analyze_figma_component', {...base, userDefinedComponent: true, exportAssets: false, generateFlutterCode: true}],
         ['analyze_figma_component', {...base, userDefinedComponent: true, exportAssets: false, generateFlutterCode: true, useDeduplication: false}],
-        ['generate_flutter_implementation', {componentNodeId: WIDE.id}],
+        ['generate_flutter_implementation', {input: FILE_KEY, nodeId: WIDE.id}],
         ['inspect_component_structure', {...base, userDefinedComponent: true}],
         ['analyze_frame_as_screen', {...base, extractAssets: false}],
         ['inspect_frame_structure', base],
@@ -56,7 +56,7 @@ test('guidance quotes Flutter instead of a line count', async () => {
     const [dedup, plain, impl, screen] = await callToolsOffline(nodeRoute(WIDE.id, WIDE), [
         ['analyze_figma_component', {input: url(WIDE.id), userDefinedComponent: true, exportAssets: false, generateFlutterCode: true}],
         ['analyze_figma_component', {input: url(WIDE.id), userDefinedComponent: true, exportAssets: false, useDeduplication: false}],
-        ['generate_flutter_implementation', {componentNodeId: WIDE.id}],
+        ['generate_flutter_implementation', {input: FILE_KEY, nodeId: WIDE.id}],
         ['analyze_frame_as_screen', {input: url(WIDE.id), extractAssets: false}],
     ]);
 

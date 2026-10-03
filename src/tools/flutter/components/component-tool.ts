@@ -425,13 +425,21 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
             title: "Generate Flutter Implementation",
             description: "Generate complete Flutter widget code using cached style definitions",
             inputSchema: {
-                componentNodeId: z.string().describe("Node ID of the analyzed component"),
+                input: z.string().describe("Figma node URL or file ID"),
+                nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
                 includeStyleDefinitions: z.boolean().optional().describe("Include style definitions in output (default: true)"),
                 widgetName: z.string().optional().describe("Custom widget class name")
             }
         },
-        async ({ componentNodeId, includeStyleDefinitions = true, widgetName }) => {
+        async ({ input, nodeId, includeStyleDefinitions = true, widgetName }) => {
             try {
+                const parsedInput = parseComponentInput(input, nodeId);
+                if (!parsedInput.isValid) {
+                    return {
+                        content: [{type: "text", text: `Error parsing input: ${parsedInput.error || 'Invalid input format'}`}],
+                        isError: true
+                    };
+                }
                 const styleLibrary = FlutterStyleLibrary.getInstance();
                 const styles = styleLibrary.getAllStyles();
                 
@@ -450,7 +458,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                     output += "⚠️  No cached styles found. Please analyze a component first.\n\n";
                 }
                 
-                output += generateWidgetClass(componentNodeId, widgetName || 'CustomWidget', styles);
+                output += generateWidgetClass(parsedInput.nodeId, widgetName || 'CustomWidget', styles);
                 
                 // Add usage summary
                 if (styles.length > 0) {

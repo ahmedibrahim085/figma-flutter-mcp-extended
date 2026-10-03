@@ -4,6 +4,10 @@
   "maxResultSizeChars": 100000,
   "installCommand": "npx -y github:ahmedibrahim085/figma-flutter-mcp-extended",
   "figmaWebUrl": "https://www.figma.com",
+  "cache": {
+    "dirName": "figma-flutter-mcp-extended",
+    "dirNameReason": "One folder per tool under the OS cache folder, as gh and env-paths do."
+  },
   "retry": {
     "maxAttempts": 3,
     "initialDelayMs": 1000,

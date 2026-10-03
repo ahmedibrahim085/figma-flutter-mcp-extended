@@ -1,13 +1,13 @@
 // tools/flutter/svg-assets.mts
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
-import {FigmaService} from "../../../services/figma.js";
+import {FigmaService, ImageDownloadError} from "../../../services/figma.js";
 import {figmaTool} from "../../figma-tool.js";
 import {join} from 'path';
 import {
     createSvgAssetsDirectory,
     generateSvgFilename,
-    downloadImage,
+    saveImage,
     getFileStats,
     updatePubspecAssets,
     type AssetInfo,
@@ -59,20 +59,21 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
             let downloadedAssets: AssetInfo[] = [];
 
             // Export each SVG node
-            const imageUrls = await figmaService.getImageExportUrls(fileId, svgNodes.map(n => n.id), {
+            const images = await figmaService.getImageBytes(fileId, svgNodes.map(n => n.id), {
                 format: 'svg',
                 scale: 1 // SVGs don't need multiple scales
             });
 
             for (const node of svgNodes) {
-                const imageUrl = imageUrls[node.id];
-                if (!imageUrl) continue;
+                const image = images[node.id];
+                if (!image) continue;
+                if (image instanceof ImageDownloadError) throw image.status === undefined ? image.cause : image;
 
                 const filename = generateSvgFilename(node.name);
                 const filepath = join(assetsDir, filename);
 
                 // Download the SVG
-                await downloadImage(imageUrl, filepath);
+                await saveImage(image, filepath);
 
                 // Get file size for reporting
                 const stats = await getFileStats(filepath);

@@ -138,6 +138,14 @@ For better results, give your agent project rules (`CLAUDE.md`, `.cursor/rules/*
 - The cleaner the design (auto layout, frames rather than groups, consistent alignment), the closer the code.
 - Heavy use can hit Figma rate limits (HTTP 429). The component, screen, theme and asset tools make up to 3 attempts with backoff and honour Figma's `Retry-After` when it is 10 seconds or less; a longer wait comes back as an error that states it. The `ff_*` tools do not retry.
 
+## Cache
+
+Reads of a file and its nodes, and rendered image bytes, are kept on disk while the Figma file is unchanged. Every such read first asks Figma for the file's `version` and `last_touched_at` with your own key, so a key that cannot open the file still gets Figma's error, and an edited file is fetched again. Figma's `version` alone does not change on every edit, so both values are part of the key. The tools ask only Figma, never the cache, about `/me`, render URLs and variables.
+
+- Folder: `figma-flutter-mcp-extended` under the OS cache folder (`~/Library/Caches` on macOS, `%LOCALAPPDATA%` on Windows, `$XDG_CACHE_HOME` or `~/.cache` elsewhere). `FIGMA_CACHE_DIR` replaces the whole path. Over HTTP the folder is on the server's disk.
+- `FIGMA_CACHE=off` turns the cache off.
+- The cache keeps the current version of each file and deletes older ones. It has no age or size limit. To clear it, delete the folder.
+
 ## Development
 
 ```bash

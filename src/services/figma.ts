@@ -12,6 +12,7 @@ import {
 import {withRetry} from '../utils/retry.js';
 import defaults from '../defaults.json' with { type: 'json' };
 import {Logger} from '../utils/logger.js';
+import {FileCache, entryName, figmaCacheDir, isCacheableFileKey} from './figma-cache.js';
 
 /**
  * Figma REST base URL. `FIGMA_API_BASE_URL` overrides it (the test suite points
@@ -20,6 +21,21 @@ import {Logger} from '../utils/logger.js';
 export function figmaApiBaseUrl(): string {
     return process.env.FIGMA_API_BASE_URL || 'https://api.figma.com/v1';
 }
+
+/** A render that could not be downloaded: `status` is the HTTP status of a refusal, and absent when the request itself failed (see `cause`). */
+export class ImageDownloadError extends Error {
+    constructor(readonly url: string, readonly status?: number, cause?: unknown) {
+        super(status === undefined ? `Failed to download image: ${cause}` : `Failed to download image: HTTP ${status}`, {cause});
+    }
+}
+
+export type ImageOptions = {
+    format?: 'png' | 'jpg' | 'svg' | 'pdf';
+    scale?: number;
+    svgIncludeId?: boolean;
+    svgSimplifyStroke?: boolean;
+    svgOutlineText?: boolean;
+};
 
 export class FigmaService {
     private accessToken: string;
@@ -89,12 +105,39 @@ export class FigmaService {
     }
 
     /**
+     * The cache of one file at its current marker, or undefined when the cache is off. Asks `/meta` with the
+     * caller's own key on every call, so a key that cannot open the file fails here as it does without the cache,
+     * and a file that changed is never answered from an older copy. `version` alone is not enough: it is the id of
+     * the latest checkpoint and stays the same across edits, while `last_touched_at` moves with each one.
+     */
+    private async fileCache(fileId: string): Promise<FileCache | undefined> {
+        const dir = figmaCacheDir();
+        if (!dir || !isCacheableFileKey(fileId)) return undefined;
+        const {file} = await this.makeRequest<{file?: {version?: string; last_touched_at?: string}}>(`/files/${fileId}/meta`);
+        if (!file?.version || !file.last_touched_at) return undefined;
+        return new FileCache(dir, fileId, [file.version, file.last_touched_at]);
+    }
+
+    /** `makeRequest` for the file and node reads, served from the cache while the file is unchanged. */
+    private async cachedRequest<T>(endpoint: string): Promise<T> {
+        const [, fileId, nodes, query] = endpoint.match(/^\/files\/([^/?]+)(\/nodes)?(?:\?(.*))?$/) ?? [];
+        const cache = fileId ? await this.fileCache(fileId) : undefined;
+        if (!cache) return this.makeRequest<T>(endpoint);
+        const name = entryName(nodes ? 'nodes' : 'file', new URLSearchParams(query));
+        const stored = await cache.read(name);
+        if (stored) return JSON.parse(stored.toString()) as T;
+        const data = await this.makeRequest<T>(endpoint);
+        await cache.write(name, JSON.stringify(data));
+        return data;
+    }
+
+    /**
      * One Figma REST GET with the shared retry policy; returns Figma's JSON as sent.
      * The tools that render Figma's response themselves use this; the typed methods below reshape it.
      */
     async get<T>(path: string, query: Record<string, string> = {}): Promise<T> {
         const params = new URLSearchParams(query).toString();
-        return this.makeRequest<T>(params ? `${path}?${params}` : path);
+        return this.cachedRequest<T>(params ? `${path}?${params}` : path);
     }
 
     /**
@@ -106,7 +149,7 @@ export class FigmaService {
         }
 
         try {
-            const data = await this.makeRequest<any>(`/files/${fileId}/nodes?ids=${nodeIds.join(',')}`);
+            const data = await this.cachedRequest<any>(`/files/${fileId}/nodes?ids=${nodeIds.join(',')}`);
 
             const nodes: Record<string, FigmaNode> = {};
             Object.entries(data.nodes || {}).forEach(([nodeId, nodeData]: [string, any]) => {
@@ -140,7 +183,7 @@ export class FigmaService {
         }
 
         try {
-            const data = await this.makeRequest<NodeResponse>(`/files/${fileId}/nodes?ids=${nodeId}`);
+            const data = await this.cachedRequest<NodeResponse>(`/files/${fileId}/nodes?ids=${nodeId}`);
 
             if (!data.nodes || !data.nodes[nodeId]) {
                 throw new FigmaNotFoundError(`Node not found: ${nodeId}`);
@@ -176,13 +219,7 @@ export class FigmaService {
     async getImageExportUrls(
         fileId: string,
         nodeIds: string[],
-        options: {
-            format?: 'png' | 'jpg' | 'svg' | 'pdf';
-            scale?: number;
-            svgIncludeId?: boolean;
-            svgSimplifyStroke?: boolean;
-            svgOutlineText?: boolean;
-        } = {}
+        options: ImageOptions = {}
     ): Promise<Record<string, string>> {
         if (!nodeIds || nodeIds.length === 0) {
             return {};
@@ -231,6 +268,44 @@ export class FigmaService {
             }
             throw new FigmaError(`Failed to export images: ${error}`, 'EXPORT_ERROR');
         }
+    }
+
+    /**
+     * The rendered bytes of each node, keyed by node id. A render Figma returned no URL for is absent; one whose
+     * download failed is an ImageDownloadError. Bytes are cached, not the render URLs, which expire after 30 days:
+     * a file left alone keeps its marker, so a cached URL would outlive its image. Only successful downloads are stored.
+     */
+    async getImageBytes(fileId: string, nodeIds: string[], options: ImageOptions = {}): Promise<Record<string, Buffer | ImageDownloadError>> {
+        if (!nodeIds || nodeIds.length === 0) return {};
+        const cache = await this.fileCache(fileId);
+        const entry = (nodeId: string) => entryName('image', {id: nodeId, ...Object.fromEntries(Object.entries(options).map(([key, value]) => [key, String(value)]))});
+        const images: Record<string, Buffer | ImageDownloadError> = {};
+        const missing: string[] = [];
+        for (const nodeId of nodeIds) {
+            const stored = await cache?.read(entry(nodeId));
+            if (stored) images[nodeId] = stored;
+            else missing.push(nodeId);
+        }
+        if (missing.length === 0) return images;
+        const urls = await this.getImageExportUrls(fileId, missing, options);
+        for (const nodeId of missing) {
+            const url = urls[nodeId];
+            if (!url) continue;
+            // The render URL is not a Figma REST call (it carries its own token), so it is a plain fetch.
+            // The runtime's own fetch, not node-fetch: its errors carry `cause.code`, which asset notes report.
+            try {
+                const response = await globalThis.fetch(url);
+                if (!response.ok) {
+                    images[nodeId] = new ImageDownloadError(url, response.status);
+                    continue;
+                }
+                images[nodeId] = Buffer.from(await response.arrayBuffer());
+                await cache?.write(entry(nodeId), images[nodeId]);
+            } catch (error) {
+                images[nodeId] = new ImageDownloadError(url, undefined, error);
+            }
+        }
+        return images;
     }
 
     /**

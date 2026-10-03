@@ -5,12 +5,11 @@
 
 import {z} from 'zod';
 import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
-import {FigmaService} from '../../services/figma.js';
+import {FigmaService, ImageDownloadError, type ImageOptions} from '../../services/figma.js';
 import {FigmaError, FigmaNotFoundError} from '../../types/errors.js';
 import {figmaTool} from '../figma-tool.js';
 import {Logger} from '../../utils/logger.js';
 import defaults from '../../defaults.json' with { type: 'json' };
-import fetch from 'node-fetch';
 
 // ────────────────────────────────────────────────────────────
 // Helpers
@@ -183,31 +182,24 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
             },
         },
         figmaTool('ff_get_screenshot error', async ({fileKey, nodeId, format = 'png', scale = defaults.screenshotScale}) => {
-            const data = await figma.get<any>(`/images/${fileKey}`, {
-                ids: nodeId,
-                format,
-                scale: String(Math.min(Math.max(scale, 0.01), 4)),
-            });
-            if (data.err) throw new FigmaError(`Figma image error: ${data.err}`, 'EXPORT_ERROR');
-
-            const imageUrl = data.images?.[nodeId];
-            if (!imageUrl) {
+            const image = (await figma.getImageBytes(fileKey, [nodeId], {
+                format: format as ImageOptions['format'],
+                scale: Math.min(Math.max(scale, 0.01), 4),
+            }))[nodeId];
+            if (!image) {
                 return {content: [{type: 'text' as const, text: `No image returned for node ${nodeId}`}]};
             }
-
-            // The render URL is not a Figma REST call (no token), so it stays a plain fetch.
-            const imgResp = await fetch(imageUrl);
-            if (!imgResp.ok) {
+            if (image instanceof ImageDownloadError) {
+                if (image.status === undefined) throw image;
                 // Fall back to returning the URL
                 return {
                     content: [
-                        {type: 'text' as const, text: `Screenshot URL (fetch failed): ${imageUrl}`},
+                        {type: 'text' as const, text: `Screenshot URL (fetch failed): ${image.url}`},
                     ],
                 };
             }
 
-            const imgBuffer = await imgResp.buffer();
-            const base64 = imgBuffer.toString('base64');
+            const base64 = image.toString('base64');
             const mimeType = format === 'jpg' ? 'image/jpeg' : format === 'svg' ? 'image/svg+xml' : `image/${format}`;
 
             return {

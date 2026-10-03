@@ -613,8 +613,6 @@ src/services/figma.ts	string	svg_simplify_stroke	arg(params.append)	getImageExpo
 src/services/figma.ts	template	${…}${…}	var(url)	makeRequest	1	K-API	R14: Figma REST endpoint path
 src/services/figma.ts	template	${…}?${…}	ternary	get	1	K-API	R14: Figma REST endpoint path
 src/services/figma.ts	template	/files/${…}/images	arg(this.makeRequest)	getImageFillUrls	1	K-API	R14: Figma REST endpoint path
-src/services/figma.ts	template	/files/${…}/nodes?ids=${…}	arg(this.makeRequest)	getNodeWithStyles	1	K-API	Figma REST path or query, or a Claude Code result key
-src/services/figma.ts	template	/files/${…}/nodes?ids=${…}	arg(this.makeRequest)	getNodes	1	K-API	R14: Figma REST endpoint path
 src/services/figma.ts	template	/files/${…}/variables/local	arg(this.makeRequest)	getLocalVariableNames	1	K-API	Figma REST path or query, or a Claude Code result key
 src/services/figma.ts	template	/images/${…}?${…}	arg(this.makeRequest)	getImageExportUrls	1	K-API	R14: Figma REST endpoint path
 src/services/figma.ts	template	Failed to export images: ${…}	arg(FigmaError)	getImageExportUrls	1	K-TEXT	R8: error message text
@@ -626,10 +624,6 @@ src/services/figma.ts	template	Node not found: ${…}	arg(FigmaNotFoundError)	ge
 src/services/figma.ts	template	Unexpected error: ${…}	arg(FigmaNetworkError)	makeRequest	1	K-TEXT	R8: error message text
 src/services/figma.ts	template	✅ Successfully fetched: ${…}	arg(Logger.diag)	makeRequest	1	K-TEXT	R5: log/console text
 src/services/figma.ts	template	🔄 Making Figma API request: ${…}	arg(Logger.diag)	makeRequest	1	K-TEXT	R5: log/console text
-src/services/figma.ts	type-string	jpg	LiteralType	getImageExportUrls	1	K-API	R2: TS literal type mirroring a Figma REST enum / export format
-src/services/figma.ts	type-string	pdf	LiteralType	getImageExportUrls	1	K-API	R2: TS literal type mirroring a Figma REST enum / export format
-src/services/figma.ts	type-string	png	LiteralType	getImageExportUrls	1	K-API	R2: TS literal type mirroring a Figma REST enum / export format
-src/services/figma.ts	type-string	svg	LiteralType	getImageExportUrls	1	K-API	R2: TS literal type mirroring a Figma REST enum / export format
 src/tools/figma-core/core-tools.ts	number	0	arg((node.children ?? []).reduce)	countNodes	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	0	arg(entries.slice)	render	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	0	binary(>)	registerCoreTools	2	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
@@ -651,7 +645,6 @@ src/tools/figma-core/core-tools.ts	string	Access denied. This file may not have 
 src/tools/figma-core/core-tools.ts	string	COMPONENT	array	summariseNode	1	K-API	Figma REST enum value
 src/tools/figma-core/core-tools.ts	string	COMPONENT_SET	array	summariseNode	1	K-API	Figma REST enum value
 src/tools/figma-core/core-tools.ts	string	Capture a PNG/JPG/SVG screenshot of a specific Figma node. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
-src/tools/figma-core/core-tools.ts	string	EXPORT_ERROR	arg(FigmaError)	registerCoreTools	1	K-SCHEMA	R6: our error code identifier
 src/tools/figma-core/core-tools.ts	string	Extract the design context for a Figma node: layout tree, component structure, 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	FORBIDDEN	arg(FigmaError)	registerCoreTools	1	K-SCHEMA	R6: our error code identifier
 src/tools/figma-core/core-tools.ts	string	FRAME	array	summariseNode	1	K-API	Figma REST enum value
@@ -680,7 +673,6 @@ src/tools/figma-core/core-tools.ts	string	The Variables REST API requires an Ent
 src/tools/figma-core/core-tools.ts	string	This tool is exempt from rate limits — always safe to call.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Use this to discover all top-level frames before extracting individual ones.	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	anthropic/maxResultSizeChars	object-key	registerCoreTools	3	K-API	Figma REST path or query, or a Claude Code result key
-src/tools/figma-core/core-tools.ts	string	base64	arg(imgBuffer.toString)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	ff_get_design_context	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
 src/tools/figma-core/core-tools.ts	string	ff_get_design_context error	arg(figmaTool)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	ff_get_metadata	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
@@ -709,8 +701,6 @@ src/tools/figma-core/core-tools.ts	string	📋 Registered core Figma tools: ff_g
 src/tools/figma-core/core-tools.ts	template	/files/${…}	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
 src/tools/figma-core/core-tools.ts	template	/files/${…}/nodes	arg(figma.get)	registerCoreTools	2	K-API	R14: Figma REST endpoint path
 src/tools/figma-core/core-tools.ts	template	/files/${…}/variables/local	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
-src/tools/figma-core/core-tools.ts	template	/images/${…}	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
-src/tools/figma-core/core-tools.ts	template	Figma image error: ${…}	arg(FigmaError)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	template	No image returned for node ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
 src/tools/figma-core/core-tools.ts	template	Node not found: ${…}	arg(FigmaNotFoundError)	registerCoreTools	2	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	template	Scale factor 0.01-4 (default: ${…}). Higher = more detail.	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	tool or parameter name, title or description
@@ -872,7 +862,6 @@ src/tools/flutter/assets/asset-manager.ts	template	${…}x	ternary	generateAsset
 src/tools/flutter/assets/asset-manager.ts	template	.${…}	arg(generateSvgFilename(node.name).replace)	exportAssetNodes	1	K-API	file path or request key composition
 src/tools/flutter/assets/asset-manager.ts	template	// ${…}\n// Do not edit manually\n\nclass ${…} {\n${…}}\n	arg(writeFile)	writeConstants	1	K-DART	emitted Dart code
 src/tools/flutter/assets/asset-manager.ts	template	Device pixel ratios (${…}) to export PNG at for nodes without exportSettings (default: ${…})	arg( ')}`})).min(1).optional()\n    .describe)	devicePixelRatiosInput	1	K-SCHEMA	tool or parameter name, title or description
-src/tools/flutter/assets/asset-manager.ts	template	Failed to download image: HTTP ${…}	arg(super)	DownloadError	1	K-TEXT	report, label, log or error text
 src/tools/flutter/assets/asset-manager.ts	template	HTTP ${…}	return	downloadFailureReason	1	K-TEXT	report, label, log or error text
 src/tools/flutter/assets/asset-manager.ts	template	^${…}assets:\s*(.*)$	arg(RegExp)	updatePubspecAssets	1	K-API	rule: pubspec YAML syntax / line editing
 src/tools/flutter/assets/asset-manager.ts	template	must be one of ${…}	prop(message)	devicePixelRatiosInput	1	K-TEXT	report, label, log or error text
@@ -2368,3 +2357,38 @@ src/server.ts	number	-32000	prop(code)	methodNotAllowed	1	K-API	JSON-RPC error c
 src/server.ts	string	Method not allowed.	prop(message)	methodNotAllowed	1	K-TEXT	report, label, log or error text
 src/utils/project-conventions.ts	string	projectPath is required over HTTP: the server's working folder is not the client's project. Pass the Flutter project's path on the machine that runs this server	arg(Error)	resolveProjectPath	1	K-TEXT	report, label, log or error text
 src/utils/project-conventions.ts	string	Path to Flutter project (stdio: defaults to the current directory; HTTP: required)	var(PROJECT_PATH_DESCRIPTION)	PROJECT_PATH_DESCRIPTION	1	K-SCHEMA	rule: tool name / zod schema / description
+src/services/figma-cache.ts	string	json	AssertEntry	(module)	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
+src/services/figma-cache.ts	string	off	binary(===)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
+src/services/figma-cache.ts	string	darwin	binary(===)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
+src/services/figma-cache.ts	string	Library	arg(join)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
+src/services/figma-cache.ts	string	Caches	arg(join)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
+src/services/figma-cache.ts	string	win32	binary(===)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
+src/services/figma-cache.ts	string	AppData	arg(join)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
+src/services/figma-cache.ts	string	Local	arg(join)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
+src/services/figma-cache.ts	string	Cache	arg(join)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
+src/services/figma-cache.ts	string	.cache	arg(join)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
+src/services/figma-cache.ts	regex	/^[A-Za-z0-9_-]+$/	PropertyAccessExpression	isCacheableFileKey	1	K-API	file key shape: only these are used as a folder name
+src/services/figma-cache.ts	string	sha256	arg(createHash)	digest	1	K-CONV	hash and entry naming for the cache; not a design fact
+src/services/figma-cache.ts	string	 	arg(parts.join)	digest	1	K-CONV	hash and entry naming for the cache; not a design fact
+src/services/figma-cache.ts	string	hex	arg(sha256').update(parts.join('\0')).digest)	digest	1	K-CONV	hash and entry naming for the cache; not a design fact
+src/services/figma-cache.ts	number	0	arg(st([path, JSON.stringify(sorted)]).slice)	entryName	1	K-CONV	hash and entry naming for the cache; not a design fact
+src/services/figma-cache.ts	number	32	arg(st([path, JSON.stringify(sorted)]).slice)	entryName	1	K-CONV	hash and entry naming for the cache; not a design fact
+src/services/figma-cache.ts	number	0	arg(digest(marker).slice)	FileCache	1	K-CONV	hash and entry naming for the cache; not a design fact
+src/services/figma-cache.ts	number	32	arg(digest(marker).slice)	FileCache	1	K-CONV	hash and entry naming for the cache; not a design fact
+src/services/figma-cache.ts	template	${…}.${…}.tmp	arg(join)	write	1	K-CONV	temp file name for the atomic write
+src/services/figma.ts	template	Failed to download image: ${…}	ternary	ImageDownloadError	1	K-TEXT	report, label, log or error text
+src/services/figma.ts	template	Failed to download image: HTTP ${…}	ternary	ImageDownloadError	1	K-TEXT	report, label, log or error text
+src/services/figma.ts	type-string	png	LiteralType	(module)	1	K-API	Figma REST path, query or image format token
+src/services/figma.ts	type-string	jpg	LiteralType	(module)	1	K-API	Figma REST path, query or image format token
+src/services/figma.ts	type-string	svg	LiteralType	(module)	1	K-API	Figma REST path, query or image format token
+src/services/figma.ts	type-string	pdf	LiteralType	(module)	1	K-API	Figma REST path, query or image format token
+src/services/figma.ts	template	/files/${…}/meta	arg(this.makeRequest)	fileCache	1	K-API	Figma REST path, query or image format token
+src/services/figma.ts	regex	/^\/files\/([^/?]+)(\/nodes)?(?:\?(.*))?$/	arg(endpoint.match)	cachedRequest	1	K-API	Figma REST path, query or image format token
+src/services/figma.ts	string	nodes	ternary	cachedRequest	1	K-CONV	hash and entry naming for the cache; not a design fact
+src/services/figma.ts	string	file	ternary	cachedRequest	1	K-CONV	hash and entry naming for the cache; not a design fact
+src/services/figma.ts	template	/files/${…}/nodes?ids=${…}	arg(this.cachedRequest)	getNodes	1	K-API	Figma REST path, query or image format token
+src/services/figma.ts	template	/files/${…}/nodes?ids=${…}	arg(this.cachedRequest)	getNodeWithStyles	1	K-API	Figma REST path, query or image format token
+src/services/figma.ts	number	0	binary(===)	getImageBytes	2	K-CONV	hash and entry naming for the cache; not a design fact
+src/services/figma.ts	string	image	arg(entryName)	entry	1	K-CONV	hash and entry naming for the cache; not a design fact
+src/tools/figma-core/core-tools.ts	type-string	format	LiteralType	registerCoreTools	1	K-API	Figma image format or base64 encoding token
+src/tools/figma-core/core-tools.ts	string	base64	arg(image.toString)	registerCoreTools	1	K-API	Figma image format or base64 encoding token

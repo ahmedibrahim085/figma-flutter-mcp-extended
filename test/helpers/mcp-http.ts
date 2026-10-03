@@ -19,7 +19,7 @@ export async function withHttpServer(routes: FakeRoutes, body: (endpoint: string
     const cwd = mkdtempSync(join(tmpdir(), 'mcp-http-'));
     const child = spawn(process.execPath, [builtCliPath(), '--http', `--port=${port}`], {
         cwd,
-        env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', FIGMA_API_BASE_URL: figma.baseUrl},
+        env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', FIGMA_CACHE: 'off', FIGMA_API_BASE_URL: figma.baseUrl},
         stdio: 'ignore',
     });
     try {

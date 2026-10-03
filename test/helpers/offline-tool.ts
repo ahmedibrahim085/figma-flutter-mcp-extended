@@ -25,11 +25,13 @@ export async function callToolOffline(
 
 /**
  * Like callToolOffline, but makes several calls in one server process.
- * Each result lists only the requests its own call made.
+ * Each result lists only the requests its own call made. `env` is added to the server's environment;
+ * the harness turns the Figma cache off, so a test of the cache passes FIGMA_CACHE and FIGMA_CACHE_DIR.
  */
 export async function callToolsOffline(
     routes: FakeRoutes,
     calls: Array<[tool: string, args: Record<string, unknown>]>,
+    env: Record<string, string> = {},
 ): Promise<OfflineToolResult[]> {
     const figma = await startFakeFigma(routes);
     const results: OfflineToolResult[] = [];
@@ -45,7 +47,7 @@ export async function callToolsOffline(
                     requests: figma.requests.slice(before),
                 });
             }
-        }, {env: {FIGMA_API_BASE_URL: figma.baseUrl}});
+        }, {env: {FIGMA_API_BASE_URL: figma.baseUrl, ...env}});
     } finally {
         await figma.close();
     }

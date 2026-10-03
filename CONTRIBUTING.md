@@ -234,6 +234,10 @@ HTTP_PORT=3333
 
 # Optional: Figma REST base URL (default https://api.figma.com/v1; the tests point it at a local fake)
 FIGMA_API_BASE_URL=https://api.figma.com/v1
+
+# Optional: Figma cache folder (default: figma-flutter-mcp-extended under the OS cache folder) and FIGMA_CACHE=off to disable it.
+# The tests set FIGMA_CACHE=off; the cache tests pass their own FIGMA_CACHE_DIR.
+FIGMA_CACHE_DIR=
 ```
 
 ## 📋 Pull Request Checklist

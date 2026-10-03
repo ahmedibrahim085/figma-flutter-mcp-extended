@@ -3,7 +3,7 @@ import {existsSync} from 'fs';
 import {writeFile, mkdir, readFile} from 'fs/promises';
 import {join, dirname} from 'path';
 import {z} from 'zod';
-import type {FigmaService} from '../../../services/figma.js';
+import {ImageDownloadError, type FigmaService} from '../../../services/figma.js';
 import {isEffectivelyVisible} from '../../../utils/visibility.js';
 import {detectConstantsDir} from '../../../utils/project-conventions.js';
 import {isDartIdentifier, lowerCamelCase} from '../../../utils/dart-names.js';
@@ -67,22 +67,9 @@ export function generateSvgFilename(nodeName: string): string {
     return `${cleanName}.svg`;
 }
 
-/** A download that answered with a non-2xx status; carries the status so callers need not parse the message. */
-class DownloadError extends Error {
-    constructor(readonly status: number) {
-        super(`Failed to download image: HTTP ${status}`);
-    }
-}
-
-export async function downloadImage(url: string, filepath: string): Promise<void> {
-    const response = await fetch(url);
-    if (!response.ok) {
-        throw new DownloadError(response.status);
-    }
-
-    const buffer = await response.arrayBuffer();
+export async function saveImage(bytes: Buffer, filepath: string): Promise<void> {
     await mkdir(dirname(filepath), {recursive: true});
-    await writeFile(filepath, Buffer.from(buffer));
+    await writeFile(filepath, bytes);
 }
 
 export async function getFileStats(filepath: string): Promise<{size: string}> {
@@ -310,7 +297,7 @@ export function selectAssetNodes(roots: any[], includeRoots: boolean): AssetNode
 function downloadFailureReason(error: unknown): string {
     const code = (error as {cause?: {code?: string}})?.cause?.code;
     if (code) return code;
-    if (error instanceof DownloadError) return `HTTP ${error.status}`;
+    if (error instanceof ImageDownloadError && error.status !== undefined) return `HTTP ${error.status}`;
     return error instanceof Error ? error.message : String(error);
 }
 
@@ -400,23 +387,22 @@ export async function exportAssetNodes(options: {
         const svgsDir = await createSvgAssetsDirectory(projectPath);
         for (const requests of groups.values()) {
             const {format, scale} = requests[0];
-            const urls = await figmaService.getImageExportUrls(fileId, requests.map(request => request.node.id), {format, scale});
+            const images = await figmaService.getImageBytes(fileId, requests.map(request => request.node.id), {format, scale});
             for (const {node} of requests) {
-                const url = urls[node.id];
-                if (!url) {
+                const image = images[node.id];
+                if (!image) {
                     notes.push(`${node.name} (${node.id}): Figma returned no image for ${format}${vectorFormat(format) ? '' : ` at ${scale}x`}; not exported`);
                     continue;
                 }
                 const vector = vectorFormat(format);
                 const filename = vector ? generateSvgFilename(node.name).replace(/\.svg$/, `.${format}`) : generateAssetFilename(node.name, format, scale);
                 const filepath = join(vector ? svgsDir : imagesDir, filename);
-                try {
-                    await downloadImage(url, filepath);
-                } catch (error) {
+                if (image instanceof ImageDownloadError) {
                     // The agent sees only the tool's text, so the failure goes there; the URL carries a signed token and stays out.
-                    notes.push(`${node.name} (${node.id}): download failed for ${format}${vector ? '' : ` at ${scale}x`} (${downloadFailureReason(error)}); not exported`);
+                    notes.push(`${node.name} (${node.id}): download failed for ${format}${vector ? '' : ` at ${scale}x`} (${downloadFailureReason(image)}); not exported`);
                     continue;
                 }
+                await saveImage(image, filepath);
                 assets.push({
                     nodeId: node.id,
                     nodeName: node.name,

@@ -64,7 +64,7 @@ export async function withServer(
 ): Promise<McpStdioServer> {
     const child = spawn(process.execPath, ['--import', TSX_LOADER, '--import', BLOCK_NETWORK, builtCliPath(), '--stdio'], {
         cwd: mkdtempSync(join(tmpdir(), 'mcp-test-')),
-        env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', ...env},
+        env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', FIGMA_CACHE: 'off', ...env},
         stdio: ['pipe', 'pipe', 'pipe'],
     });
 

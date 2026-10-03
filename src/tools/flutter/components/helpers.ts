@@ -439,4 +439,3 @@ export function hasVisualStyling(styling: any): boolean {
     return !!(styling.fills?.length || styling.strokes?.length ||
         styling.cornerRadius !== undefined || styling.effects?.dropShadows?.length);
 }
-

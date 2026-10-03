@@ -89,6 +89,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     const figma = new FigmaService(figmaApiKey);
 
     // ── ff_get_metadata ──────────────────────────────────────
+    // @ts-ignore TS2589: Known TypeScript limitation with complex Zod schemas in registerTool generics
     server.registerTool(
         'ff_get_metadata',
         {

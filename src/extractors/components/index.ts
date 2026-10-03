@@ -1,17 +1,9 @@
 // src/extractors/components/index.mts
 
-// Core functionality
-export {
-    ComponentExtractor,
-    analyzeComponent,
-    analyzeComponentWithVariants
-} from './core.js';
-
 export {
     extractMetadata,
     extractLayoutInfo,
     extractStylingInfo,
-    analyzeChildren,
     createNestedComponentInfo,
     createComponentChild,
     isComponentNode,

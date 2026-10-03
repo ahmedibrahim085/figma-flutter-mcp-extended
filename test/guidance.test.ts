@@ -32,33 +32,31 @@ test('no tool output carries an invented rule, ranking or advice', async () => {
     const base = {input, nodeId: WIDE.id};
     const results = await callToolsOffline(nodeRoute(WIDE.id, WIDE), [
         ['analyze_figma_component', {...base, userDefinedComponent: true, exportAssets: false, generateFlutterCode: true}],
-        ['analyze_figma_component', {...base, userDefinedComponent: true, exportAssets: false, generateFlutterCode: true, useDeduplication: false}],
         ['generate_flutter_implementation', {input: FILE_KEY, nodeId: WIDE.id}],
         ['inspect_component_structure', {...base, userDefinedComponent: true}],
         ['analyze_frame_as_screen', {...base, extractAssets: false}],
         ['inspect_frame_structure', base],
     ]);
 
-    assert.equal(results.length, 6);
+    assert.equal(results.length, 5);
     for (const {text: out} of results) {
         assert.ok(out.length > 150, `tool output too short to prove anything: ${out}`);
         assert.doesNotMatch(out, BANNED);
     }
     // Positive controls: the reports ran on this fixture, not on an error.
     assert.match(results[0].text, /Wide Card/);
-    assert.match(results[4].text, /Screen Analysis Report/);
-    assert.match(results[5].text, /Screen Structure Inspection/);
+    assert.match(results[3].text, /Screen Analysis Report/);
+    assert.match(results[4].text, /Screen Structure Inspection/);
 });
 
 test('guidance quotes Flutter instead of a line count', async () => {
-    const [dedup, plain, impl, screen] = await callToolsOffline(nodeRoute(WIDE.id, WIDE), [
+    const [dedup, impl, screen] = await callToolsOffline(nodeRoute(WIDE.id, WIDE), [
         ['analyze_figma_component', {input: url(WIDE.id), userDefinedComponent: true, exportAssets: false, generateFlutterCode: true}],
-        ['analyze_figma_component', {input: url(WIDE.id), userDefinedComponent: true, exportAssets: false, useDeduplication: false}],
         ['generate_flutter_implementation', {input: FILE_KEY, nodeId: WIDE.id}],
         ['analyze_frame_as_screen', {input: url(WIDE.id), extractAssets: false}],
     ]);
 
-    for (const {text: out} of [dedup, plain, impl, screen]) {
+    for (const {text: out} of [dedup, impl, screen]) {
         assert.match(out, /Avoid overly large single widgets with a large build\(\) function\. Split them into different widgets based on encapsulation but also on how they change/);
         assert.match(out, /To create reusable pieces of UIs, prefer using a StatelessWidget rather than a function\./);
         assert.match(out, /docs\.flutter\.dev\/perf\/best-practices/);
@@ -66,13 +64,12 @@ test('guidance quotes Flutter instead of a line count', async () => {
 });
 
 test('the report prints the corner radii Figma sends, not "mixed"', async () => {
-    const [plain] = await callToolsOffline(nodeRoute(WIDE.id, WIDE), [
-        ['analyze_figma_component', {input: url(WIDE.id), userDefinedComponent: true, exportAssets: false, useDeduplication: false}],
+    const [report] = await callToolsOffline(nodeRoute(WIDE.id, WIDE), [
+        ['analyze_figma_component', {input: url(WIDE.id), userDefinedComponent: true, exportAssets: false, generateFlutterCode: true}],
     ]);
 
-    assert.match(plain.text, /Border radius: 4px 8px 12px 16px\n/);
-    assert.match(plain.text, /First fill: /);
-    assert.doesNotMatch(plain.text, /mixed|consistent|Primary|SizedBox gaps/);
+    assert.match(report.text, /borderRadius: BorderRadius\.only\(topLeft: Radius\.circular\(4\), topRight: Radius\.circular\(8\), bottomRight: Radius\.circular\(12\), bottomLeft: Radius\.circular\(16\)\),\n/);
+    assert.doesNotMatch(report.text, /mixed|consistent|Primary|SizedBox gaps/);
 });
 
 // Figma layer order, deliberately opposite to size, type and y.
@@ -92,13 +89,12 @@ test('children are numbered in Figma layer order in all four analyze and inspect
     const base = {input: url(ORDERED.id), nodeId: ORDERED.id};
     const results = await callToolsOffline(nodeRoute(ORDERED.id, ORDERED), [
         ['analyze_figma_component', {...base, userDefinedComponent: true, exportAssets: false}],
-        ['analyze_figma_component', {...base, userDefinedComponent: true, exportAssets: false, useDeduplication: false}],
         ['inspect_component_structure', {...base, userDefinedComponent: true}],
         ['analyze_frame_as_screen', {...base, extractAssets: false}],
         ['inspect_frame_structure', base],
     ]);
 
-    assert.equal(results.length, 5);
+    assert.equal(results.length, 4);
     for (const {text: out} of results) {
         const order = [...out.matchAll(/^\s*\d+\. (Dot|Mid|Hero) \(/gm)].map((m) => m[1]);
         assert.deepEqual(order, ['Dot', 'Mid', 'Hero'], out);
@@ -107,13 +103,13 @@ test('children are numbered in Figma layer order in all four analyze and inspect
 
 test('a nested component keeps its Figma type: an INSTANCE is reported as INSTANCE', async () => {
     const base = {input: url(ORDERED.id), nodeId: ORDERED.id};
-    const [plain, screen] = await callToolsOffline(nodeRoute(ORDERED.id, ORDERED), [
-        ['analyze_figma_component', {...base, userDefinedComponent: true, exportAssets: false, useDeduplication: false}],
+    const [report, screen] = await callToolsOffline(nodeRoute(ORDERED.id, ORDERED), [
+        ['analyze_figma_component', {...base, userDefinedComponent: true, exportAssets: false}],
         ['analyze_frame_as_screen', {...base, extractAssets: false}],
     ]);
 
-    for (const {text: out} of [plain, screen]) {
-        assert.match(out, /Type: INSTANCE/);
-        assert.doesNotMatch(out, /Type: COMPONENT\n/);
-    }
+    assert.match(report.text, /Hero \(INSTANCE\)/);
+    assert.doesNotMatch(report.text, /Hero \(COMPONENT\)/);
+    assert.match(screen.text, /Type: INSTANCE/);
+    assert.doesNotMatch(screen.text, /Type: COMPONENT\n/);
 });

@@ -57,17 +57,17 @@ test('style totals count the current call only; resetCachedStyles and resetStyle
 });
 
 test('report headings use Figma and Flutter terms', async () => {
-    const plain = await call(TEXT_FRAME, 'analyze_figma_component', {exportAssets: false, userDefinedComponent: true, useDeduplication: false});
+    const report = await call(TEXT_FRAME, 'analyze_figma_component', {exportAssets: false, userDefinedComponent: true});
     // A URL input adds the layout map section to the report.
     const screen = await call(SCREEN, 'analyze_frame_as_screen',
         {input: `https://www.figma.com/design/${FILE_KEY}/x?node-id=30-1`, extractAssets: false});
 
-    assert.match(plain.text, /Child layers \(1 analyzed\)/);
+    assert.match(report.text, /Children Analysis \(1 children\)/);
     assert.match(screen.text, /Layout sizing \(FIXED\/HUG\/FILL\)/);
     assert.match(screen.text, /Screen layout map for AI Implementation/);
     assert.match(screen.text, /Child widgets:/);
     for (const old of [/Child Layers \(/, /Child Widgets:/, /Screen Layout map/, /child elements/i, /Child Elements/, /Layout Sizing Semantics/, /Visual Context/, /Enhanced Semantic Detection/, /Section Widgets/, /Style Library/]) {
-        for (const {text} of [plain, screen]) assert.doesNotMatch(text, old);
+        for (const {text} of [report, screen]) assert.doesNotMatch(text, old);
     }
 });
 

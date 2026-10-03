@@ -122,28 +122,18 @@ const CARD_ROW = {
     ],
 };
 
-test('component analysis reports padding, sizing, alignment, borders and radius', async () => {
-    const report = await analyze(nodeRoute('3:1', CARD_ROW), '3:1', {useDeduplication: false});
-    assert.match(report, /- Padding: 12px 16px 12px 16px \(TRBL\)\n- Horizontal Sizing: FILL\n- Vertical Sizing: HUG\n- Parent Alignment: STRETCH/);
-    assert.match(report, /- Border: 2px solid #333333 align INSIDE\n- Corner radius: 8px/);
-    assert.match(report, /1\. Icon \(FRAME\)[^]*?Horizontal Sizing: FIXED\n\s+Vertical Sizing: FIXED\n\s+Parent Alignment: INHERIT/);
-    assert.match(report, /Border: 1px solid #000000 align OUTSIDE\n\s+Corner radius: 4px/);
-    assert.match(report, /- Add spacing with SizedBox\(width: 8\)/);
-    assert.match(report, /- CrossAxisAlignment: CrossAxisAlignment\.end/);
+test('component analysis reports sizing, and its code carries padding, gap, alignment, borders and radius', async () => {
+    const report = await analyze(nodeRoute('3:1', CARD_ROW), '3:1');
+    assert.match(report, /   • Horizontal sizing: FILL\n   • Vertical sizing: HUG\n   • Parent alignment: STRETCH/);
+    assert.match(report, /1\. Icon \(FRAME\)\n\s+📐 Size: 24×24px\n\s+📐 Horizontal sizing: FIXED\n\s+📐 Vertical sizing: FIXED\n\s+📐 Parent alignment: INHERIT/);
+    // The definitions the report prints: padding as EdgeInsets.fromLTRB, a 2 px INSIDE border and radius 8 on the card, a 1 px OUTSIDE border on the icon.
+    assert.match(report, /= EdgeInsets\.fromLTRB\(16, 12, 16, 12\);/);
+    assert.match(report, /  border: Border\.all\(\n    color: Color\(0xFF333333\),\n    width: 2,\n  \),\n  borderRadius: BorderRadius\.circular\(8\),/);
+    assert.match(report, /  border: Border\.all\(\n    color: Color\(0xFF000000\),\n    width: 1,\n    strokeAlign: BorderSide\.strokeAlignOutside,\n  \),\n  borderRadius: BorderRadius\.circular\(4\),/);
+    // The Row: gap 8, primary CENTER, counter MAX.
+    assert.match(report, /mainAxisAlignment: MainAxisAlignment\.center,\n\s+crossAxisAlignment: CrossAxisAlignment\.end,/);
+    assert.match(report, /SizedBox\(width: 8\),/);
 });
-
-for (const [primary, counter, main, cross] of [
-    ['CENTER', 'MAX', 'MainAxisAlignment.center', 'CrossAxisAlignment.end'],
-    ['SPACE_BETWEEN', 'MIN', 'MainAxisAlignment.spaceBetween', 'CrossAxisAlignment.start'],
-    ['MAX', 'CENTER', 'MainAxisAlignment.end', 'CrossAxisAlignment.center'],
-    ['MIN', 'BASELINE', 'MainAxisAlignment.start', 'CrossAxisAlignment.baseline'],
-]) {
-    test(`layout guidance maps ${primary}/${counter} to ${main} and ${cross}`, async () => {
-        const report = await analyze(nodeRoute('3:1', {...CARD_ROW, primaryAxisAlignItems: primary, counterAxisAlignItems: counter}), '3:1', {useDeduplication: false});
-        assert.match(report, new RegExp(`- MainAxisAlignment: ${main.replace('.', '\\.')}\\n`));
-        assert.match(report, new RegExp(`- CrossAxisAlignment: ${cross.replace('.', '\\.')}\\n`));
-    });
-}
 
 test('inspect_component_structure reports sizing and alignment for the component and its children', async () => {
     const {text, requests} = await callToolOffline(nodeRoute('3:1', CARD_ROW), 'inspect_component_structure',

@@ -30,12 +30,12 @@ for (const {name, corners, dart} of RADII) {
         if (dart) assert.ok(text.includes(`  borderRadius: ${dart},\n`), text);
     });
 
-    test(`the plain analysis guidance prints ${name} as ${dart}`, async () => {
+    test(`the analysis report's style definitions print ${name} as ${dart}`, async () => {
         const node = frame(corners);
         const {text} = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component',
-            {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, useDeduplication: false});
+            {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, generateFlutterCode: true});
 
         assert.equal(text.includes('borderRadius:'), dart !== '', text);
-        if (dart) assert.ok(text.includes(`    borderRadius: ${dart},\n`), text);
+        if (dart) assert.ok(text.includes(`  borderRadius: ${dart},\n`), text);
     });
 }

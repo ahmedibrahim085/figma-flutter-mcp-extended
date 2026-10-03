@@ -51,7 +51,7 @@ async function tempProject(t: TestContext, pubspec: string | undefined, withThem
 }
 
 const TOOLS = [
-    ['analyze_figma_component', (dir: string) => ({input: FILE_KEY, nodeId: '5:1', userDefinedComponent: true, exportAssets: true, projectPath: dir, useDeduplication: false})],
+    ['analyze_figma_component', (dir: string) => ({input: FILE_KEY, nodeId: '5:1', userDefinedComponent: true, exportAssets: true, projectPath: dir})],
     ['analyze_frame_as_screen', (dir: string) => ({input: FILE_KEY, nodeId: '5:1', extractAssets: true, projectPath: dir})],
 ] as const;
 

@@ -7,7 +7,6 @@ import type {
     StylingInfo,
     ComponentChild,
     NestedComponentInfo,
-    SkippedNodeInfo,
     CategorizedEffects,
     ColorInfo,
     StrokeInfo,
@@ -19,7 +18,7 @@ import type {
 import {Logger} from '../../utils/logger.js';
 import {filterEffectivelyVisibleChildren} from '../../utils/visibility.js';
 import {extractComponentProperties} from '../../utils/component-properties.js';
-import {dartString, textStyleCode, textWidgetCode, convertTypeStyle, convertTextWidget, type TextOverrides, type TextStyleFields} from '../flutter/text-style.js';
+import {convertTypeStyle, convertTextWidget, type TextOverrides, type TextStyleFields} from '../flutter/text-style.js';
 
 /**
  * Extract component metadata
@@ -146,62 +145,6 @@ export function extractStylingInfo(node: FigmaNode): StylingInfo {
     }
 
     return styling;
-}
-
-/**
- * Analyze child nodes with prioritization and limits
- */
-export function analyzeChildren(
-    node: FigmaNode,
-    options: Required<ComponentExtractionOptions>
-): {
-    children: ComponentChild[];
-    nestedComponents: NestedComponentInfo[];
-    skippedNodes: SkippedNodeInfo[];
-} {
-    const children: ComponentChild[] = [];
-    const nestedComponents: NestedComponentInfo[] = [];
-    const skippedNodes: SkippedNodeInfo[] = [];
-
-    if (!node.children || node.children.length === 0) {
-        return {children, nestedComponents, skippedNodes};
-    }
-
-    // Filter effectively visible nodes unless includeHiddenNodes is true.
-    // Also drops empty frames whose only children are hidden (e.g. App Bar icon slots).
-    let visibleChildren = filterEffectivelyVisibleChildren(
-        node.children,
-        options.includeHiddenNodes
-    );
-
-    // Children stay in Figma layer order: no score or type decides which come first.
-    const processedCount = Math.min(visibleChildren.length, options.maxChildNodes);
-
-    for (let i = 0; i < visibleChildren.length; i++) {
-        const child = visibleChildren[i];
-        const isComponent = isComponentNode(child);
-
-        if (i < processedCount) {
-            // Check if this is a nested component
-            if (isComponent) {
-                nestedComponents.push(createNestedComponentInfo(child));
-            }
-
-            // Pass parent and siblings for better semantic detection
-            const siblings = visibleChildren.filter(sibling => sibling.id !== child.id);
-            children.push(createComponentChild(child, isComponent, options, node, siblings));
-        } else {
-            // Track skipped nodes
-            skippedNodes.push({
-                nodeId: child.id,
-                name: child.name,
-                type: child.type,
-                reason: 'max_nodes'
-            });
-        }
-    }
-
-    return {children, nestedComponents, skippedNodes};
 }
 
 /**
@@ -543,16 +486,6 @@ function detectTextCase(content: string): 'uppercase' | 'lowercase' | 'capitaliz
     }
 
     return 'mixed';
-}
-
-/**
- * The Text widget for a text node: its characters with its own style. No word in the text
- * decides another widget, a colour or a theme role.
- */
-export function generateFlutterTextWidget(textInfo: TextInfo): string {
-    const widget = textInfo.widget ?? {text: textInfo.content};
-    const customStyle = textInfo.style ? textStyleCode(textInfo.style) : undefined;
-    return textWidgetCode(widget, customStyle);
 }
 
 /**

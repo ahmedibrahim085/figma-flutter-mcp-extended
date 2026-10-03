@@ -72,7 +72,7 @@ test('analyze_figma_component: the same rule, and the analysed root is never exp
     const dir = await tempProject(t);
     const root = {...LOGO_SCREEN, exportSettings: [setting('PNG', 'SCALE', 4)]};
     const {requests} = await callToolOffline(figma(root, [{ids: ['5:3'], format: 'png', scale: 1}]), 'analyze_figma_component',
-        {input: FILE_KEY, nodeId: '5:1', userDefinedComponent: true, exportAssets: true, projectPath: dir, useDeduplication: false});
+        {input: FILE_KEY, nodeId: '5:1', userDefinedComponent: true, exportAssets: true, projectPath: dir});
 
     assert.deepEqual(imageRequests(requests), [{ids: '5:3', format: 'png', scale: '1'}]);
     assert.equal(existsSync(join(dir, 'assets/images/screen.png')), false);
@@ -126,7 +126,7 @@ test('devicePixelRatios [1.5, 3] writes 1.5x/ and 3.0x/ and only those, on all t
     const calls: ImageCall[] = [{ids: ['5:2'], format: 'png', scale: 1.5}, {ids: ['5:2'], format: 'png', scale: 3}];
     const runs: Array<[string, {id: string}, Record<string, unknown>]> = [
         ['analyze_frame_as_screen', screen([hero]), {input: FILE_KEY, nodeId: '5:1'}],
-        ['analyze_figma_component', screen([hero]), {input: FILE_KEY, nodeId: '5:1', userDefinedComponent: true, exportAssets: true, useDeduplication: false}],
+        ['analyze_figma_component', screen([hero]), {input: FILE_KEY, nodeId: '5:1', userDefinedComponent: true, exportAssets: true}],
         ['export_flutter_assets', hero, {fileId: FILE_KEY, nodeIds: ['5:2']}],
     ];
     for (const [tool, root, args] of runs) {
@@ -286,7 +286,7 @@ test('the analyse tools name a download that failed too, and a run where every d
 
     const none = await tempProject(t);
     const all = await callToolOffline(figma(screen([photo('5:2', 'Only')]), [{ids: ['5:2'], format: 'png', scale: 2, failDownload: ['5:2']}]),
-        'analyze_figma_component', {input: FILE_KEY, nodeId: '5:1', userDefinedComponent: true, exportAssets: true, projectPath: none, useDeduplication: false});
+        'analyze_figma_component', {input: FILE_KEY, nodeId: '5:1', userDefinedComponent: true, exportAssets: true, projectPath: none});
 
     assert.match(all.text, /Only \(5:2\): download failed for png at 2x \(HTTP 404\); not exported/);
     assert.equal(existsSync(join(none, 'assets/images/2.0x/only.png')), false);

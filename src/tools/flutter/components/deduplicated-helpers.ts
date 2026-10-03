@@ -598,6 +598,12 @@ export function generateComprehensiveDeduplicatedReport(
     vertical: analysis.layout.sizingVertical,
     align: analysis.layout.layoutAlign
   }, '   • ', {horizontal: 'Horizontal sizing', vertical: 'Vertical sizing', align: 'Parent alignment'});
+  if (analysis.layout.grid) {
+    const {rows, columns, rowGap, columnGap} = analysis.layout.grid;
+    const counts = [rows !== undefined && `${rows} rows`, columns !== undefined && `${columns} columns`].filter(Boolean).join(' × ');
+    const parts = [counts, rowGap !== undefined && `row gap ${rowGap}`, columnGap !== undefined && `column gap ${columnGap}`].filter(Boolean);
+    output += `   • layoutMode: ${analysis.layout.layoutMode}${parts.length ? ` (${parts.join(', ')})` : ''}\n`;
+  }
   if (analysis.metadata.componentKey) {
     output += `   • Component Key: ${analysis.metadata.componentKey}\n`;
   }

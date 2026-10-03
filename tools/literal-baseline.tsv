@@ -86,12 +86,6 @@ src/extractors/colors/types.ts	type-string	other	LiteralType	(module)	1	K-SCHEMA
 src/extractors/colors/types.ts	type-string	primary	LiteralType	(module)	1	K-SCHEMA	R2 member of our own output union type, src/extractors/colors/types.ts:21
 src/extractors/colors/types.ts	type-string	secondary	LiteralType	(module)	1	K-SCHEMA	R2 member of our own output union type, src/extractors/colors/types.ts:21
 src/extractors/colors/types.ts	type-string	text	LiteralType	(module)	1	K-SCHEMA	R2 member of our own output union type, src/extractors/colors/types.ts:21
-src/extractors/components/core.ts	number	0	binary(>)	analyzeComponent	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
-src/extractors/components/core.ts	number	10	binary(??)	ComponentExtractor	1	F-HEUR	analysis cap; removed by ticket 15
-src/extractors/components/core.ts	number	3	binary(??)	ComponentExtractor	1	F-HEUR	analysis cap; removed by ticket 15
-src/extractors/components/core.ts	string	./variant-analyzer.js	arg(import)	analyzeComponentWithVariants	1	K-API	ES module path
-src/extractors/components/core.ts	string	COMPONENT_SET	binary(!==)	analyzeComponentWithVariants	1	K-API	rule R9: Figma REST enum value
-src/extractors/components/core.ts	string	Node is not a COMPONENT_SET	arg(Error)	analyzeComponentWithVariants	1	K-TEXT	rule R2: error message
 src/extractors/components/deduplicated-extractor.ts	number	0	binary(>)	analyzeComponent	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/deduplicated-extractor.ts	string	BOOLEAN_OPERATION	binary(!==)	analyzeChildren	1	K-API	rule R9: Figma REST enum value
 src/extractors/components/deduplicated-extractor.ts	string	COMPONENT	array	NESTED_COMPONENT_TYPES	1	K-API	rule R9: Figma REST enum value
@@ -105,7 +99,6 @@ src/extractors/components/deduplicated-extractor.ts	string	padding	arg(this.glob
 src/extractors/components/deduplicated-extractor.ts	string	padding	arg(this.globalStyleManager.addStyle)	analyzeComponent	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/components/deduplicated-extractor.ts	string	text	arg(this.globalStyleManager.addStyle)	analyzeChildren	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/components/extractor.ts	number	0	arg(visibleChildren\n            .slice)	createComponentChild	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
-src/extractors/components/extractor.ts	number	0	binary(===)	analyzeChildren	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	0	binary(===)	detectTextCase	2	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	0	binary(>)	extractBasicStyling	2	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	0	binary(>)	extractMetadata	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
@@ -119,7 +112,6 @@ src/extractors/components/extractor.ts	number	0	index	detectTextCase	4	K-CONV	ru
 src/extractors/components/extractor.ts	number	0	index	textOverrides	1	F-HEUR	only fills[0] is read; decision 14 says the last fill is on top and this is not yet probed; B3.90
 src/extractors/components/extractor.ts	number	0	index	textStyleFields	1	F-HEUR	only fills[0] is read; decision 14 says the last fill is on top and this is not yet probed; B3.90
 src/extractors/components/extractor.ts	number	0	param-default(depth)	createComponentChild	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
-src/extractors/components/extractor.ts	number	0	var(i)	analyzeChildren	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	1	binary(!==)	extractStylingInfo	1	K-API	node opacity 1 = fully opaque, Figma identity
 src/extractors/components/extractor.ts	number	1	binary(+)	createComponentChild	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	1	binary(??)	categorizeEffects	2	K-API	Figma Color: an absent alpha means fully opaque (1)
@@ -160,7 +152,6 @@ src/extractors/components/extractor.ts	string	capitalize	return	detectTextCase	1
 src/extractors/components/extractor.ts	string	frame	return	determineLayoutType	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/components/extractor.ts	string	horizontal	ternary	extractLayoutInfo	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/components/extractor.ts	string	lowercase	return	detectTextCase	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
-src/extractors/components/extractor.ts	string	max_nodes	prop(reason)	analyzeChildren	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/components/extractor.ts	string	mixed	return	detectTextCase	2	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/components/extractor.ts	string	sentence	return	detectTextCase	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/components/extractor.ts	string	uppercase	return	detectTextCase	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
@@ -928,7 +919,6 @@ src/tools/flutter/components/component-tool.ts	number	0	arg(input.substring)	reg
 src/tools/flutter/components/component-tool.ts	number	0	binary(===)	registerComponentTools	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/component-tool.ts	number	0	binary(>)	registerComponentTools	3	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/component-tool.ts	number	0	ternary	registerComponentTools	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/component-tool.ts	number	10	BindingElement	registerComponentTools	1	F-HEUR	analysis cap; removed by ticket 15
 src/tools/flutter/components/component-tool.ts	number	50	arg(input.substring)	registerComponentTools	1	K-TEXT	rule: log truncation (Logger.info input preview)
 src/tools/flutter/components/component-tool.ts	string		arg(.isDefault ? ' (default)' : ''}\n`).join)	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string		ternary	registerComponentTools	1	K-TEXT	empty text: nothing to print
@@ -965,11 +955,9 @@ src/tools/flutter/components/component-tool.ts	string	Inspect Component Structur
 src/tools/flutter/components/component-tool.ts	string	Invalid input format	binary(||)	registerComponentTools	2	K-TEXT	hand-reviewed ||-fallback: error text only
 src/tools/flutter/components/component-tool.ts	string	List Component Variants	prop(title)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	List the variants of a Figma component set with the variant axes and defaults Figma defines	prop(description)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
-src/tools/flutter/components/component-tool.ts	string	Maximum child nodes to analyze (default: 10)	arg(z.number().optional().describe)	registerComponentTools	1	F-HEUR	analysis cap; removed by ticket 15
 src/tools/flutter/components/component-tool.ts	string	Node ID (if providing file ID separately)	arg(z.string().optional().describe)	registerComponentTools	4	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Path to Flutter project for asset export (defaults to current directory)	arg(z.string().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Treat a FRAME as a component (when designer hasn't converted to actual component yet) (default: false)	arg(z.boolean().optional().describe)	registerComponentTools	2	K-SCHEMA	rule: tool name/title/description
-src/tools/flutter/components/component-tool.ts	string	Use style deduplication for token efficiency (default: true)	arg(z.boolean().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Variant names to analyze instead of every variant of a component set	arg(z.array(z.string()).optional().describe)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/components/component-tool.ts	string	\n\n	binary(+)	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	analyze_figma_component	arg(server.registerTool)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
@@ -1341,188 +1329,35 @@ src/tools/flutter/components/deduplicated-helpers.ts	type-string	vertical	Litera
 src/tools/flutter/components/deduplicated-helpers.ts	type-string	width	LiteralType	axisSize	1	K-SCHEMA	rule: TypeScript literal type of our own API
 src/tools/flutter/components/deduplicated-helpers.ts	type-string	width	LiteralType	boxConstraints	1	K-SCHEMA	rule: TypeScript literal type of our own API
 src/tools/flutter/components/helpers.ts	number	0	binary(===)	generateStructureInspectionReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/helpers.ts	number	0	binary(>)	generateComponentAnalysisReport	5	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/helpers.ts	number	0	binary(>)	generateFlutterGuidance	6	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/helpers.ts	number	0	binary(>)	generateStructureInspectionReport	4	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/helpers.ts	number	0	binary(||)	generateStructureInspectionReport	2	K-CONV	hand-reviewed ||-fallback: child count 0 when no children
-src/tools/flutter/components/helpers.ts	number	0	index	generateFlutterGuidance	2	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/helpers.ts	number	1	binary(!==)	generateComponentAnalysisReport	1	K-CONV	hand-reviewed: opacity 1 = opaque identity
-src/tools/flutter/components/helpers.ts	number	1	binary(+)	generateComponentAnalysisReport	3	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/helpers.ts	number	1	binary(+)	generateFlutterGuidance	3	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/helpers.ts	number	1	binary(+)	generateStructureInspectionReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/helpers.ts	number	100	binary(*)	generateComponentAnalysisReport	1	K-CONV	rule: percent
-src/tools/flutter/components/helpers.ts	number	2	arg(indentContinuation)	generateFlutterGuidance	1	K-DART	indent width of emitted Dart
-src/tools/flutter/components/helpers.ts	string		arg(formatFills)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string		arg(formatFills)	generateStructureInspectionReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string		arg(formatInteractions)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string		arg(formatPadding)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string		arg(formatStrokes)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string		ternary	generateComponentAnalysisReport	2	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string		ternary	generateStructureInspectionReport	3	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string		ternary	side	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	string	 	arg(fontParts.join)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string	   	arg(formatFills)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string	   	arg(formatFills)	generateStructureInspectionReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string	   	arg(formatInteractions)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string	   	arg(formatNestedInteractions)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string	   	arg(formatPadding)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string	   	arg(formatSizingAlignment)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string	   	arg(formatSizingAlignment)	generateStructureInspectionReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string	   	arg(formatStrokes)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string	 [COMPONENT]	ternary	generateComponentAnalysisReport	1	K-TEXT	rule: user-facing/log text, no design fact
 src/tools/flutter/components/helpers.ts	string	 [COMPONENT]	ternary	generateStructureInspectionReport	1	K-TEXT	rule: user-facing/log text, no design fact
 src/tools/flutter/components/helpers.ts	string	 [EMPTY_HIDDEN_SLOT]	ternary	generateStructureInspectionReport	1	K-TEXT	rule: user-facing/log text, no design fact
 src/tools/flutter/components/helpers.ts	string	 [HIDDEN]	ternary	generateStructureInspectionReport	1	K-TEXT	rule: user-facing/log text, no design fact
-src/tools/flutter/components/helpers.ts	string	 × 	arg({columns} columns`].filter(Boolean).join)	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	string	,	binary(+)	generateFlutterGuidance	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	string	, 	arg(parts.join)	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	string	- 	arg(formatSizingAlignment)	generateComponentAnalysisReport	1	K-TEXT	rule: user-facing/log text, no design fact
-src/tools/flutter/components/helpers.ts	string	/* Your content here */	arg(FlutterCodeGenerator.nestFillLayers)	generateFlutterGuidance	1	K-DART	emitted Dart code
-src/tools/flutter/components/helpers.ts	string	/* Your content here */	ternary	generateFlutterGuidance	1	K-DART	emitted Dart code
-src/tools/flutter/components/helpers.ts	string	BASELINE	object-key	mapFigmaToFlutterAlignment	1	K-API	rule: Figma REST enum value
-src/tools/flutter/components/helpers.ts	string	CENTER	object-key	mapFigmaToFlutterAlignment	2	K-API	rule: Figma REST enum value
 src/tools/flutter/components/helpers.ts	string	COMPONENT	binary(===)	generateStructureInspectionReport	2	K-API	rule: Figma REST enum value
-src/tools/flutter/components/helpers.ts	string	Column	ternary	generateFlutterGuidance	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	CrossAxisAlignment.baseline	prop('BASELINE')	mapFigmaToFlutterAlignment	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	CrossAxisAlignment.center	prop('CENTER')	mapFigmaToFlutterAlignment	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	CrossAxisAlignment.end	prop('MAX')	mapFigmaToFlutterAlignment	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	CrossAxisAlignment.start	prop('MIN')	mapFigmaToFlutterAlignment	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	CrossAxisAlignment.start	ternary	mapFigmaToFlutterAlignment	1	K-DART	hand-reviewed ||-fallback: unknown Figma alignment -> start; Figma default is MIN (helpers.ts:497)
-src/tools/flutter/components/helpers.ts	string	Direct input	ternary	generateComponentAnalysisReport	1	K-TEXT	rule: user-facing/log text, no design fact
-src/tools/flutter/components/helpers.ts	string	Figma URL	ternary	generateComponentAnalysisReport	1	K-TEXT	rule: user-facing/log text, no design fact
 src/tools/flutter/components/helpers.ts	string	INSTANCE	binary(===)	generateStructureInspectionReport	2	K-API	rule: Figma REST enum value
-src/tools/flutter/components/helpers.ts	string	MAX	object-key	mapFigmaToFlutterAlignment	2	K-API	rule: Figma REST enum value
-src/tools/flutter/components/helpers.ts	string	MIN	object-key	mapFigmaToFlutterAlignment	2	K-API	rule: Figma REST enum value
-src/tools/flutter/components/helpers.ts	string	MainAxisAlignment.center	prop('CENTER')	mapFigmaToFlutterAlignment	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	MainAxisAlignment.end	prop('MAX')	mapFigmaToFlutterAlignment	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	MainAxisAlignment.spaceAround	prop('SPACE_AROUND')	mapFigmaToFlutterAlignment	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	MainAxisAlignment.spaceBetween	prop('SPACE_BETWEEN')	mapFigmaToFlutterAlignment	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	MainAxisAlignment.spaceEvenly	prop('SPACE_EVENLY')	mapFigmaToFlutterAlignment	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	MainAxisAlignment.start	prop('MIN')	mapFigmaToFlutterAlignment	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	MainAxisAlignment.start	ternary	mapFigmaToFlutterAlignment	1	K-DART	hand-reviewed ||-fallback: unknown Figma alignment -> start; Figma default is MIN (helpers.ts:497)
-src/tools/flutter/components/helpers.ts	string	Row	ternary	generateFlutterGuidance	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	SPACE_AROUND	object-key	mapFigmaToFlutterAlignment	1	K-API	rule: Figma REST enum value
-src/tools/flutter/components/helpers.ts	string	SPACE_BETWEEN	object-key	mapFigmaToFlutterAlignment	1	K-API	rule: Figma REST enum value
-src/tools/flutter/components/helpers.ts	string	SPACE_EVENLY	object-key	mapFigmaToFlutterAlignment	1	K-API	rule: Figma REST enum value
-src/tools/flutter/components/helpers.ts	string	TEXT	binary(===)	generateFlutterGuidance	1	K-API	rule: Figma REST enum value
 src/tools/flutter/components/helpers.ts	string	TEXT	binary(===)	generateStructureInspectionReport	1	K-API	rule: Figma REST enum value
-src/tools/flutter/components/helpers.ts	string	\n	arg(lit('\n').map(line => `   ${line}`).join)	generateFlutterGuidance	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string	\n	arg(widgetSuggestion.split)	generateFlutterGuidance	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string	auto-layout	binary(===)	generateFlutterGuidance	1	K-SCHEMA	rule: value of our own analysis/style-category schema
-src/tools/flutter/components/helpers.ts	string	cross	arg(mapFigmaToFlutterAlignment)	generateFlutterGuidance	1	K-SCHEMA	rule: value of our own analysis/style-category schema
-src/tools/flutter/components/helpers.ts	string	height	ternary	generateFlutterGuidance	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	string	horizontal	binary(===)	generateFlutterGuidance	2	K-SCHEMA	rule: value of our own analysis/style-category schema
-src/tools/flutter/components/helpers.ts	string	main	arg(mapFigmaToFlutterAlignment)	generateFlutterGuidance	1	K-SCHEMA	rule: value of our own analysis/style-category schema
-src/tools/flutter/components/helpers.ts	string	main	binary(===)	mapFigmaToFlutterAlignment	2	K-SCHEMA	rule: value of our own analysis/style-category schema
-src/tools/flutter/components/helpers.ts	string	mixed	binary(!==)	generateComponentAnalysisReport	1	K-SCHEMA	rule: value of our own analysis/style-category schema
-src/tools/flutter/components/helpers.ts	string	number	binary(===)	generateComponentAnalysisReport	2	K-API	rule: JS typeof result
-src/tools/flutter/components/helpers.ts	string	url	binary(===)	generateComponentAnalysisReport	2	K-SCHEMA	rule: value of our own analysis/style-category schema
-src/tools/flutter/components/helpers.ts	string	width	ternary	generateFlutterGuidance	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/helpers.ts	template	        // offset: not set by Figma\n	ternary	generateFlutterGuidance	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	        blurRadius: ${…},\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	        color: ${…},\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
-src/tools/flutter/components/helpers.ts	template	        offset: Offset(${…}, ${…}),\n	ternary	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	        spreadRadius: ${…},\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	      ),\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	      BoxShadow(\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	    ],\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	    border: Border(\n      top: ${…},\n      right: ${…},\n      bottom: ${…},\n      left: ${…},\n    ),\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
-src/tools/flutter/components/helpers.ts	template	    border: Border.all(\n      color: ${…},\n      // width: strokeWeight not set by Figma\n    ),\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
-src/tools/flutter/components/helpers.ts	template	    border: Border.all(\n      color: ${…},\n      width: ${…},\n    ),\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
-src/tools/flutter/components/helpers.ts	template	    boxShadow: [\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	    color: ${…},\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
-src/tools/flutter/components/helpers.ts	template	   ${…}	ArrowFunction	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	   Component Key: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/helpers.ts	template	   Contains: ${…} child nodes\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	   Corner radius: ${…}px\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	   Flutter Widget:\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	   Node ID: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	   Size: ${…}×${…}px\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/helpers.ts	template	   Size: ${…}×${…}px\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	   Size: not set by Figma\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	   Text Case: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	   Text Content: "${…}"\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	   Type: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	   Typography: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	  ),\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	  child: ${…}\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
-src/tools/flutter/components/helpers.ts	template	  decoration: BoxDecoration(\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	  padding: EdgeInsets.all(${…}),\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	  padding: EdgeInsets.fromLTRB(${…}, ${…}, ${…}, ${…}),\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	 (${…})	ternary	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	${…} columns	binary(&&)	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	${…} nodes were skipped due to the maxChildNodes limit:\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	${…} rows	binary(&&)	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	${…}. "${…}"\n	binary(+=)	generateFlutterGuidance	1	K-API	file path or request key composition
 src/tools/flutter/components/helpers.ts	template	${…}. ${…} (${…})${…}${…}${…}\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	${…}. ${…} (${…})${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	${…}. ${…} (${…})\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	${…}. ${…}() - Node ID: ${…}\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	${…}. ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	${…}. // TEXT layer "${…}" (${…}): characters not read\n\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	${…}\n\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	${…}px	arg(fontParts.push)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	)\n\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	, width: ${…}	ternary	side	1	K-DART	emitted Dart code
-src/tools/flutter/components/helpers.ts	template	- ${…}\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	- Add spacing with SizedBox(${…}: ${…})\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- Corner radius: ${…}px ${…}px ${…}px ${…}px\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- Corner radius: ${…}px\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- Cross Axis Alignment: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- CrossAxisAlignment: ${…}\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- Dimensions: ${…}×${…}px\n	ternary	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- Dimensions: not set by Figma\n	ternary	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	- Direction: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/error text, no design fact
 src/tools/flutter/components/helpers.ts	template	- Found ${…} nested components for separate analysis\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/error text, no design fact
 src/tools/flutter/components/helpers.ts	template	- Found ${…} text nodes for content extraction\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- Main Axis Alignment: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- MainAxisAlignment: ${…}\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- Opacity: ${…}%\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- Spacing: ${…}px\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- Type: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- Use ${…}() as the main layout widget\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- Use Container() or Stack() for layout\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	- layoutMode: ${…}${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	Analysis Limitations:\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	BorderSide(color: ${…}${…})	ArrowFunction	side	1	K-DART	emitted Dart code
 src/tools/flutter/components/helpers.ts	template	Child Structure:\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Child layers (${…} analyzed):\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/helpers.ts	template	Children: ${…}\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	hand-reviewed ||-fallback: child count 0 when no children
-src/tools/flutter/components/helpers.ts	template	Component Analysis Report\n\n	var(output)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Component Architecture:\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/helpers.ts	template	Component Structure Inspection\n\n	var(output)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Component: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/helpers.ts	template	Component: ${…}\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Container(\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	Create separate widget classes for reusability:\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/helpers.ts	template	Dimensions: ${…}×${…}px\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Flutter Implementation Guidance:\n\n	var(guidance)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Layout Structure:\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Main Widget Structure:\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Nested Components Found (${…}):\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Node ID: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/helpers.ts	template	Node ID: ${…}\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Source: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Text Elements & Flutter Widgets:\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	These components should be analyzed separately to maintain reusability:\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/helpers.ts	template	This component has no children.\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Type: ${…}\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/helpers.ts	template	Type: ${…}\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	Visual Styling:\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	\n	binary(+=)	generateComponentAnalysisReport	6	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/helpers.ts	template	\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/helpers.ts	template	\nAnalysis Recommendations:\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	\nAnalyze each nested component separately using the analyze_figma_component tool.\n\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	\nContainer Decoration:\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/helpers.ts	template	\nSkipped ${…} hidden / empty-slot child(ren). Use showAllChildren: true to include them.\n	binary(+=)	generateStructureInspectionReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	\nTo analyze all nodes, increase the maxChildNodes parameter.\n\n	binary(+=)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	template	column gap ${…}	binary(&&)	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	row gap ${…}	binary(&&)	generateComponentAnalysisReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/helpers.ts	template	weight: ${…}	arg(fontParts.push)	generateComponentAnalysisReport	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/helpers.ts	template	🏗️  Widget Composition Best Practices:\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/helpers.ts	type-string	cross	LiteralType	mapFigmaToFlutterAlignment	1	K-SCHEMA	rule: TypeScript literal type of our own API
-src/tools/flutter/components/helpers.ts	type-string	main	LiteralType	mapFigmaToFlutterAlignment	1	K-SCHEMA	rule: TypeScript literal type of our own API
 src/tools/flutter/screens/helpers.ts	number	0	binary(===)	formatFixedOnScroll	1	K-CONV	index, count, midpoint or identity element
 src/tools/flutter/screens/helpers.ts	number	0	binary(===)	generateScreenStructureReport	1	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:268)
 src/tools/flutter/screens/helpers.ts	number	0	binary(>)	generateFlutterScreenGuidance	2	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:460)
@@ -2299,7 +2134,6 @@ src/extractors/flutter/style-library.ts	template	BorderRadius.only(${…})	retur
 src/extractors/flutter/style-library.ts	string	, 	arg(named.join)	borderRadius	1	K-TEXT	separator or empty text
 src/extractors/flutter/style-library.ts	template	  borderRadius: ${…},\n	ternary	radiusLines	1	K-DART	emitted Dart code
 src/extractors/flutter/style-library.ts	string		ternary	radiusLines	1	K-TEXT	separator or empty text
-src/tools/flutter/components/helpers.ts	template	    borderRadius: ${…},\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
 src/tools/figma-core/core-tools.ts	string	base64	arg(image.toString)	registerCoreTools	1	K-API	Figma image format or base64 encoding token
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(===)	styleDefinitionsSection	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	string		return	styleDefinitionsSection	1	K-TEXT	report, label, log or error text
@@ -2362,6 +2196,15 @@ src/tools/flutter/components/component-tool.ts	number	50	arg('='.repeat)	render	
 src/tools/flutter/components/component-tool.ts	number	0	arg(classes.reduce)	registerComponentTools	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/component-tool.ts	number	0	arg(renderWithinBudget)	registerComponentTools	3	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	template	// approximate: ${…} left out to fit the response budget\n${…}	return	childWidget	1	K-TEXT	report, label, log or error text
+src/tools/flutter/components/deduplicated-helpers.ts	template	${…} rows	binary(&&)	generateComprehensiveDeduplicatedReport	1	K-TEXT	R5: report text
+src/tools/flutter/components/deduplicated-helpers.ts	template	${…} columns	binary(&&)	generateComprehensiveDeduplicatedReport	1	K-TEXT	R5: report text
+src/tools/flutter/components/deduplicated-helpers.ts	string	 × 	arg({columns} columns`].filter(Boolean).join)	generateComprehensiveDeduplicatedReport	1	K-TEXT	R5: report text
+src/tools/flutter/components/deduplicated-helpers.ts	template	row gap ${…}	binary(&&)	generateComprehensiveDeduplicatedReport	1	K-TEXT	R5: report text
+src/tools/flutter/components/deduplicated-helpers.ts	template	column gap ${…}	binary(&&)	generateComprehensiveDeduplicatedReport	1	K-TEXT	R5: report text
+src/tools/flutter/components/deduplicated-helpers.ts	template	   • layoutMode: ${…}${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	R5: report text
+src/tools/flutter/components/deduplicated-helpers.ts	template	 (${…})	ternary	generateComprehensiveDeduplicatedReport	1	K-TEXT	R5: report text
+src/tools/flutter/components/deduplicated-helpers.ts	string	, 	arg(parts.join)	generateComprehensiveDeduplicatedReport	1	K-TEXT	R5: report text
+src/tools/flutter/components/deduplicated-helpers.ts	string		ternary	generateComprehensiveDeduplicatedReport	1	K-TEXT	R5: report text
 src/utils/budget.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
 src/utils/budget.ts	number	0	prop(included)	newCut	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/utils/budget.ts	number	1	binary(+)	countNodes	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math

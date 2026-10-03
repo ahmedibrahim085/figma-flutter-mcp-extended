@@ -235,8 +235,6 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
         figmaTool('ff_get_design_context error', async ({fileKey, nodeId, depth}) => {
             const data = await figma.get<any>(`/files/${fileKey}/nodes`, {
                 ids: nodeId,
-                geometry: 'paths',
-                plugin_data: 'shared',
                 ...(depth === undefined ? {} : {depth: String(depth)}),
             });
             const nodeData = data.nodes?.[nodeId];

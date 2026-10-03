@@ -160,3 +160,23 @@ test('a screenshot with useAbsoluteBounds and one without do not share a cache e
     assert.deepEqual(paths(fullSecond.requests), [META]);
     assert.deepEqual(paths(plainSecond.requests), [META]);
 });
+
+test('ff_get_design_context reads the entry ff_get_metadata cached: both ask Figma for the same node query', async () => {
+    const env = cacheEnv();
+    const [metadata, context] = await callToolsOffline(nodeRoutes(newMeta()), [METADATA_CALL, ['ff_get_design_context', {fileKey: FILE_KEY, nodeId: '1:1'}]], env);
+
+    assert.deepEqual(paths(metadata.requests), [META, NODES]);
+    assert.deepEqual(paths(context.requests), [META]);
+});
+
+test('with a depth, ff_get_design_context still reads the entry ff_get_metadata cached', async () => {
+    const env = cacheEnv();
+    const routes = {...nodeRoutes(newMeta()), [`${NODES}?ids=1:1&depth=2`]: {body: {nodes: {'1:1': {document: NODE}}}}};
+    const [metadata, context] = await callToolsOffline(routes, [
+        ['ff_get_metadata', {fileKey: FILE_KEY, nodeId: '1:1', depth: 2}],
+        ['ff_get_design_context', {fileKey: FILE_KEY, nodeId: '1:1', depth: 2}],
+    ], env);
+
+    assert.deepEqual(paths(metadata.requests), [META, NODES]);
+    assert.deepEqual(paths(context.requests), [META]);
+});

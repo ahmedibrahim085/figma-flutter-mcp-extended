@@ -661,10 +661,8 @@ src/tools/figma-core/core-tools.ts	string	image/svg+xml	ternary	registerCoreTool
 src/tools/figma-core/core-tools.ts	string	jpg	binary(===)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
 src/tools/figma-core/core-tools.ts	string	or your access token lacks the required scope. 	binary(+)	registerCoreTools	1	K-TEXT	hand: error text, no design fact
-src/tools/figma-core/core-tools.ts	string	paths	prop(geometry)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	png	BindingElement	registerCoreTools	1	K-SCHEMA	hand: tool contract default format png, stated in the tool description core-tools.ts:156; png is a documented Figma format; Figma page states no default (UNVERIFIED what API does without format)
 src/tools/figma-core/core-tools.ts	string	radii, and other values defined in the Variables panel. 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
-src/tools/figma-core/core-tools.ts	string	shared	prop(plugin_data)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	styles, text content, and design properties. This is the primary tool for understanding 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	svg	binary(===)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	text	AsExpression	registerCoreTools	6	K-API	R12: MCP content block type

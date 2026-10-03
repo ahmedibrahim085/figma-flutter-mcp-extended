@@ -378,14 +378,14 @@ export class FlutterCodeGenerator {
     const color = stroke && dartColor(stroke);
     if (!color) return '';
     const align = {CENTER: 'BorderSide.strokeAlignCenter', OUTSIDE: 'BorderSide.strokeAlignOutside'}[stroke.align as string];
-    const sides = stroke.individualWeights;
-    if (sides && new Set(Object.values(sides)).size > 1) {
+    const weights = stroke.individualWeights;
+    if (weights && new Set(Object.values(weights)).size > 1) {
       const side = (width: number) => width > 0
         ? `BorderSide(color: ${color}, width: ${width}${align ? `, strokeAlign: ${align}` : ''})`
         : 'BorderSide.none';
-      return `  border: Border(\n    top: ${side(sides.top)},\n    right: ${side(sides.right)},\n    bottom: ${side(sides.bottom)},\n    left: ${side(sides.left)},\n  ),\n`;
+      return `  border: Border(\n    top: ${side(weights.top)},\n    right: ${side(weights.right)},\n    bottom: ${side(weights.bottom)},\n    left: ${side(weights.left)},\n  ),\n`;
     }
-    const weight = sides ? sides.top : stroke.weight;
+    const weight = weights ? weights.top : stroke.weight;
     if (weight === 0) return '';
     return `  border: Border.all(\n    color: ${color},\n    ${weight === undefined ? '// width: strokeWeight not set by Figma' : `width: ${weight},`}\n${align ? `    strokeAlign: ${align},\n` : ''}  ),\n`;
   }

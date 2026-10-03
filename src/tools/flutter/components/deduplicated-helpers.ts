@@ -84,7 +84,10 @@ function referencedStyles(code: string, styleLibrary: FlutterStyleLibrary) {
   return styleLibrary.getAllStyles().filter(style => new RegExp(`\\b${style.id}\\b`).test(code));
 }
 
-/** The "Style Definitions" section for the styles `code` refers to, as Dart constants; '' when it refers to none. */
+/**
+ * The "Style Definitions" section for the styles `code` refers to, as Dart constants; '' when it refers to none.
+ * A report prints it before the code: the classes refer to these top-level finals by name, so the report's Dart compiles on its own.
+ */
 export function styleDefinitionsSection(code: string, styleLibrary: FlutterStyleLibrary): string {
   const styles = referencedStyles(code, styleLibrary);
   if (styles.length === 0) return '';

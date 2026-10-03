@@ -64,11 +64,27 @@ function summariseNode(node: any, cut: Cut): any {
 const countNodes = (node: any): number => 1 + (node.children ?? []).reduce((n: number, c: any) => n + countNodes(c), 0);
 
 /**
+ * `render(n)` serialises the first n of `total` items in document order. Returns the
+ * text for all of them when it fits the budget, else for the most that fit (at least one).
+ */
+function renderWithinBudget(total: number, render: (n: number) => string): string {
+    const whole = render(total);
+    if (whole.length <= defaults.maxResultSizeChars) return whole;
+    let [fits, over] = [1, total];
+    while (over - fits > 1) {
+        const mid = Math.floor((fits + over) / 2);
+        if (render(mid).length <= defaults.maxResultSizeChars) fits = mid;
+        else over = mid;
+    }
+    return render(fits);
+}
+
+/**
  * Serialises `build(tree, frames)` for `root`. Over the budget, it keeps the
  * most nodes (in document order) that fit and adds `truncated` and
  * `omittedNodeIds`, so the text stays valid JSON.
  */
-function renderWithinBudget(root: any, build: (tree: any, frames: any[]) => any): string {
+function renderTree(root: any, build: (tree: any, frames: any[]) => any): string {
     const render = (limit: number) => {
         const cut: Cut = {limit, included: 0, omitted: [], frames: []};
         const result = build(summariseNode(root, cut), cut.frames);
@@ -78,17 +94,7 @@ function renderWithinBudget(root: any, build: (tree: any, frames: any[]) => any)
         }
         return JSON.stringify(result, null, 2);
     };
-    const total = countNodes(root);
-    const whole = render(total);
-    if (whole.length <= defaults.maxResultSizeChars) return whole;
-    // Largest limit that fits; the root alone is the floor.
-    let [fits, over] = [1, total];
-    while (over - fits > 1) {
-        const mid = Math.floor((fits + over) / 2);
-        if (render(mid).length <= defaults.maxResultSizeChars) fits = mid;
-        else over = mid;
-    }
-    return render(fits);
+    return renderWithinBudget(countNodes(root), render);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -159,7 +165,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     rootNode = data.document;
                 }
 
-                const text = renderWithinBudget(rootNode, (tree, frames) => ({
+                const text = renderTree(rootNode, (tree, frames) => ({
                     fileName: data.name || fileKey,
                     lastModified: data.lastModified,
                     nodeTree: tree,
@@ -295,7 +301,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 const styles = nodeData.styles || {};
 
                 // Build a structured design context
-                const text = renderWithinBudget(doc, (tree, frames) => ({
+                const text = renderTree(doc, (tree, frames) => ({
                     node: {
                         id: doc.id,
                         name: doc.name,
@@ -331,6 +337,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         'ff_get_variable_defs',
         {
+            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
             title: 'Get Figma Variable Definitions',
             description:
                 'Read the variables of a Figma file: colors, spacing, typography, ' +
@@ -377,51 +384,37 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
 
                 // Collections are keyed by id (names can repeat); a variable whose collection
                 // Figma did not send is still listed, under its collection id.
-                const structured: any = {
-                    collectionCount: 0,
-                    variableCount: 0,
-                    collections: {} as any,
+                const entries = Object.entries(variables) as any[];
+                const render = (count: number) => {
+                    const structured: any = {collectionCount: 0, variableCount: count, collections: {} as any};
+                    for (const [collId, coll] of Object.entries(collections) as any[]) {
+                        structured.collections[collId] = {
+                            name: coll.name,
+                            modes: coll.modes?.map((m: any) => ({id: m.modeId, name: m.name})),
+                            variables: [] as any[],
+                        };
+                    }
+                    for (const [varId, v] of entries.slice(0, count)) {
+                        const entry: any = {
+                            id: varId,
+                            name: v.name,
+                            resolvedType: v.resolvedType,
+                            valuesByMode: v.valuesByMode,
+                        };
+                        if (v.description) entry.description = v.description;
+                        if (v.scopes) entry.scopes = v.scopes;
+
+                        (structured.collections[v.variableCollectionId] ??= {variables: []}).variables.push(entry);
+                    }
+                    structured.collectionCount = Object.keys(structured.collections).length;
+                    if (count < entries.length) {
+                        structured.truncated = true;
+                        structured.omittedVariableIds = entries.slice(count).map(([varId]) => varId);
+                    }
+                    return JSON.stringify(structured, null, 2);
                 };
 
-                for (const [collId, coll] of Object.entries(collections) as any[]) {
-                    structured.collections[collId] = {
-                        name: coll.name,
-                        modes: coll.modes?.map((m: any) => ({id: m.modeId, name: m.name})),
-                        variables: [] as any[],
-                    };
-                }
-
-                for (const [varId, v] of Object.entries(variables) as any[]) {
-                    const entry: any = {
-                        id: varId,
-                        name: v.name,
-                        resolvedType: v.resolvedType,
-                        valuesByMode: v.valuesByMode,
-                    };
-                    if (v.description) entry.description = v.description;
-                    if (v.scopes) entry.scopes = v.scopes;
-
-                    (structured.collections[v.variableCollectionId] ??= {variables: []}).variables.push(entry);
-                    structured.variableCount++;
-                }
-                structured.collectionCount = Object.keys(structured.collections).length;
-
-                const json = JSON.stringify(structured, null, 2);
-
-                if (json.length > 100000) {
-                    return {
-                        content: [
-                            {
-                                type: 'text' as const,
-                                text:
-                                    json.slice(0, 100000) +
-                                    `\n\n--- TRUNCATED (${json.length} chars). Large variable set. ---`,
-                            },
-                        ],
-                    };
-                }
-
-                return {content: [{type: 'text' as const, text: json}]};
+                return {content: [{type: 'text' as const, text: renderWithinBudget(entries.length, render)}]};
             } catch (err: any) {
                 return {content: [{type: 'text' as const, text: `ff_get_variable_defs error: ${err.message}`}], isError: true};
             }

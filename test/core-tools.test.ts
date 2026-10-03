@@ -170,3 +170,38 @@ for (const {tool, query, treeKey, framesKey} of TREE_TOOLS) {
         });
     });
 }
+
+test('ff_get_variable_defs: 2000 variables over the budget stay valid JSON and list the omitted ids', async () => {
+    const variables = Array.from({length: 2000}, (_, i) => variable(`V:${i}`, i % 2 ? 'VC:b' : 'VC:a'));
+    const {text} = await callToolOffline(
+        variablesRoute(variables, [collection('VC:a', 'Colours'), collection('VC:b', 'Spacing')]),
+        'ff_get_variable_defs', {fileKey: FILE_KEY});
+
+    const out = JSON.parse(text);
+    assert.ok(text.length <= BUDGET, `response is ${text.length} characters`);
+    assert.equal(out.truncated, true);
+    const listed = Object.values<any>(out.collections).flatMap((c) => c.variables.map((v: any) => v.id));
+    assert.ok(listed.length > 0 && listed.length < 2000, `listed ${listed.length}`);
+    assert.equal(out.variableCount, listed.length);
+    // Each variable is listed or omitted, once, and the omitted ones are the last in response order.
+    assert.deepEqual([...listed].sort(), variables.map((v) => v.id).filter((id) => !out.omittedVariableIds.includes(id)).sort());
+    assert.deepEqual(out.omittedVariableIds, variables.slice(listed.length).map((v) => v.id));
+    assert.equal(new Set([...listed, ...out.omittedVariableIds]).size, 2000);
+});
+
+test('ff_get_variable_defs: a response inside the budget has no truncated or omittedVariableIds', async () => {
+    const {text} = await callToolOffline(variablesRoute([variable('V:1', 'VC:a')], [collection('VC:a', 'Colours')]),
+        'ff_get_variable_defs', {fileKey: FILE_KEY});
+    const out = JSON.parse(text);
+    assert.equal('truncated' in out, false);
+    assert.equal('omittedVariableIds' in out, false);
+});
+
+test('ff_get_variable_defs: tools/list declares the budget to the client', async () => {
+    await withServer(async (server) => {
+        await server.initialize();
+        const list: any = await server.request('tools/list');
+        const entry = list.result.tools.find((t: any) => t.name === 'ff_get_variable_defs');
+        assert.equal(entry._meta['anthropic/maxResultSizeChars'], BUDGET);
+    });
+});

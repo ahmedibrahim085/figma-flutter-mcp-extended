@@ -112,12 +112,7 @@ import 'package:render_check/generated.dart';
 
 // The generated widget must lay out without a Flutter error in each host a screen can give it.
 void main() {
-  final hosts = <String, Widget Function(Widget)>{
-    'bounded': (w) => Align(alignment: Alignment.topLeft, child: w),
-    'horizontal scroll': (w) => SingleChildScrollView(scrollDirection: Axis.horizontal, child: w),
-    'vertical scroll': (w) => SingleChildScrollView(child: w),
-    'row': (w) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [w]),
-  };
+  final hosts = ${HOSTS};
   for (final host in hosts.entries) {
     testWidgets('${className} in a \${host.key} host', (tester) async {
       ${viewSetup}final errors = <String>[];

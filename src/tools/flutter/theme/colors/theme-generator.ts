@@ -62,38 +62,38 @@ export function themeConstants(colors: ThemeColor[]): ThemeConstants {
 
 export class SimpleThemeGenerator {
     /**
-     * Generate AppColors Dart class from theme colors
+     * Generate AppColors Dart class from the theme's constants
      */
-    async generateAppColors(colors: ThemeColor[], outputPath: string, options: ThemeGenerationOptions = {}): Promise<string> {
+    async generateAppColors(constants: ThemeConstants, outputPath: string, options: ThemeGenerationOptions = {}): Promise<string> {
         // Create output directory
         await mkdir(outputPath, {recursive: true});
         const filePath = join(outputPath, defaults.output.colorsFile);
 
         // Generate Dart content
-        const content = this.generateDartContent(colors);
+        const content = this.generateDartContent(constants);
 
         await writeFile(filePath, content);
 
         // Generate ThemeData if requested
         if (options.generateThemeData) {
-            await this.generateThemeData(colors, outputPath, options);
+            await this.generateThemeData(constants, outputPath, options);
         }
 
         return filePath;
     }
 
     /**
-     * Generate Flutter ThemeData from theme colors
+     * Generate Flutter ThemeData from the theme's constants
      */
-    async generateThemeData(colors: ThemeColor[], outputPath: string, options: ThemeGenerationOptions = {}): Promise<string> {
+    async generateThemeData(constants: ThemeConstants, outputPath: string, options: ThemeGenerationOptions = {}): Promise<string> {
         const filePath = join(outputPath, defaults.output.themeFile);
-        const content = this.generateThemeDataContent(colors, options);
+        const content = this.generateThemeDataContent(constants, options);
 
         await writeFile(filePath, content);
         return filePath;
     }
 
-    private generateDartContent(colors: ThemeColor[]): string {
+    private generateDartContent(constants: ThemeConstants): string {
 
         let content = `// Generated AppColors from a Figma frame of color samples
 
@@ -103,7 +103,7 @@ class AppColors {
 `;
 
         // Generate color constants
-        themeConstants(colors).generated.forEach(({color, name}) => {
+        constants.generated.forEach(({color, name}) => {
             content += `  /// ${color.name}
   static const Color ${name} = ${dartColor(color.fill)};
 
@@ -114,8 +114,8 @@ class AppColors {
         return content;
     }
 
-    private generateThemeDataContent(colors: ThemeColor[], options: ThemeGenerationOptions): string {
-        const names = new Set(themeConstants(colors).generated.map(({name}) => name));
+    private generateThemeDataContent(constants: ThemeConstants, options: ThemeGenerationOptions): string {
+        const names = new Set(constants.generated.map(({name}) => name));
         // Without a colour named primary there is no seed: no ColorScheme, so the theme needs no AppColors.
         const colorScheme = options.includeColorScheme !== false && names.has('primary') ? this.generateColorScheme(names) : '';
 

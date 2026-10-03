@@ -58,10 +58,12 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                 // A swatch bound to a variable takes the variable's name; Figma only names variables on some plans.
                 let variableNamesRefused = false;
                 if (themeColors.some(color => color.variableId)) {
-                    const variableNames = await figmaService.getLocalVariableNames(fileId).catch(() => {
+                    let variableNames: Record<string, string> = {};
+                    try {
+                        variableNames = await figmaService.getLocalVariableNames(fileId);
+                    } catch {
                         variableNamesRefused = true;
-                        return {} as Record<string, string>;
-                    });
+                    }
                     themeColors.forEach(color => {
                         if (color.variableId) color.name = variableNames[color.variableId] ?? color.variableId;
                     });
@@ -76,9 +78,11 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                     };
                 }
 
+                const constantSet = themeConstants(themeColors);
+
                 // Generate AppColors class
                 const outputPath = join(projectPath, 'lib', defaults.output.themeSubdir);
-                const generatedFilePath = await generator.generateAppColors(themeColors, outputPath, {
+                const generatedFilePath = await generator.generateAppColors(constantSet, outputPath, {
                     generateThemeData,
                     includeColorScheme: true,
                     includeMaterialColors: true
@@ -102,7 +106,7 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                 if (variableNamesRefused) {
                     output += `\nNote: the variables endpoint refused or failed, so swatches bound to a variable are named by the variable id.\n`;
                 }
-                const {generated, skipped} = themeConstants(themeColors);
+                const {generated, skipped} = constantSet;
                 skipped.forEach(({color, reason}) => {
                     output += `\nNote: not generated: "${color.name}" (${describeFill(color.fill)}): ${reason}.\n`;
                 });

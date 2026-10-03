@@ -117,14 +117,11 @@ test('style dedup splits texts that differ only in letter spacing and merges ide
     assert.equal(refs['Plain B'], refs['Plain A']);
 });
 
-test('generate_flutter_implementation prints the full TextStyle definition', async () => {
+test('generate_flutter_implementation puts the full TextStyle in the widget', async () => {
     const node = frameWithText('Sample copy', restStyle(16, 600, {letterSpacing: 1, italic: true}));
-    const [, generated] = await callToolsOffline(nodeRoute(node.id, node), [
-        ['analyze_figma_component', {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true}],
-        ['generate_flutter_implementation', {input: FILE_KEY, nodeId: node.id}],
-    ]);
+    const generated = await callToolOffline(nodeRoute(node.id, node), 'generate_flutter_implementation', {input: FILE_KEY, nodeId: node.id});
 
-    assert.match(generated.text, /^final text\w+ = TextStyle\(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight\.w600, fontStyle: FontStyle\.italic, color: Color\(0xFF112233\), letterSpacing: 1, height: 1\.5, leadingDistribution: TextLeadingDistribution\.even\);$/m);
+    assert.match(generated.text, /style: TextStyle\(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight\.w600, fontStyle: FontStyle\.italic, color: Color\(0xFF112233\), letterSpacing: 1, height: 1\.5, leadingDistribution: TextLeadingDistribution\.even\),/);
 });
 
 /**

@@ -423,7 +423,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
         "generate_flutter_implementation",
         {
             title: "Generate Flutter Implementation",
-            description: "Generate complete Flutter widget code using cached style definitions",
+            description: "Generate complete Flutter widget code for one Figma node, with the style definitions it uses",
             inputSchema: {
                 input: z.string().describe("Figma node URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
@@ -440,47 +440,28 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                         isError: true
                     };
                 }
-                const styleLibrary = FlutterStyleLibrary.getInstance();
-                const styles = styleLibrary.getAllStyles();
-                
+                const node = await new FigmaService(figmaApiKey).getNode(parsedInput.fileId, parsedInput.nodeId);
+                const analysis = await new DeduplicatedComponentExtractor().analyzeComponent(node, true);
+                const implementation = generateFlutterImplementation(analysis);
+
                 let output = "🏗️  Flutter Implementation\n";
                 output += `${'='.repeat(50)}\n\n`;
-                
+
+                // Only the styles this class refers to; the library also holds what other nodes cached.
+                const styles = FlutterStyleLibrary.getInstance().getAllStyles()
+                    .filter(style => new RegExp(`\\b${style.id}\\b`).test(implementation));
                 if (includeStyleDefinitions && styles.length > 0) {
                     output += "📋 Style Definitions:\n";
                     output += `${'─'.repeat(30)}\n`;
                     styles.forEach(style => {
-                        output += `// ${style.id} (${style.category}, used ${style.usageCount} times)\n`;
+                        output += `// ${style.id} (${style.category})\n`;
                         output += `final ${style.id} = ${style.flutterCode};\n\n`;
                     });
                     output += "\n";
-                } else if (styles.length === 0) {
-                    output += "⚠️  No cached styles found. Please analyze a component first.\n\n";
                 }
-                
-                output += generateWidgetClass(parsedInput.nodeId, widgetName || 'CustomWidget', styles);
-                
-                // Add usage summary
-                if (styles.length > 0) {
-                    output += "\n\n📊 Cached styles summary:\n";
-                    output += `${'─'.repeat(30)}\n`;
-                    output += `• Total unique styles: ${styles.length}\n`;
-                    
-                    const categoryStats = styles.reduce((acc, style) => {
-                        acc[style.category] = (acc[style.category] || 0) + 1;
-                        return acc;
-                    }, {} as Record<string, number>);
-                    
-                    Object.entries(categoryStats).forEach(([category, count]) => {
-                        output += `• ${category}: ${count} style(s)\n`;
-                    });
-                    
-                    const totalUsage = styles.reduce((sum, style) => sum + style.usageCount, 0);
-                    output += `• Total style usage: ${totalUsage}\n`;
-                    const efficiency = styles.length > 0 ? ((totalUsage - styles.length) / totalUsage * 100).toFixed(1) : '0.0';
-                    output += `• Deduplication efficiency: ${efficiency}% reduction\n`;
-                }
-                
+
+                output += implementation;
+
                 return {
                     content: [{ type: "text", text: output }]
                 };
@@ -524,94 +505,3 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
     );
 }
 
-
-/**
- * Generate widget class implementation
- */
-function generateWidgetClass(componentNodeId: string, widgetName: string, styles: Array<any>): string {
-    let output = `🎯 Widget Implementation:\n`;
-    output += `${'─'.repeat(30)}\n`;
-    
-    // Widget composition best practices
-    output += `🏗️  Widget Composition Guidelines:\n`;
-    WIDGET_SPLIT_ADVICE.forEach(line => { output += `- ${line}\n`; });
-    output += `\n`;
-    
-    output += `class ${widgetName} extends StatelessWidget {\n`;
-    output += `  const ${widgetName}({Key? key}) : super(key: key);\n\n`;
-    output += `  @override\n`;
-    output += `  Widget build(BuildContext context) {\n`;
-
-    // Find relevant styles for this component
-    const decorationStyles = styles.filter(s => s.category === 'decoration');
-    const paddingStyles = styles.filter(s => s.category === 'padding');
-    const textStyles = styles.filter(s => s.category === 'text');
-
-    if (decorationStyles.length > 0 || paddingStyles.length > 0) {
-        output += `    return Container(\n`;
-        
-        // Add decoration if available
-        if (decorationStyles.length > 0) {
-            const decorationStyle = decorationStyles[0]; // Use first decoration style
-            output += `      decoration: ${decorationStyle.id},\n`;
-        }
-        
-        // Add padding if available
-        if (paddingStyles.length > 0) {
-            const paddingStyle = paddingStyles[0]; // Use first padding style
-            output += `      padding: ${paddingStyle.id},\n`;
-        }
-        
-        // Add child content
-        if (textStyles.length > 0) {
-            const textStyle = textStyles[0]; // Use first text style
-            output += `      child: Text(\n`;
-            output += `        'Sample Text', // TODO: Replace with actual content\n`;
-            output += `        style: ${textStyle.id},\n`;
-            output += `      ),\n`;
-        } else {
-            output += `      child: Column(\n`;
-            output += `        children: [\n`;
-            output += `          // TODO: Add your widget content here\n`;
-            output += `          Text('Component Content'),\n`;
-            output += `        ],\n`;
-            output += `      ),\n`;
-        }
-        
-        output += `    );\n`;
-    } else if (textStyles.length > 0) {
-        // Just a text widget if only text styles are available
-        const textStyle = textStyles[0];
-        output += `    return Text(\n`;
-        output += `      'Sample Text', // TODO: Replace with actual content\n`;
-        output += `      style: ${textStyle.id},\n`;
-        output += `    );\n`;
-    } else {
-        // Fallback for when no cached styles are available
-        output += `    return Container(\n`;
-        output += `      // TODO: Implement widget using component node ID: ${componentNodeId}\n`;
-        output += `      // No cached styles found - please analyze a component first\n`;
-        output += `      child: Text('Widget Placeholder'),\n`;
-        output += `    );\n`;
-    }
-
-    output += `  }\n`;
-    output += `}\n`;
-
-    // Add usage instructions
-    output += `\n💡 Usage Instructions:\n`;
-    output += `${'─'.repeat(30)}\n`;
-    WIDGET_SPLIT_ADVICE.forEach((line, index) => { output += `${index + 1}. ${line}\n`; });
-    output += `${WIDGET_SPLIT_ADVICE.length + 1}. Replace 'Sample Text' with actual content from Figma\n`;
-    output += `${WIDGET_SPLIT_ADVICE.length + 2}. Customize the widget structure and add any missing properties\n\n`;
-
-    if (styles.length > 0) {
-        output += `📦 Available Style References:\n`;
-        output += `${'─'.repeat(30)}\n`;
-        styles.forEach(style => {
-            output += `• ${style.id} (${style.category})\n`;
-        });
-    }
-
-    return output;
-}

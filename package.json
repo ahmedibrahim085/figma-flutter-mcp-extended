@@ -25,6 +25,7 @@
     "version": "changeset version && npm install --lockfile-only",
     "release": "changeset publish",
     "render-check": "bash tools/render-check/run.sh",
+    "render-check:all": "node --import tsx tools/render-check/run-all.mts",
     "mutants": "bash tools/mutants.sh",
     "audit:literals": "node tools/literal-scan.cjs"
   },

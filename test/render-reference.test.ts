@@ -66,3 +66,15 @@ test('the recapture script asks Figma for scale 1 with absolute bounds and recor
     assert.match(shot.capturedAt, /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/);
     assert.equal(existsSync(join(work, 'manifest.json')), true);
 });
+
+test('the render check\'s expected-result list covers every reference image; a known failure carries its register id', () => {
+    const list = JSON.parse(readFileSync(join(ROOT, 'tools', 'render-check', 'expected.json'), 'utf-8'));
+    const shots = manifestOf(SHOTS).screenshots;
+    assert.deepEqual(list.map((e: any) => e.node), shots.map((s: any) => s.nodeId));
+    for (const entry of list) {
+        assert.equal(entry.fixture, shots.find((s: any) => s.nodeId === entry.node).fixture, `${entry.node} fixture`);
+        assert.ok(entry.expect === 'pass' || entry.expect === 'fail', `${entry.node} expect`);
+        if (entry.expect === 'fail') assert.match(entry.register, /^B3\.\d+$/, `${entry.node} register id`);
+        else assert.equal(entry.register, undefined, `${entry.node} passes, so it has no register id`);
+    }
+});

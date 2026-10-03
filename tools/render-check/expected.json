@@ -1,0 +1,12 @@
+[
+  {"node": "1:8", "fixture": "text-frame.json", "expect": "fail", "register": "B3.119"},
+  {"node": "1:20", "fixture": "paints-frame.json", "expect": "fail", "register": "B3.63"},
+  {"node": "1:34", "fixture": "layout-frame.json", "expect": "fail", "register": "B3.71"},
+  {"node": "1:64", "fixture": "component-button-set.json", "expect": "fail", "register": "B3.117"},
+  {"node": "1:92", "fixture": "component-button-set.json", "expect": "fail", "register": "B3.52"},
+  {"node": "2:15", "fixture": "alignment-frame.json", "expect": "pass"},
+  {"node": "2:19", "fixture": "alignment-frame.json", "expect": "pass"},
+  {"node": "2:23", "fixture": "alignment-frame.json", "expect": "pass"},
+  {"node": "2:27", "fixture": "alignment-frame.json", "expect": "pass"},
+  {"node": "2:31", "fixture": "alignment-frame.json", "expect": "fail", "register": "B3.118"}
+]

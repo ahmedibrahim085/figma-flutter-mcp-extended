@@ -1,12 +1,12 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {spawnSync} from 'node:child_process';
-import {dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
+import {RUN_DIR_ENV} from './helpers/mcp-stdio.ts';
 
 // What end users install is what `npm pack` would publish; development tools and tests stay out of it.
 // `npm test` packs the folder it built for this run (the repo's dist/ may be rebuilt meanwhile); a run by hand packs the repo.
-const ROOT = process.env.FIGMA_FLUTTER_TEST_DIST ? dirname(process.env.FIGMA_FLUTTER_TEST_DIST) : fileURLToPath(new URL('..', import.meta.url));
+const ROOT = process.env[RUN_DIR_ENV] ?? fileURLToPath(new URL('..', import.meta.url));
 const SHIPPED_FILES = ['package.json', 'README.md', 'LICENSE.md'];
 
 test('the published package holds only the built server and its README, license and manifest', () => {

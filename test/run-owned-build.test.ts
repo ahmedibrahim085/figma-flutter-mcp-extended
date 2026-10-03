@@ -4,14 +4,15 @@ import {existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync}
 import {tmpdir} from 'node:os';
 import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
-import {withServer} from './helpers/mcp-stdio.ts';
+import {withServer, RUN_DIR_ENV, RUN_FLAG_ENV} from './helpers/mcp-stdio.ts';
 
-// `npm test` builds once into a folder the run owns (tools/test-run.mjs) and names it in this variable.
+// `npm test` builds once into a folder the run owns (tools/test-run.mjs) and names it in RUN_DIR_ENV.
 // A rebuild of the repo's dist/ (another run, a reviewer, `npm run build`) must not reach the servers.
-const RUN_DIST = 'FIGMA_FLUTTER_TEST_DIST';
 const REPO_CLI = fileURLToPath(new URL('../dist/cli.js', import.meta.url));
 
-test('a server starts from the run-owned build while the repo dist/cli.js is being rewritten', {skip: process.env[RUN_DIST] ? false : `a run by hand uses the repo dist/; start it with npm test (${RUN_DIST} unset)`}, async () => {
+test('a server starts from the run-owned build while the repo dist/cli.js is being rewritten', {skip: process.env[RUN_FLAG_ENV] ? false : `a run by hand uses the repo dist/; start it with npm test (${RUN_FLAG_ENV} unset)`}, async () => {
+    // The wrapper sets the flag; a flag without the folder means the wrapper broke, and skipping would hide it.
+    assert.ok(process.env[RUN_DIR_ENV], `${RUN_FLAG_ENV} is set but ${RUN_DIR_ENV} is not`);
     // tsc opens every output file with flag "w", which empties it first; a server loading it then sees no module.
     // A fresh checkout has no repo dist/ (npm test no longer builds it); the test then creates and removes the file.
     const original = existsSync(REPO_CLI) ? readFileSync(REPO_CLI) : undefined;
@@ -28,11 +29,12 @@ test('a server starts from the run-owned build while the repo dist/cli.js is bei
 });
 
 test('the server start timeout is the one in test/helpers/harness.json', async () => {
-    const previous = process.env[RUN_DIST];
+    const previous = process.env[RUN_DIR_ENV];
     const fixture = mkdtempSync(join(tmpdir(), 'ff-silent-'));
     // A server that reads stdin and never replies to initialize.
-    writeFileSync(join(fixture, 'cli.js'), 'process.stdin.resume();\n');
-    process.env[RUN_DIST] = fixture;
+    mkdirSync(join(fixture, 'dist'));
+    writeFileSync(join(fixture, 'dist', 'cli.js'), 'process.stdin.resume();\n');
+    process.env[RUN_DIR_ENV] = fixture;
     try {
         await assert.rejects(
             withServer((server) => server.initialize()),
@@ -42,6 +44,6 @@ test('the server start timeout is the one in test/helpers/harness.json', async (
             }
         );
     } finally {
-        if (previous === undefined) delete process.env[RUN_DIST]; else process.env[RUN_DIST] = previous;
+        if (previous === undefined) delete process.env[RUN_DIR_ENV]; else process.env[RUN_DIR_ENV] = previous;
     }
 });

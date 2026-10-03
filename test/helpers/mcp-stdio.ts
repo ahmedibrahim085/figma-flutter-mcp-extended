@@ -14,14 +14,21 @@ const harness: {serverStartTimeoutMs: number; killGraceMs: number} =
 /** How long a server may take to answer `initialize`; the value and its reason are in harness.json. */
 export const SERVER_START_TIMEOUT_MS = harness.serverStartTimeoutMs;
 
+/** Set by tools/test-run.mjs: names the folder it built for this run (dist/ inside it, package.json beside it). */
+export const RUN_DIR_ENV = 'FIGMA_FLUTTER_TEST_RUN_DIR';
+/** Set to 1 by tools/test-run.mjs only; a test that needs the run folder can tell a run by hand from a broken wrapper. */
+export const RUN_FLAG_ENV = 'FIGMA_FLUTTER_TEST_RUN';
+
 /**
- * The built server the tests start: the folder `npm test` built for this run (tools/test-run.mjs
- * names it in FIGMA_FLUTTER_TEST_DIST), so a rebuild of the repo's dist/ cannot reach a running
- * test. A run by hand has no such folder and uses the repo's dist/.
+ * The built server the tests start: the folder `npm test` built for this run, so a rebuild of the
+ * repo's dist/ cannot reach a running test. A run by hand has no such folder and uses the repo's
+ * dist/ (run `npm run build` first).
  */
 export function builtCliPath(): string {
-    return join(process.env.FIGMA_FLUTTER_TEST_DIST ?? REPO_DIST, 'cli.js');
+    const runDir = process.env[RUN_DIR_ENV];
+    return join(runDir ? join(runDir, 'dist') : REPO_DIST, 'cli.js');
 }
+
 // Resolved here: the server runs from an empty temp dir, where bare `tsx` would not resolve.
 const TSX_LOADER = import.meta.resolve('tsx');
 const BLOCK_NETWORK = new URL('./block-network.ts', import.meta.url).href;

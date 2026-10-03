@@ -146,6 +146,10 @@ Reads of a file and its nodes, and rendered image bytes, are kept on disk while 
 - `FIGMA_CACHE=off` turns the cache off.
 - The cache keeps the current version of each file and deletes older ones. It has no age or size limit. To clear it, delete the folder.
 
+## Report a problem
+
+If the server gives a wrong, missing or broken result, [open an issue](https://github.com/ahmedibrahim085/figma-flutter-mcp-extended/issues/new/choose) and pick "Report a problem". The template asks for the tool and its arguments, what the output showed, what Figma shows, when it happened (UTC), the server version (`serverInfo.version`), the transport (stdio or HTTP), your OS, any workaround and the impact. Leave out Figma keys, private file keys and project details. The server's MCP `instructions` name the same place, so an agent can report for you.
+
 ## Development
 
 ```bash

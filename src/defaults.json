@@ -9,6 +9,8 @@
   "screenshotScale": 1,
   "maxResultSizeChars": 100000,
   "installCommand": "npx -y github:ahmedibrahim085/figma-flutter-mcp-extended",
+  "issuesUrl": "https://github.com/ahmedibrahim085/figma-flutter-mcp-extended/issues",
+  "issuesUrlReason": "Where a user or an agent reports a problem with this server. The MCP instructions and the README name it; the issue template lives in .github/ISSUE_TEMPLATE.",
   "figmaWebUrl": "https://www.figma.com",
   "cache": {
     "dirName": "figma-flutter-mcp-extended",

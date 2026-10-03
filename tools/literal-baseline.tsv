@@ -2397,3 +2397,4 @@ src/tools/flutter/components/component-tool.ts	string		ternary	variantSection	1	
 src/tools/flutter/components/component-tool.ts	string	─	PropertyAccessExpression	variantSection	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	number	30	arg('─'.repeat)	variantSection	1	K-TEXT	rule: separator width in report text
 src/utils/budget.ts	string	anthropic/maxResultSizeChars	object-key	BUDGET_META	1	K-API	Claude Code tool metadata key (S1 code.claude.com MCP output limits)
+src/server.ts	template	To report a problem with this server, open an issue at ${…}/new/choose. Say which tool you called and with what arguments (Figma file and node ids redacted), wh	prop(instructions)	createServer	1	K-TEXT	server instructions text sent to MCP clients; the URL itself is read from defaults.json

@@ -15,6 +15,8 @@ export function createServer(figmaApiKey: string) {
     const server = new McpServer({
         name: "figma-flutter",
         version: getPackageVersion()
+    }, {
+        instructions: `To report a problem with this server, open an issue at ${defaults.issuesUrl}/new/choose. Say which tool you called and with what arguments (Figma file and node ids redacted), what the output or report showed, and what Figma shows. Never include a Figma key or a private file key.`
     });
 
     registerAllTools(server, figmaApiKey);

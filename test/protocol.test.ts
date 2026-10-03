@@ -66,6 +66,13 @@ test('stdio: server identifies as figma-flutter and lists exactly the registered
     assert.deepEqual(tools, EXPECTED_TOOLS);
 });
 
+test('stdio: the initialize instructions name the place to report a problem, from defaults.json', async () => {
+    const {init} = await serve();
+    const defaults = JSON.parse(readFileSync(new URL('../src/defaults.json', import.meta.url), 'utf-8'));
+    assert.match(defaults.issuesUrl, /^https:\/\/github\.com\/[^/]+\/[^/]+\/issues$/);
+    assert.ok(init.result.instructions.includes(defaults.issuesUrl), init.result.instructions);
+});
+
 test('stdio: generate_golden_file_test reports "Golden file test written to" the file it wrote, importing the pubspec package', async (t) => {
     const dir = mkdtempSync(join(tmpdir(), 'golden-'));
     t.after(() => rm(dir, {recursive: true, force: true}));

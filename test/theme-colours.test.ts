@@ -171,3 +171,10 @@ test('a lone style named Grey/500 gives grey500, not an invalid identifier', asy
     assert.match(colors!, /static const Color grey500 = Color\(0xFF808080\);/);
     assert.match(report, /Container\(color: AppColors\.grey500\)/);
 });
+
+test('when no colour can be generated, the report gives no usage example', async (t) => {
+    const {report} = await extract(t, palette(rect('90:2', '500', solid(0, 0, 1))));
+
+    assert.match(report, /Note: not generated: "500"/);
+    assert.doesNotMatch(report, /Usage Examples|AppColors\./);
+});

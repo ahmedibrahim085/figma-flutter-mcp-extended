@@ -117,9 +117,11 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                     output += `• ${defaults.output.themeFile} - Flutter ThemeData\n`;
                 }
 
-                output += `\nUsage Examples:\n`;
-                output += `// Colors:\n`;
+                if (constants.length > 0 || generateThemeData) {
+                    output += `\nUsage Examples:\n`;
+                }
                 if (constants.length > 0) {
+                    output += `// Colors:\n`;
                     output += `Container(color: AppColors.${constants[0]})\n`;
                     output += `Text('Hello', style: TextStyle(color: AppColors.${constants[constants.length - 1]}))\n`;
                 }

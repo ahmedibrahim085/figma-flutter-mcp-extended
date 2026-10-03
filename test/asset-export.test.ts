@@ -4,8 +4,6 @@ import {mkdtemp, readFile, rm, writeFile} from 'node:fs/promises';
 import {existsSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-// SHORTCUT: js-yaml comes in through @changesets, not as a direct dependency.
-// Add it to devDependencies if that chain ever drops it.
 import yaml from 'js-yaml';
 import {callToolOffline, FILE_KEY} from './helpers/offline-tool.ts';
 import type {FakeResponse, FakeRoutes} from './helpers/fake-figma.ts';

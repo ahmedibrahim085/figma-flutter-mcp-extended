@@ -258,6 +258,28 @@ HTTP_HOST=
 HTTP_ALLOWED_ORIGINS=
 ```
 
+## Releasing
+
+`main` is the integration branch: reviewed commits go there. A release is a tag on a clean, tested `main`; users install it with `npx -y github:ahmedibrahim085/figma-flutter-mcp-extended#vX.Y.Z` (without the `#` suffix they get `main`). The package is never published to npm, so there is no publish step and no changeset or changelog file: the GitHub Release notes are the changelog.
+
+**When.** After each pushed change that alters what a consumer sees: a tool, an argument, or what a tool returns. A push that only changes tests or docs gets no release.
+
+**Which number.** `0.x`, as long as the project is below 1.0:
+- a breaking change (a tool or argument removed or renamed, an output contract changed, a new default that changes results) bumps the middle number: `0.4.0` to `0.5.0`;
+- anything else a consumer sees bumps the last number: `0.4.0` to `0.4.1`.
+
+npm's caret range treats the middle number as the breaking one below 1.0. `serverInfo.version` is read from `package.json`, so it needs no second edit; a test checks that they agree.
+
+**Steps**, from a clean `main` after `npm test` is green:
+
+1. Write the notes in a file outside the repository. List interface changes first, each as old to new, then everything else the consumer sees. Take them from the resolved tickets.
+2. Scan the notes for employer names and file keys (the scan command is in the project's local instructions) before they are published. It must find nothing.
+3. Bump `version` in `package.json`, then commit it: `git commit -am "chore(release): vX.Y.Z"` and push `main`.
+4. Tag that commit: `git tag -a vX.Y.Z -m "vX.Y.Z"`, then `git push origin vX.Y.Z`.
+5. Create the release: `gh release create vX.Y.Z --verify-tag --title "vX.Y.Z" --notes-file <notes file>`.
+6. Check the pin resolves: `npm view "github:ahmedibrahim085/figma-flutter-mcp-extended#vX.Y.Z" version` prints `X.Y.Z`.
+7. Tell the consumer the tag and the pin command.
+
 ## 📋 Pull Request Checklist
 
 Before submitting a PR:

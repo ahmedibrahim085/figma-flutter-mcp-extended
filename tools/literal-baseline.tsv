@@ -384,7 +384,7 @@ src/extractors/flutter/text-style.ts	number	0	binary(===)	textStyleCode	1	K-CONV
 src/extractors/flutter/text-style.ts	number	0	binary(>)	convertTextWidget	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/flutter/text-style.ts	number	0	binary(>)	overriddenFields	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/flutter/text-style.ts	number	0	binary(>)	textStyleCode	1	K-CONV	rule R13: 8-bit colour / hex / string slicing / indentation width
-src/extractors/flutter/text-style.ts	number	0	binary(??)	convertTypeStyle	1	F-DEFAULT	letterSpacing default (owner provisional: audit finding C3 sits with the typography work); removed by ticket 10
+src/extractors/flutter/text-style.ts	number	0	binary(??)	convertTypeStyle	1	K-CONV	decision 4: letterSpacing 0 always emitted
 src/extractors/flutter/text-style.ts	number	0	binary(??)	idAt	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/flutter/text-style.ts	number	0	index	textRuns	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/flutter/text-style.ts	number	0	var(start)	textRuns	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
@@ -960,14 +960,14 @@ src/tools/flutter/assets/assets.ts	string	, 	arg(DEVICE_PIXEL_RATIOS.join)	regis
 src/tools/flutter/assets/assets.ts	string	Array of node IDs to export; each is exported, and so are its descendants with exportSettings or a visible IMAGE fill	arg(z.array(z.string()).describe)	registerFlutterAssetTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/assets/assets.ts	string	Error: Figma access token not configured.	prop(text)	registerFlutterAssetTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/assets/assets.ts	string	Export Flutter Assets	prop(title)	registerFlutterAssetTools	1	K-SCHEMA	rule: tool name / zod schema / description
-src/tools/flutter/assets/assets.ts	string	Export format for nodes without exportSettings (default: png)	arg(png', 'jpg', 'svg']).optional().describe)	registerFlutterAssetTools	1	F-DEFAULT	export format default restated in the parameter description; removed by ticket 06 (format comes from exportSettings)
+src/tools/flutter/assets/assets.ts	string	Export format for nodes without exportSettings (default: png)	arg(png', 'jpg', 'svg']).optional().describe)	registerFlutterAssetTools	1	F-DEFAULT	tool-input default for the export format, no owning ticket; B3.88
 src/tools/flutter/assets/assets.ts	string	Export the given Figma nodes, plus descendants that have exportSettings or a visible IMAGE fill, into the Flutter assets folders and pubspec.yaml. A node's expo	binary(+)	registerFlutterAssetTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/assets/assets.ts	string	Figma file ID	arg(z.string().describe)	registerFlutterAssetTools	1	K-SCHEMA	rule: tool name / zod schema / description
 src/tools/flutter/assets/assets.ts	string	No visible nodes to export in the specified IDs. Hidden nodes (visible: false) and empty icon slots are skipped.	prop(text)	registerFlutterAssetTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/assets/assets.ts	string	Path to Flutter project (defaults to current directory)	arg(z.string().optional().describe)	registerFlutterAssetTools	1	K-SCHEMA	rule: tool name / zod schema / description
 src/tools/flutter/assets/assets.ts	string	export_flutter_assets	arg(server.registerTool)	registerFlutterAssetTools	1	K-SCHEMA	rule: tool name / zod schema / description
 src/tools/flutter/assets/assets.ts	string	jpg	array-arg(z.enum)	registerFlutterAssetTools	1	K-SCHEMA	rule: tool name / zod schema / description
-src/tools/flutter/assets/assets.ts	string	png	BindingElement	registerFlutterAssetTools	1	F-DEFAULT	export format default (owner provisional: format comes from exportSettings); removed by ticket 06
+src/tools/flutter/assets/assets.ts	string	png	BindingElement	registerFlutterAssetTools	1	F-DEFAULT	tool-input default for the export format, no owning ticket; B3.88
 src/tools/flutter/assets/assets.ts	string	png	array-arg(z.enum)	registerFlutterAssetTools	1	K-SCHEMA	rule: tool name / zod schema / description
 src/tools/flutter/assets/assets.ts	string	svg	array-arg(z.enum)	registerFlutterAssetTools	1	K-SCHEMA	rule: tool name / zod schema / description
 src/tools/flutter/assets/assets.ts	string	text	prop(type)	registerFlutterAssetTools	6	K-API	rule: MCP content type

@@ -14,8 +14,19 @@ import fetch from 'node-fetch';
 // Helpers
 // ────────────────────────────────────────────────────────────
 
-/** Recursively summarise a node tree (id, name, type, children count, bounding box). */
-function summariseNode(node: any): any {
+/** What one response includes: the first `limit` nodes in document order. */
+interface Cut {
+    limit: number;
+    included: number;
+    /** Root of each omitted subtree, in document order. */
+    omitted: string[];
+    /** FRAME/COMPONENT/COMPONENT_SET among the included nodes. */
+    frames: any[];
+}
+
+/** Recursively summarise a node tree (id, name, type, children count, bounding box), stopping at the cut. */
+function summariseNode(node: any, cut: Cut): any {
+    cut.included++;
     const summary: any = {
         id: node.id,
         name: node.name,
@@ -30,17 +41,8 @@ function summariseNode(node: any): any {
     if (node.visible === false) {
         summary.visible = false;
     }
-    if (node.children) {
-        summary.childCount = node.children.length;
-        summary.children = node.children.map(summariseNode);
-    }
-    return summary;
-}
-
-/** Flatten a node tree into a list of frames (FRAME/COMPONENT/COMPONENT_SET). */
-function collectFrames(node: any, frames: any[] = []): any[] {
     if (['FRAME', 'COMPONENT', 'COMPONENT_SET'].includes(node.type)) {
-        frames.push({
+        cut.frames.push({
             id: node.id,
             name: node.name,
             type: node.type,
@@ -49,11 +51,44 @@ function collectFrames(node: any, frames: any[] = []): any[] {
         });
     }
     if (node.children) {
+        summary.childCount = node.children.length;
+        summary.children = [];
         for (const child of node.children) {
-            collectFrames(child, frames);
+            if (cut.included < cut.limit) summary.children.push(summariseNode(child, cut));
+            else cut.omitted.push(child.id);
         }
     }
-    return frames;
+    return summary;
+}
+
+const countNodes = (node: any): number => 1 + (node.children ?? []).reduce((n: number, c: any) => n + countNodes(c), 0);
+
+/**
+ * Serialises `build(tree, frames)` for `root`. Over the budget, it keeps the
+ * most nodes (in document order) that fit and adds `truncated` and
+ * `omittedNodeIds`, so the text stays valid JSON.
+ */
+function renderWithinBudget(root: any, build: (tree: any, frames: any[]) => any): string {
+    const render = (limit: number) => {
+        const cut: Cut = {limit, included: 0, omitted: [], frames: []};
+        const result = build(summariseNode(root, cut), cut.frames);
+        if (cut.omitted.length > 0) {
+            result.truncated = true;
+            result.omittedNodeIds = cut.omitted;
+        }
+        return JSON.stringify(result, null, 2);
+    };
+    const total = countNodes(root);
+    const whole = render(total);
+    if (whole.length <= defaults.maxResultSizeChars) return whole;
+    // Largest limit that fits; the root alone is the floor.
+    let [fits, over] = [1, total];
+    while (over - fits > 1) {
+        const mid = Math.floor((fits + over) / 2);
+        if (render(mid).length <= defaults.maxResultSizeChars) fits = mid;
+        else over = mid;
+    }
+    return render(fits);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -72,6 +107,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         'ff_get_metadata',
         {
+            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
             title: 'Get Figma File Metadata',
             description:
                 'Get the node tree structure of a Figma file or a specific node. ' +
@@ -123,18 +159,15 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     rootNode = data.document;
                 }
 
-                const tree = summariseNode(rootNode);
-                const frames = collectFrames(rootNode);
-
-                const result = {
+                const text = renderWithinBudget(rootNode, (tree, frames) => ({
                     fileName: data.name || fileKey,
                     lastModified: data.lastModified,
                     nodeTree: tree,
                     topLevelFrames: frames,
                     frameCount: frames.length,
-                };
+                }));
 
-                return {content: [{type: 'text' as const, text: JSON.stringify(result, null, 2)}]};
+                return {content: [{type: 'text' as const, text}]};
             } catch (err: any) {
                 return {content: [{type: 'text' as const, text: `ff_get_metadata error: ${err.message}`}]};
             }
@@ -220,6 +253,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         'ff_get_design_context',
         {
+            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
             title: 'Get Figma Design Context',
             description:
                 'Extract the design context for a Figma node: layout tree, component structure, ' +
@@ -261,7 +295,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 const styles = nodeData.styles || {};
 
                 // Build a structured design context
-                const context: any = {
+                const text = renderWithinBudget(doc, (tree, frames) => ({
                     node: {
                         id: doc.id,
                         name: doc.name,
@@ -280,31 +314,13 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                         itemSpacing: doc.itemSpacing,
                         backgroundColor: doc.backgroundColor,
                     },
-                    tree: summariseNode(doc),
+                    tree,
                     components: Object.keys(components).length > 0 ? components : undefined,
                     styles: Object.keys(styles).length > 0 ? styles : undefined,
-                    frames: collectFrames(doc),
-                };
+                    frames,
+                }));
 
-                const json = JSON.stringify(context, null, 2);
-
-                // Guard against huge responses — truncate if needed
-                if (json.length > 100000) {
-                    const truncated = json.slice(0, 100000);
-                    return {
-                        content: [
-                            {
-                                type: 'text' as const,
-                                text:
-                                    truncated +
-                                    `\n\n--- TRUNCATED (${json.length} chars total). ` +
-                                    `Use a smaller depth or target a child node for full detail. ---`,
-                            },
-                        ],
-                    };
-                }
-
-                return {content: [{type: 'text' as const, text: json}]};
+                return {content: [{type: 'text' as const, text}]};
             } catch (err: any) {
                 return {content: [{type: 'text' as const, text: `ff_get_design_context error: ${err.message}`}]};
             }

@@ -1,5 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
+import {withServer} from './helpers/mcp-stdio.ts';
 import {callToolOffline, FILE_KEY} from './helpers/offline-tool.ts';
 import type {FakeRoutes} from './helpers/fake-figma.ts';
 
@@ -96,3 +97,76 @@ test('ff_get_screenshot defaults to scale 1, one pixel per Figma unit', async ()
     assert.deepEqual(requests[0].query, {ids: '1:1', format: 'png', scale: '1'});
     assert.equal(isError, false);
 });
+
+// ── response budget ──────────────────────────────────────────
+
+const BUDGET = 100000;
+const wideNode = (id: string, extra: object = {}) =>
+    frame(id, {absoluteBoundingBox: {x: 0, y: 0, width: 390, height: 44}, ...extra});
+
+/** Every node id under `node`, itself included, in document order. */
+const idsOf = (node: any): string[] => [node.id, ...(node.children ?? []).flatMap(idsOf)];
+const idsInSummary = (node: any): string[] => [node.id, ...(Array.isArray(node.children) ? node.children : []).flatMap(idsInSummary)];
+
+const TREE_TOOLS = [
+    {tool: 'ff_get_metadata', query: 'ids=1:1', treeKey: 'nodeTree', framesKey: 'topLevelFrames'},
+    {tool: 'ff_get_design_context', query: DESIGN_CONTEXT_QUERY, treeKey: 'tree', framesKey: 'frames'},
+];
+
+for (const {tool, query, treeKey, framesKey} of TREE_TOOLS) {
+    test(`${tool}: 1500 children over the budget stay valid JSON and list the omitted ids`, async () => {
+        const children = Array.from({length: 1500}, (_, i) => wideNode(`2:${i}`));
+        const {text} = await callToolOffline(nodesRoute(query, wideNode('1:1', {children})),
+            tool, {fileKey: FILE_KEY, nodeId: '1:1'});
+
+        const out = JSON.parse(text);
+        assert.ok(text.length <= BUDGET, `response is ${text.length} characters`);
+        assert.equal(out.truncated, true);
+        const kept = out[treeKey].children.map((c: any) => c.id);
+        assert.ok(kept.length > 0 && kept.length < 1500, `kept ${kept.length}`);
+        // Document order: the nodes kept are the first ones, the omitted ids are the rest, each once.
+        assert.deepEqual([...kept, ...out.omittedNodeIds], children.map((c) => c.id));
+        assert.equal(out[treeKey].childCount, 1500);
+        // The frames list covers only what the response includes.
+        assert.deepEqual(out[framesKey].map((f: any) => f.id), ['1:1', ...kept]);
+    });
+
+    test(`${tool}: the cut falls on whole nodes, and omitted ids are the roots of omitted subtrees`, async () => {
+        const branch = (id: string) => wideNode(id, {children: Array.from({length: 700}, (_, i) => wideNode(`${id}.${i}`))});
+        const document = wideNode('1:1', {children: [branch('3:1'), branch('3:2'), branch('3:3')]});
+        const {text} = await callToolOffline(nodesRoute(query, document), tool, {fileKey: FILE_KEY, nodeId: '1:1'});
+
+        const out = JSON.parse(text);
+        assert.ok(text.length <= BUDGET, `response is ${text.length} characters`);
+        assert.equal(out.truncated, true);
+        const kept = idsInSummary(out[treeKey]);
+        const omitted: string[] = out.omittedNodeIds;
+        const ancestors = (id: string) => id.split('.').slice(0, -1).map((_, i, parts) => parts.slice(0, i + 1).join('.')).concat(['1:1']);
+        for (const id of idsOf(document)) {
+            const inTree = kept.includes(id);
+            const underOmitted = omitted.some((o) => o === id || id.startsWith(`${o}.`));
+            assert.ok(inTree !== underOmitted, `${id}: in tree ${inTree}, under an omitted root ${underOmitted}`);
+        }
+        for (const id of omitted) {
+            assert.ok(!ancestors(id).some((a) => omitted.includes(a) && a !== id), `${id} lies under another omitted id`);
+            assert.ok(kept.includes(ancestors(id)[ancestors(id).length - 2] ?? '1:1'), `${id} has a parent that was cut`);
+        }
+    });
+
+    test(`${tool}: a response inside the budget has no truncated or omittedNodeIds`, async () => {
+        const document = wideNode('1:1', {children: [wideNode('2:1'), wideNode('2:2')]});
+        const {text} = await callToolOffline(nodesRoute(query, document), tool, {fileKey: FILE_KEY, nodeId: '1:1'});
+        const out = JSON.parse(text);
+        assert.equal('truncated' in out, false);
+        assert.equal('omittedNodeIds' in out, false);
+    });
+
+    test(`${tool}: tools/list declares the budget to the client`, async () => {
+        await withServer(async (server) => {
+            await server.initialize();
+            const list: any = await server.request('tools/list');
+            const entry = list.result.tools.find((t: any) => t.name === tool);
+            assert.equal(entry._meta['anthropic/maxResultSizeChars'], BUDGET);
+        });
+    });
+}

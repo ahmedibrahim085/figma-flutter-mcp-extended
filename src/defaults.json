@@ -1,6 +1,7 @@
 {
   "httpPort": 3333,
   "screenshotScale": 1,
+  "maxResultSizeChars": 100000,
   "installCommand": "npx -y github:ahmedibrahim085/figma-flutter-mcp-extended",
   "figmaWebUrl": "https://www.figma.com",
   "retry": {

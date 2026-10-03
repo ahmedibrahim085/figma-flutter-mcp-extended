@@ -1,12 +1,14 @@
-import express, { type Request, type Response } from "express";
+import { type NextFunction, type Request, type Response } from "express";
 import { Server } from "http";
 import cors from "cors";
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {StdioServerTransport} from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { createMcpExpressApp } from "@modelcontextprotocol/sdk/server/express.js";
 import {registerAllTools} from "./tools/index.js";
 import { Logger } from "./utils/logger.js";
 import { getPackageVersion } from "./config.js";
+import defaults from "./defaults.json" with { type: "json" };
 import { configureProjectPath } from "./utils/project-conventions.js";
 
 export function createServer(figmaApiKey: string) {
@@ -57,18 +59,36 @@ export async function startMcpServer(figmaApiKey: string): Promise<void> {
     }
 }
 
-export async function startHttpServer(port: number, figmaApiKey?: string): Promise<void> {
+/**
+ * Refuses a request whose Origin is not trusted: the MCP spec (Streamable HTTP, Security Warning) says a server MUST
+ * validate Origin against DNS rebinding and answer an invalid one with 403. A request with no Origin is a non-browser
+ * client and is served. The SDK 1.27.1 transport options for this are deprecated and it ships no Origin middleware.
+ */
+function originValidation(allowedOrigins: string[]) {
+  const trusted = (origin: string) => {
+    if (allowedOrigins.includes(origin)) return true;
+    try {
+      return defaults.trustedOriginHosts.includes(new URL(origin).hostname);
+    } catch {
+      return false; // "null" and other values that are not an origin
+    }
+  };
+  return (req: Request, res: Response, next: NextFunction) => {
+    const origin = req.headers.origin;
+    if (origin === undefined || trusted(origin)) return next();
+    res.status(403).json({jsonrpc: "2.0", error: {code: -32000, message: `Invalid Origin: ${origin}`}, id: null});
+  };
+}
+
+export async function startHttpServer(port: number, figmaApiKey: string | undefined, {host, allowedOrigins}: {host: string; allowedOrigins: string[]}): Promise<void> {
   // HTTP mode keeps no session (MCP 2025-11-25 makes sessions optional): every POST is served by its own server and
   // transport, which are closed when the response closes. The Figma key comes from the request, or the fallback key.
-  const app = express();
+  // The SDK's Express app parses JSON and, for a loopback `host`, refuses a Host header that is not localhost (DNS rebinding).
+  const app = createMcpExpressApp({host});
   configureProjectPath(true);
 
-  app.use(cors({
-    origin: '*', // Allow all origins - adjust as needed for production
-  }));
-
-  // Parse JSON requests for the Streamable HTTP endpoint only, will break SSE endpoint
-  app.use("/mcp", express.json());
+  app.use(originValidation(allowedOrigins));
+  app.use(cors({origin: true})); // only a trusted or absent Origin gets here; the trusted one is echoed back
 
   app.post("/mcp", async (req, res) => {
     Logger.log("Received StreamableHTTP request");
@@ -139,8 +159,13 @@ export async function startHttpServer(port: number, figmaApiKey?: string): Promi
   app.get("/mcp", methodNotAllowed);
   app.delete("/mcp", methodNotAllowed);
 
-  httpServer = app.listen(port, () => {
-    Logger.log(`HTTP server listening on port ${port}`);
+  httpServer = app.listen(port, host, (error?: Error) => {
+    // Express 5 hands a failed listen (EADDRINUSE, a bad address) to this callback instead of throwing.
+    if (error) {
+      Logger.error(`HTTP server cannot listen on ${host}:${port}:`, error);
+      process.exit(1);
+    }
+    Logger.log(`HTTP server listening on port ${port} (address ${host})`);
     Logger.log(`StreamableHTTP endpoint available at http://localhost:${port}/mcp`);
   });
 

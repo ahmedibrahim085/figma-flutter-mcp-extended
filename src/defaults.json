@@ -1,5 +1,11 @@
 {
   "httpPort": 3333,
+  "httpHost": "127.0.0.1",
+  "httpHostReason": "HTTP mode listens on this machine only: the MCP spec (2025-11-25 Streamable HTTP, Security Warning) says a locally running server SHOULD bind 127.0.0.1, not all interfaces, and a fallback Figma key would otherwise be reachable from other machines (B3.102).",
+  "remoteHttpHost": "0.0.0.0",
+  "remoteHttpHostReason": "--remote exists to be reached from other machines, so it binds every interface unless --host says otherwise; its clients bring their own Figma key.",
+  "trustedOriginHosts": ["localhost", "127.0.0.1", "[::1]"],
+  "trustedOriginHostsReason": "A browser page on this machine (an MCP inspector, a local tool) sends one of these as its Origin hostname, on any port. Any other Origin is refused with 403, as the MCP spec requires (DNS rebinding); --allowed-origin adds one.",
   "screenshotScale": 1,
   "maxResultSizeChars": 100000,
   "installCommand": "npx -y github:ahmedibrahim085/figma-flutter-mcp-extended",

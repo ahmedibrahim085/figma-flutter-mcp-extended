@@ -7,7 +7,7 @@ import {START_FAILURE_TEST_TIMEOUT_MS} from './helpers/mcp-stdio.ts';
 
 test('a server that exits at start-up fails the helper within seconds, with the server\'s error text', {timeout: START_FAILURE_TEST_TIMEOUT_MS}, async () => {
     const taken = createServer();
-    await new Promise<void>((resolve) => taken.listen(0, resolve));
+    await new Promise<void>((resolve) => taken.listen(0, '127.0.0.1', resolve));
     const {port} = taken.address() as {port: number};
     try {
         await assert.rejects(

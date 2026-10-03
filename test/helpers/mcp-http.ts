@@ -9,12 +9,12 @@ import {builtCliPath, SERVER_START_TIMEOUT_MS} from './mcp-stdio.ts';
 
 /**
  * One `--http` server with Figma replaced by the fake serving `routes`; `body` gets its MCP endpoint and its working folder.
- * The port is a free one the helper picked, unless `port` says otherwise (a test of a server that cannot start).
+ * The port is a free one the helper picked, unless `port` says otherwise (a test of a server that cannot start); `args` are more CLI arguments.
  * The server is ready when it logs that it listens: a probe request could be answered by another process that took the port.
  * A server that exits before that fails the helper with its own error text, and one that never listens fails it after
  * SERVER_START_TIMEOUT_MS, so a broken start never hangs the test run.
  */
-export async function withHttpServer(routes: FakeRoutes, body: (endpoint: string, cwd: string) => Promise<void>, {port: fixedPort}: {port?: number} = {}) {
+export async function withHttpServer(routes: FakeRoutes, body: (endpoint: string, cwd: string) => Promise<void>, {port: fixedPort, args = []}: {port?: number; args?: string[]} = {}) {
     const figma = await startFakeFigma(routes);
     try {
         const port = fixedPort ?? await new Promise<number>((resolve) => {
@@ -25,7 +25,7 @@ export async function withHttpServer(routes: FakeRoutes, body: (endpoint: string
             });
         });
         const cwd = mkdtempSync(join(tmpdir(), 'mcp-http-'));
-        const child = spawn(process.execPath, [builtCliPath(), '--http', `--port=${port}`], {
+        const child = spawn(process.execPath, [builtCliPath(), '--http', `--port=${port}`, ...args], {
             cwd,
             env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', FIGMA_CACHE: 'off', FIGMA_API_BASE_URL: figma.baseUrl},
             stdio: ['ignore', 'ignore', 'pipe'],
@@ -57,11 +57,11 @@ export async function withHttpServer(routes: FakeRoutes, body: (endpoint: string
 }
 
 /** One request with the client's Figma key, and no session id unless `session` is given. */
-export function httpRequest(endpoint: string, key: string, init: {method?: string; message?: object; session?: string} = {}) {
+export function httpRequest(endpoint: string, key: string, init: {method?: string; message?: object; session?: string; headers?: Record<string, string>} = {}) {
     return fetch(endpoint, {
         method: init.method ?? 'POST',
         headers: {'content-type': 'application/json', accept: 'application/json, text/event-stream', 'x-figma-api-key': key,
-            ...(init.session ? {'mcp-session-id': init.session} : {})},
+            ...(init.session ? {'mcp-session-id': init.session} : {}), ...init.headers},
         body: init.message ? JSON.stringify(init.message) : undefined,
     });
 }

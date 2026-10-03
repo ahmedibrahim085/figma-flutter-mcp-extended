@@ -215,6 +215,12 @@ When the HTTP server is running, it serves one endpoint:
 - **POST /mcp** - Streamable HTTP endpoint for MCP communication. It keeps no session: every request is served on its own, so no `initialize` and no session id are needed, and no `Mcp-Session-Id` is issued. Send the Figma key with each request (`Authorization: Bearer`, `X-Figma-Api-Key`, or the `figmaApiKey` query parameter), or start the server with a key. A request with a `progressToken` is answered as an event stream carrying its progress; any other request is answered as JSON.
 - **GET /mcp** and **DELETE /mcp** answer 405.
 
+### Who can reach the HTTP server
+
+- **Address:** it listens on `127.0.0.1` only, so another machine cannot reach it or spend its Figma key. `--host <address>` (or `HTTP_HOST`) listens elsewhere. `--remote` (a server for other machines, whose users send their own Figma key) listens on `0.0.0.0` unless `--host` says otherwise. Both are in `src/defaults.json` with their reasons.
+- **Origin:** a request with no `Origin` header (a non-browser client) is served. An `Origin` whose hostname is `localhost`, `127.0.0.1` or `[::1]` (any port) is served and gets the matching CORS headers. Any other `Origin` gets 403 with a JSON-RPC error, as the MCP spec requires against DNS rebinding. `--allowed-origin <origin>` (repeatable) or `HTTP_ALLOWED_ORIGINS` (comma separated) trusts more.
+- **Host:** while it listens on a loopback address, a `Host` header that is not `localhost`, `127.0.0.1` or `[::1]` gets 403 (DNS rebinding), using the SDK's own check. With another `--host` the `Host` header is not checked, because the server cannot know its public name; the Figma key per request is the protection there.
+
 Over HTTP the server's working folder is not your Flutter project, so the tools that write files (`extract_theme_colors`, `extract_theme_typography`, `export_flutter_assets`, `export_svg_flutter_assets`, `generate_golden_file_test`) need `projectPath` and return an error without it. Over stdio, `projectPath` defaults to the current directory.
 
 ## Environment Variables
@@ -238,6 +244,10 @@ FIGMA_API_BASE_URL=https://api.figma.com/v1
 # Optional: Figma cache folder (default: figma-flutter-mcp-extended under the OS cache folder) and FIGMA_CACHE=off to disable it.
 # The tests set FIGMA_CACHE=off; the cache tests pass their own FIGMA_CACHE_DIR.
 FIGMA_CACHE_DIR=
+
+# Optional: HTTP mode address (default 127.0.0.1) and extra trusted browser origins, comma separated
+HTTP_HOST=
+HTTP_ALLOWED_ORIGINS=
 ```
 
 ## 📋 Pull Request Checklist

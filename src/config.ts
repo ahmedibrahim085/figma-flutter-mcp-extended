@@ -14,6 +14,10 @@ export interface ServerConfig {
     isHttpMode: boolean;
     isRemoteMode: boolean;
     httpPort: number;
+    /** The address the HTTP server listens on. */
+    httpHost: string;
+    /** Origins trusted in addition to defaults.trustedOriginHosts. */
+    allowedOrigins: string[];
     configSources: {
         figmaApiKey: "cli" | "env" | "none";
         envFile: "cli" | "default";
@@ -21,6 +25,7 @@ export interface ServerConfig {
         http: "cli" | "env" | "default";
         remote: "cli" | "env" | "default";
         port: "cli" | "env" | "default";
+        host: "cli" | "env" | "default";
     };
 }
 
@@ -42,6 +47,8 @@ interface CliArgs {
     http?: boolean;
     remote?: boolean;
     port?: number;
+    host?: string;
+    "allowed-origin"?: string[];
 }
 
 export function getServerConfig(): ServerConfig {
@@ -76,6 +83,15 @@ export function getServerConfig(): ServerConfig {
                 description: "Port number for HTTP server",
                 default: defaults.httpPort,
             },
+            host: {
+                type: "string",
+                description: "Address the HTTP server listens on (default 127.0.0.1; --remote defaults to 0.0.0.0)",
+            },
+            "allowed-origin": {
+                type: "string",
+                array: true,
+                description: "Browser Origin to trust in addition to localhost; repeat for more (env HTTP_ALLOWED_ORIGINS, comma separated)",
+            },
         })
         .help()
         .version(getPackageVersion())
@@ -105,6 +121,8 @@ export function getServerConfig(): ServerConfig {
         isHttpMode: false,
         isRemoteMode: false,
         httpPort: defaults.httpPort,
+        httpHost: defaults.httpHost,
+        allowedOrigins: [],
         configSources: {
             figmaApiKey: "none",
             envFile: envFileSource,
@@ -112,6 +130,7 @@ export function getServerConfig(): ServerConfig {
             http: "default",
             remote: "default",
             port: "default",
+            host: "default",
         },
     };
 
@@ -163,6 +182,18 @@ export function getServerConfig(): ServerConfig {
         config.configSources.port = "env";
     }
 
+    // Handle the address HTTP mode listens on
+    if (argv.host) {
+        config.httpHost = argv.host;
+        config.configSources.host = "cli";
+    } else if (process.env.HTTP_HOST) {
+        config.httpHost = process.env.HTTP_HOST;
+        config.configSources.host = "env";
+    } else if (config.isRemoteMode) {
+        config.httpHost = defaults.remoteHttpHost;
+    }
+    config.allowedOrigins = argv["allowed-origin"] ?? (process.env.HTTP_ALLOWED_ORIGINS?.split(",").map(origin => origin.trim()).filter(Boolean) ?? []);
+
     // Validate configuration - Users must provide their own API key for ALL modes
     if (!config.figmaApiKey) {
         console.error("Error: FIGMA_API_KEY is required for all modes.");
@@ -200,6 +231,7 @@ export function getServerConfig(): ServerConfig {
         console.log(`- REMOTE_MODE: ${config.isRemoteMode} (source: ${config.configSources.remote})`);
         if (config.isHttpMode) {
             console.log(`- HTTP_PORT: ${config.httpPort} (source: ${config.configSources.port})`);
+            console.log(`- HTTP_HOST: ${config.httpHost} (source: ${config.configSources.host})`);
         }
         console.log(); // Empty line for better readability
     }

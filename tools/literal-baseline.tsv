@@ -44,14 +44,14 @@ src/config.ts	string	Users can still provide their own keys via HTTP headers for
 src/config.ts	string	Your Figma API key (can also be set via FIGMA_API_KEY env var)	prop(description)	getServerConfig	1	K-SCHEMA	R10: tool/param title or description
 src/config.ts	string	\nConfiguration:	arg(console.log)	getServerConfig	1	K-TEXT	R5: log/console text
 src/config.ts	string	boolean	prop(type)	getServerConfig	3	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/config.ts	string	cli	binary(=)	getServerConfig	6	K-SCHEMA	R16: our config-source / output-format enum value
+src/config.ts	string	cli	binary(=)	getServerConfig	7	K-SCHEMA	R16: our config-source / output-format enum value
 src/config.ts	string	cli	binary(===)	getServerConfig	1	K-SCHEMA	R16: our config-source / output-format enum value
 src/config.ts	string	default	binary(=)	getServerConfig	1	K-SCHEMA	R16: our config-source / output-format enum value
 src/config.ts	string	default	prop(http)	getServerConfig	1	K-SCHEMA	R16: our config-source / output-format enum value
 src/config.ts	string	default	prop(port)	getServerConfig	1	K-SCHEMA	R16: our config-source / output-format enum value
 src/config.ts	string	default	prop(remote)	getServerConfig	1	K-SCHEMA	R16: our config-source / output-format enum value
 src/config.ts	string	default	prop(stdio)	getServerConfig	1	K-SCHEMA	R16: our config-source / output-format enum value
-src/config.ts	string	env	binary(=)	getServerConfig	5	K-SCHEMA	R16: our config-source / output-format enum value
+src/config.ts	string	env	binary(=)	getServerConfig	6	K-SCHEMA	R16: our config-source / output-format enum value
 src/config.ts	string	figma-api-key	PropertySignature	(module)	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/config.ts	string	figma-api-key	index	getServerConfig	2	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/config.ts	string	figma-api-key	object-key	getServerConfig	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
@@ -60,7 +60,7 @@ src/config.ts	string	json	prop(outputFormat)	getServerConfig	1	K-SCHEMA	R16: our
 src/config.ts	string	none	prop(figmaApiKey)	getServerConfig	1	K-SCHEMA	R16: our config-source / output-format enum value
 src/config.ts	string	number	prop(type)	getServerConfig	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/config.ts	string	package.json	arg(join)	getPackageVersion	1	K-API	hand: npm package.json
-src/config.ts	string	string	prop(type)	getServerConfig	2	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
+src/config.ts	string	string	prop(type)	getServerConfig	4	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/config.ts	string	true	binary(===)	getServerConfig	2	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/config.ts	string	utf8	arg(readFileSync)	getPackageVersion	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/config.ts	template	  ${…} --figma-api-key=YOUR_KEY --remote	arg(console.error)	getServerConfig	1	K-TEXT	report, label, log or error text
@@ -74,11 +74,11 @@ src/config.ts	template	- HTTP_MODE: ${…} (source: ${…})	arg(console.log)	get
 src/config.ts	template	- HTTP_PORT: ${…} (source: ${…})	arg(console.log)	getServerConfig	1	K-TEXT	R5: log/console text
 src/config.ts	template	- REMOTE_MODE: ${…} (source: ${…})	arg(console.log)	getServerConfig	1	K-TEXT	R5: log/console text
 src/config.ts	template	- STDIO_MODE: ${…} (source: ${…})	arg(console.log)	getServerConfig	1	K-TEXT	R5: log/console text
-src/config.ts	type-string	cli	LiteralType	(module)	6	K-SCHEMA	R1: TS literal type for our own config/output field
+src/config.ts	type-string	cli	LiteralType	(module)	7	K-SCHEMA	R1: TS literal type for our own config/output field
 src/config.ts	type-string	cli	LiteralType	getServerConfig	1	K-SCHEMA	R1: TS literal type for our own config/output field
-src/config.ts	type-string	default	LiteralType	(module)	5	K-SCHEMA	R1: TS literal type for our own config/output field
+src/config.ts	type-string	default	LiteralType	(module)	6	K-SCHEMA	R1: TS literal type for our own config/output field
 src/config.ts	type-string	default	LiteralType	getServerConfig	1	K-SCHEMA	R1: TS literal type for our own config/output field
-src/config.ts	type-string	env	LiteralType	(module)	5	K-SCHEMA	R1: TS literal type for our own config/output field
+src/config.ts	type-string	env	LiteralType	(module)	6	K-SCHEMA	R1: TS literal type for our own config/output field
 src/config.ts	type-string	json	LiteralType	(module)	1	K-SCHEMA	R1: TS literal type for our own config/output field
 src/config.ts	type-string	none	LiteralType	(module)	1	K-SCHEMA	R1: TS literal type for our own config/output field
 src/config.ts	type-string	yaml	LiteralType	(module)	1	K-SCHEMA	R1: TS literal type for our own config/output field
@@ -542,11 +542,9 @@ src/server.ts	number	1	arg(process.exit)	startMcpServer	1	K-API	R3: process exit
 src/server.ts	number	1000	arg(setInterval)	startHttpServer	1	K-API	progress interval kept in code as a protocol constant (ticket 02, finding E10)
 src/server.ts	number	401	arg(res.status)	startHttpServer	1	K-API	hand: HTTP 401
 src/server.ts	number	7	arg(authHeader.substring)	extractFigmaApiKey	1	K-API	hand: length of "Bearer " prefix, RFC 6750 (server.ts:39-40)
-src/server.ts	string	*	prop(origin)	startHttpServer	1	K-API	hand: CORS origin wildcard (server.ts:79)
 src/server.ts	string	/mcp	arg(app.delete)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	/mcp	arg(app.get)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	/mcp	arg(app.post)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/server.ts	string	/mcp	arg(app.use)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	2.0	prop(jsonrpc)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	Bearer 	arg(authHeader.startsWith)	extractFigmaApiKey	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	Failed to start MCP server:	arg(console.error)	startMcpServer	1	K-TEXT	R5: log/console text
@@ -563,7 +561,6 @@ src/server.ts	string	Unauthorized: Figma API key required. You must provide your
 src/server.ts	string	figma-flutter	prop(name)	createServer	1	K-SCHEMA	hand: MCP server name; renaming it is a consumer-visible change (CLAUDE.md rule)
 src/server.ts	string	notifications/progress	prop(method)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	x-figma-api-key	index	extractFigmaApiKey	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/server.ts	template	HTTP server listening on port ${…}	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
 src/server.ts	template	StreamableHTTP endpoint available at http://localhost:${…}/mcp	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
 src/services/figma.ts	number	0	binary(===)	FigmaService	1	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
 src/services/figma.ts	number	0	binary(===)	getImageExportUrls	1	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
@@ -2384,3 +2381,19 @@ src/extractors/flutter/style-library.ts	string	// width: strokeWeight not set by
 src/extractors/flutter/style-library.ts	template	width: ${…},	ternary	borderLines	1	K-DART	emitted Dart code
 src/extractors/flutter/style-library.ts	template	    strokeAlign: ${…},\n	ternary	borderLines	1	K-DART	emitted Dart code
 src/extractors/flutter/style-library.ts	string		ternary	borderLines	1	K-TEXT	empty text: nothing to print
+src/config.ts	string	allowed-origin	PropertySignature	(module)	1	K-SCHEMA	CLI option name, type or config-source enum value
+src/config.ts	string	Address the HTTP server listens on (default 127.0.0.1; --remote defaults to 0.0.0.0)	prop(description)	getServerConfig	1	K-SCHEMA	CLI option description or config-source enum value
+src/config.ts	string	allowed-origin	object-key	getServerConfig	1	K-SCHEMA	CLI option name, type or config-source enum value
+src/config.ts	string	Browser Origin to trust in addition to localhost; repeat for more (env HTTP_ALLOWED_ORIGINS, comma separated)	prop(description)	getServerConfig	1	K-SCHEMA	CLI option description or config-source enum value
+src/config.ts	string	default	prop(host)	getServerConfig	1	K-SCHEMA	CLI option name, type or config-source enum value
+src/config.ts	string	allowed-origin	index	getServerConfig	1	K-SCHEMA	CLI option name, type or config-source enum value
+src/config.ts	string	,	arg(process.env.HTTP_ALLOWED_ORIGINS?.split)	getServerConfig	1	K-CONV	comma separated env list
+src/config.ts	template	- HTTP_HOST: ${…} (source: ${…})	arg(console.log)	getServerConfig	1	K-TEXT	report, label, log or error text
+src/server.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
+src/server.ts	number	403	arg(res.status)	originValidation	1	K-API	hand: HTTP status / JSON-RPC code / process exit code
+src/server.ts	string	2.0	prop(jsonrpc)	originValidation	1	K-API	JSON-RPC version
+src/server.ts	number	-32000	prop(code)	originValidation	1	K-API	hand: HTTP status / JSON-RPC code / process exit code
+src/server.ts	template	Invalid Origin: ${…}	prop(message)	originValidation	1	K-TEXT	report, label, log or error text
+src/server.ts	template	HTTP server cannot listen on ${…}:${…}:	arg(Logger.error)	startHttpServer	1	K-TEXT	report, label, log or error text
+src/server.ts	number	1	arg(process.exit)	startHttpServer	1	K-API	hand: HTTP status / JSON-RPC code / process exit code
+src/server.ts	template	HTTP server listening on port ${…} (address ${…})	arg(Logger.log)	startHttpServer	1	K-TEXT	report, label, log or error text

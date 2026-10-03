@@ -24,7 +24,7 @@ async function startServer(): Promise<void> {
         } else {
             console.log('Starting Figma Flutter Server in HTTP mode...');
         }
-        await startHttpServer(config.httpPort, config.figmaApiKey);
+        await startHttpServer(config.httpPort, config.figmaApiKey, {host: config.httpHost, allowedOrigins: config.allowedOrigins});
     } else {
         console.log('Starting Figma Flutter Server...');
         console.log('⚠️  You must provide your Figma API key via:');

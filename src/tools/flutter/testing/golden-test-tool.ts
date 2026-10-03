@@ -4,7 +4,7 @@ import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {figmaTool} from "../../figma-tool.js";
 import {join} from "path";
 import {mkdir, writeFile} from "fs/promises";
-import {detectProjectName, detectGoldenTestDir, hasPubspec, missingPubspecMessage, resolveProjectPath} from "../../../utils/project-conventions.js";
+import {detectProjectName, detectGoldenTestDir, hasPubspec, missingPubspecMessage, resolveProjectPath, PROJECT_PATH_DESCRIPTION} from "../../../utils/project-conventions.js";
 import defaults from '../../../defaults.json' with { type: 'json' };
 
 function toSnakeCase(name: string): string {
@@ -26,7 +26,7 @@ export function registerGoldenTestTools(server: McpServer, _figmaApiKey: string)
             inputSchema: {
                 widgetName: z.string().describe("Name of the Flutter widget class to test (e.g. ContinueButton)"),
                 widgetImportPath: z.string().describe("Import path relative to lib/, e.g. 'widgets/continue_button.dart'"),
-                projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)")
+                projectPath: z.string().optional().describe(PROJECT_PATH_DESCRIPTION)
             }
         },
         figmaTool('Error generating golden file test', async ({widgetName, widgetImportPath, projectPath: givenPath}) => {

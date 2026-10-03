@@ -63,10 +63,8 @@ export async function startHttpServer(port: number, figmaApiKey?: string): Promi
   const app = express();
   configureProjectPath(true);
 
-  // Configure CORS to expose Mcp-Session-Id header for browser-based clients
   app.use(cors({
     origin: '*', // Allow all origins - adjust as needed for production
-    exposedHeaders: ['Mcp-Session-Id']
   }));
 
   // Parse JSON requests for the Streamable HTTP endpoint only, will break SSE endpoint

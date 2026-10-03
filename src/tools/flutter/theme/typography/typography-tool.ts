@@ -9,7 +9,7 @@ import {TypographyGenerator, typographyConstants} from "./typography-generator.j
 import {join} from 'path';
 import {validateAndConvertNodeId} from "../../../../utils/figma-url-parser.js";
 import {shortestFloat32} from "../../../../utils/float32.js";
-import {resolveProjectPath} from '../../../../utils/project-conventions.js';
+import {resolveProjectPath, PROJECT_PATH_DESCRIPTION} from '../../../../utils/project-conventions.js';
 import defaults from '../../../../defaults.json' with { type: 'json' };
 
 export function registerTypographyTools(server: McpServer, figmaApiKey: string) {
@@ -21,7 +21,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
                 nodeId: z.string().describe("Node ID of the frame of text samples"),
-                projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)"),
+                projectPath: z.string().optional().describe(PROJECT_PATH_DESCRIPTION),
                 generateTextTheme: z.boolean().optional().describe("Generate Flutter TextTheme class (defaults to false)")
             }
         },

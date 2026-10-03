@@ -14,7 +14,7 @@ import {
     generateSvgAssetConstants
 } from "./asset-manager.js";
 import {assetUsageReport} from "./asset-report.js";
-import {hasPubspec, missingPubspecMessage, resolveProjectPath} from "../../../utils/project-conventions.js";
+import {hasPubspec, missingPubspecMessage, resolveProjectPath, PROJECT_PATH_DESCRIPTION} from "../../../utils/project-conventions.js";
 import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
 import {isEffectivelyVisible} from "../../../utils/visibility.js";
 import defaults from '../../../defaults.json' with { type: 'json' };
@@ -29,7 +29,7 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
                 nodeIds: z.array(z.string()).describe("Array of node IDs to export as SVG; descendants with an SVG export setting are exported too"),
-                projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)")
+                projectPath: z.string().optional().describe(PROJECT_PATH_DESCRIPTION)
             }
         },
         figmaTool('Error exporting SVG assets', async ({fileId, nodeIds, projectPath: givenPath}) => {

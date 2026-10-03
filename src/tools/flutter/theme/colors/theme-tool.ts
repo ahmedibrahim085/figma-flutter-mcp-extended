@@ -9,7 +9,7 @@ import {describeFill} from "../../../../utils/paint-format.js";
 import {convertFillToColorInfo} from "../../../../extractors/components/extractor.js";
 import {validateAndConvertNodeId} from "../../../../utils/figma-url-parser.js";
 import {join} from 'path';
-import {resolveProjectPath} from '../../../../utils/project-conventions.js';
+import {resolveProjectPath, PROJECT_PATH_DESCRIPTION} from '../../../../utils/project-conventions.js';
 import defaults from '../../../../defaults.json' with { type: 'json' };
 
 export function registerThemeTools(server: McpServer, figmaApiKey: string) {
@@ -21,7 +21,7 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
                 nodeId: z.string().describe("Node ID of the frame of color samples"),
-                projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)"),
+                projectPath: z.string().optional().describe(PROJECT_PATH_DESCRIPTION),
                 generateThemeData: z.boolean().optional().describe("Generate Flutter ThemeData class (defaults to false)")
             }
         },

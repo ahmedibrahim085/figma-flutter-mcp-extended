@@ -10,7 +10,7 @@ import {
     selectAssetNodes
 } from "./asset-manager.js";
 import {assetUsageReport} from "./asset-report.js";
-import {hasPubspec, missingPubspecMessage, resolveProjectPath} from "../../../utils/project-conventions.js";
+import {hasPubspec, missingPubspecMessage, resolveProjectPath, PROJECT_PATH_DESCRIPTION} from "../../../utils/project-conventions.js";
 import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
 
 export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string) {
@@ -24,7 +24,7 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
                 nodeIds: z.array(z.string()).describe("Array of node IDs to export; each is exported, and so are its descendants with exportSettings or a visible IMAGE fill"),
-                projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)"),
+                projectPath: z.string().optional().describe(PROJECT_PATH_DESCRIPTION),
                 format: z.enum(['png', 'jpg', 'svg']).optional().describe("Export format for nodes without exportSettings (default: png)"),
                 devicePixelRatios: devicePixelRatiosInput
             }

@@ -19,6 +19,9 @@ export function missingPubspecMessage(projectPath: string): string {
     return `No pubspec.yaml in ${projectPath}. Run this in a Flutter project (flutter create), or pass projectPath. Nothing was requested or written.`;
 }
 
+/** The `projectPath` argument text of every tool that writes files; it matches resolveProjectPath. */
+export const PROJECT_PATH_DESCRIPTION = 'Path to Flutter project (stdio: defaults to the current directory; HTTP: required)';
+
 let overHttp = false;
 
 /** Set once at startup, like Logger.configureMode: over HTTP the server's folder is not the client's project. */

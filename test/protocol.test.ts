@@ -5,8 +5,7 @@ import {rm} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
-import {fileURLToPath} from 'node:url';
-import {withServer, type JsonRpcMessage} from './helpers/mcp-stdio.ts';
+import {withServer, builtCliPath, SERVER_START_TIMEOUT_MS, type JsonRpcMessage} from './helpers/mcp-stdio.ts';
 import {callToolOffline} from './helpers/offline-tool.ts';
 
 // Independent source of truth: the tool names registered in src/tools.
@@ -95,8 +94,7 @@ test('without a Figma key, the start-up hint installs from GitHub, not an unregi
     const cwd = mkdtempSync(join(tmpdir(), 'ff-nokey-'));
     const env = {...process.env};
     delete env.FIGMA_API_KEY;
-    const cli = fileURLToPath(new URL('../dist/cli.js', import.meta.url));
-    const run = spawnSync(process.execPath, [cli, '--stdio'], {cwd, env, encoding: 'utf-8', timeout: 15000});
+    const run = spawnSync(process.execPath, [builtCliPath(), '--stdio'], {cwd, env, encoding: 'utf-8', timeout: SERVER_START_TIMEOUT_MS});
     assert.equal(run.status, 1);
     assert.match(run.stderr, /npx -y github:ahmedibrahim085\/figma-flutter-mcp-extended --figma-api-key=YOUR_KEY --stdio/);
     assert.doesNotMatch(run.stderr, /npx figma-flutter /);

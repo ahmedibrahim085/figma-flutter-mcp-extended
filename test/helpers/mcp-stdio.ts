@@ -2,12 +2,26 @@
 // a consumer's MCP client does. Tests go through this seam only.
 import assert from 'node:assert/strict';
 import {spawn} from 'node:child_process';
-import {mkdtempSync} from 'node:fs';
+import {mkdtempSync, readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-const CLI = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'dist', 'cli.js');
+const REPO_DIST = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'dist');
+const harness: {serverStartTimeoutMs: number; killGraceMs: number} =
+    JSON.parse(readFileSync(new URL('./harness.json', import.meta.url), 'utf8'));
+
+/** How long a server may take to answer `initialize`; the value and its reason are in harness.json. */
+export const SERVER_START_TIMEOUT_MS = harness.serverStartTimeoutMs;
+
+/**
+ * The built server the tests start: the folder `npm test` built for this run (tools/test-run.mjs
+ * names it in FIGMA_FLUTTER_TEST_DIST), so a rebuild of the repo's dist/ cannot reach a running
+ * test. A run by hand has no such folder and uses the repo's dist/.
+ */
+export function builtCliPath(): string {
+    return join(process.env.FIGMA_FLUTTER_TEST_DIST ?? REPO_DIST, 'cli.js');
+}
 // Resolved here: the server runs from an empty temp dir, where bare `tsx` would not resolve.
 const TSX_LOADER = import.meta.resolve('tsx');
 const BLOCK_NETWORK = new URL('./block-network.ts', import.meta.url).href;
@@ -29,7 +43,7 @@ export interface McpStdioServer {
 }
 
 /**
- * Starts `node dist/cli.js --stdio`, runs `body`, then closes stdin and asserts
+ * Starts `node <built dist>/cli.js --stdio`, runs `body`, then closes stdin and asserts
  * the server exits cleanly (code 0, no signal): a crash, a non-zero exit or a
  * hang after replying fails the test. The working directory is an empty temp
  * dir so a developer's own .env is never loaded; the API key is a dummy value.
@@ -38,10 +52,10 @@ export interface McpStdioServer {
  */
 export async function withServer(
     body: (server: McpStdioServer) => Promise<void>,
-    {timeoutMs = 15000, env = {}, allowNetworkAttempts = false}:
+    {timeoutMs = SERVER_START_TIMEOUT_MS, env = {}, allowNetworkAttempts = false}:
         {timeoutMs?: number; env?: Record<string, string>; allowNetworkAttempts?: boolean} = {}
 ): Promise<McpStdioServer> {
-    const child = spawn(process.execPath, ['--import', TSX_LOADER, '--import', BLOCK_NETWORK, CLI, '--stdio'], {
+    const child = spawn(process.execPath, ['--import', TSX_LOADER, '--import', BLOCK_NETWORK, builtCliPath(), '--stdio'], {
         cwd: mkdtempSync(join(tmpdir(), 'mcp-test-')),
         env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', ...env},
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -122,7 +136,7 @@ export async function withServer(
     }
 
     child.stdin.end();
-    const killTimer = setTimeout(() => child.kill('SIGKILL'), 5000);
+    const killTimer = setTimeout(() => child.kill('SIGKILL'), harness.killGraceMs);
     const exit = await exited;
     clearTimeout(killTimer);
 

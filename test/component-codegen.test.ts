@@ -236,3 +236,29 @@ test('style dedup merges identical non-uniform padding across calls and splits a
     assert.equal(paddingRef(reports[1]), paddingRef(reports[0]));
     assert.notEqual(paddingRef(reports[2]), paddingRef(reports[0]));
 });
+
+// Component-path 04 (decision 31): one analysis path. useDeduplication and maxChildNodes are gone from the schema; a
+// caller that still passes them is not rejected, and gets the deduplicated report with every child.
+test('analyze_figma_component takes neither useDeduplication nor maxChildNodes', async () => {
+    let properties: Record<string, unknown> = {};
+    await withServer(async (s) => {
+        await s.initialize();
+        const list: any = await s.request('tools/list');
+        properties = list.result.tools.find((t: any) => t.name === 'analyze_figma_component').inputSchema.properties;
+    });
+
+    assert.ok(!('useDeduplication' in properties));
+    assert.ok(!('maxChildNodes' in properties));
+    assert.ok('includeVariants' in properties);
+});
+
+test('a caller that still passes useDeduplication: false and maxChildNodes: 1 gets the deduplicated report with every child', async () => {
+    const {text, isError} = await callToolOffline(nodeRoute('3:1', CARD_ROW), 'analyze_figma_component',
+        {input: FILE_KEY, nodeId: '3:1', exportAssets: false, userDefinedComponent: true, useDeduplication: false, maxChildNodes: 1});
+
+    assert.equal(isError, false);
+    assert.match(text, /^📊 Comprehensive Component Analysis \(Deduplicated\)$/m);
+    assert.doesNotMatch(text, /Component Analysis Report|skipped due to the maxChildNodes limit/);
+    assert.match(text, /1\. Icon \(FRAME\)/);
+    assert.match(text, /2\. Label \(TEXT\)/);
+});

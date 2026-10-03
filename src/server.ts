@@ -68,7 +68,8 @@ function originValidation(allowedOrigins: string[]) {
   const trusted = (origin: string) => {
     if (allowedOrigins.includes(origin)) return true;
     try {
-      return defaults.trustedOriginHosts.includes(new URL(origin).hostname);
+      const {protocol, hostname} = new URL(origin);
+      return (protocol === "http:" || protocol === "https:") && defaults.trustedOriginHosts.includes(hostname);
     } catch {
       return false; // "null" and other values that are not an origin
     }

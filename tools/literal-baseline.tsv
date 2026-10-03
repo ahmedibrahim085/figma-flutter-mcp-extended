@@ -19,7 +19,7 @@ src/cli.ts	string	⚠️  You must provide your Figma API key via:	arg(console.l
 src/cli.ts	string	📝 Get API key: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens	arg(console.log)	startServer	1	K-TEXT	R5: log/console text
 src/cli.ts	string	📝 Get your API key: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens	arg(console.log)	startServer	1	K-TEXT	R5: log/console text
 src/config.ts	number	-4	arg(key.slice)	maskApiKey	1	K-TEXT	hand: log masking slice(-4) (config.ts:28)
-src/config.ts	number	1	arg(process.exit)	getServerConfig	1	K-API	R3: process exit code
+src/config.ts	number	1	arg(process.exit)	getServerConfig	2	K-API	R3: process exit code
 src/config.ts	number	10	arg(parseInt)	getServerConfig	1	K-CONV	hand: parseInt radix 10
 src/config.ts	number	4	binary(<=)	maskApiKey	1	K-TEXT	hand: log masking: shows last 4 chars of the API key in startup log; no design value (config.ts:27)
 src/config.ts	string		arg(console.error)	getServerConfig	3	K-TEXT	R5: log/console text
@@ -28,7 +28,6 @@ src/config.ts	string	  2. Environment variable: FIGMA_API_KEY=YOUR_API_KEY in .e
 src/config.ts	string	****	return	maskApiKey	1	K-TEXT	hand: masked key placeholder
 src/config.ts	string	..	arg(join)	getPackageVersion	1	K-API	hand: path to package.json one level above dist/ (config.ts:38); node path API
 src/config.ts	string	.env	arg(resolve)	getServerConfig	1	K-API	hand: dotenv default file name .env in cwd (config.ts:101)
-src/config.ts	string	Error: FIGMA_API_KEY is required for all modes.	arg(console.error)	getServerConfig	1	K-TEXT	R5: log/console text
 src/config.ts	string	Examples:	arg(console.error)	getServerConfig	1	K-TEXT	R5: log/console text
 src/config.ts	string	Get your API key from: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens	arg(console.error)	getServerConfig	1	K-TEXT	R5: log/console text
 src/config.ts	string	Path to custom .env file to load environment variables from	prop(description)	getServerConfig	1	K-SCHEMA	R10: tool/param title or description
@@ -2396,3 +2395,9 @@ src/cli.ts	string	⚠️  The server's FIGMA_API_KEY is ignored in remote mode. 
 src/cli.ts	string	⚠️  Users MUST provide their own Figma API keys via:	ternary	startServer	1	K-TEXT	report, label, log or error text
 src/config.ts	template	  ${…} --remote   (each request brings its own key)	arg(console.error)	getServerConfig	1	K-TEXT	report, label, log or error text
 src/server.ts	string	The server's FIGMA_API_KEY is ignored in --remote mode: every request must carry its own Figma key	arg(Logger.log)	startHttpServer	1	K-TEXT	report, label, log or error text
+src/config.ts	string	null	var(origin)	getServerConfig	1	K-API	what URL.origin reports for a value with no origin
+src/config.ts	string	null	binary(===)	getServerConfig	1	K-API	what URL.origin reports for a value with no origin
+src/config.ts	template	Error: "${…}" is not a valid origin. Use scheme://host[:port], for example https://inspector.example	arg(console.error)	getServerConfig	1	K-TEXT	report, label, log or error text
+src/config.ts	string	Error: FIGMA_API_KEY is required for every mode except --remote.	arg(console.error)	getServerConfig	1	K-TEXT	report, label, log or error text
+src/server.ts	string	http:	binary(===)	trusted	1	K-API	URL protocol token
+src/server.ts	string	https:	binary(===)	trusted	1	K-API	URL protocol token

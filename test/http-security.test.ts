@@ -34,6 +34,32 @@ test('an untrusted Origin gets 403 with a JSON-RPC error, on POST, GET and DELET
     });
 });
 
+test('only an http or https origin on a trusted host is trusted: ftp://localhost and file://localhost are not', async () => {
+    await withHttpServer({}, async (endpoint) => {
+        for (const origin of ['ftp://localhost', 'file://localhost', 'chrome-extension://localhost']) {
+            const response = await httpRequest(endpoint, 'key-a', {message: LIST, ...withOrigin(origin)});
+
+            assert.equal(response.status, 403, origin);
+        }
+        assert.equal((await httpRequest(endpoint, 'key-a', {message: LIST, ...withOrigin('https://localhost:8443')})).status, 200);
+    });
+});
+
+test('--allowed-origin is normalised to an origin, so a trailing slash still matches', async () => {
+    await withHttpServer({}, async (endpoint) => {
+        const response = await httpRequest(endpoint, 'key-a', {message: LIST, ...withOrigin('https://inspector.example')});
+
+        assert.equal(response.status, 200);
+    }, {args: ['--allowed-origin=https://inspector.example/']});
+});
+
+test('an --allowed-origin that is not an origin stops the server at start-up, naming the value', async () => {
+    await assert.rejects(
+        withHttpServer({}, async () => assert.fail('the server must not start'), {args: ['--allowed-origin=not an origin']}),
+        /not an origin.*is not a valid origin|is not a valid origin.*not an origin/s,
+    );
+});
+
 test('--allowed-origin trusts one more origin', async () => {
     await withHttpServer({}, async (endpoint) => {
         const response = await httpRequest(endpoint, 'key-a', {message: LIST, ...withOrigin('https://inspector.example')});

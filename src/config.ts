@@ -192,11 +192,25 @@ export function getServerConfig(): ServerConfig {
     } else if (config.isRemoteMode) {
         config.httpHost = defaults.remoteHttpHost;
     }
-    config.allowedOrigins = argv["allowed-origin"] ?? (process.env.HTTP_ALLOWED_ORIGINS?.split(",").map(origin => origin.trim()).filter(Boolean) ?? []);
+    const allowedOrigins = argv["allowed-origin"] ?? (process.env.HTTP_ALLOWED_ORIGINS?.split(",").map(origin => origin.trim()).filter(Boolean) ?? []);
+    // An Origin header is scheme://host[:port] with no path, so each value is reduced to that form ("https://x.com/" -> "https://x.com").
+    config.allowedOrigins = allowedOrigins.map((value) => {
+        let origin = "null"; // what URL.origin says for a value that has no origin (new URL throws on "not an origin")
+        try {
+            origin = new URL(value).origin;
+        } catch {
+            // left as "null"
+        }
+        if (origin === "null") {
+            console.error(`Error: "${value}" is not a valid origin. Use scheme://host[:port], for example https://inspector.example`);
+            process.exit(1);
+        }
+        return origin;
+    });
 
     // Validate configuration - every mode but --remote needs a key at start-up; remote requests bring their own
     if (!config.figmaApiKey && !config.isRemoteMode) {
-        console.error("Error: FIGMA_API_KEY is required for all modes.");
+        console.error("Error: FIGMA_API_KEY is required for every mode except --remote.");
         console.error("Please provide your Figma API key via one of these methods:");
         console.error("  1. CLI argument: --figma-api-key=YOUR_API_KEY");
         console.error("  2. Environment variable: FIGMA_API_KEY=YOUR_API_KEY in .env file");

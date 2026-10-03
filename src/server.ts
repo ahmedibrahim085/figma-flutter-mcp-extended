@@ -80,10 +80,14 @@ function originValidation(allowedOrigins: string[]) {
   };
 }
 
-export async function startHttpServer(port: number, figmaApiKey: string | undefined, {host, allowedOrigins}: {host: string; allowedOrigins: string[]}): Promise<void> {
+export async function startHttpServer(port: number, figmaApiKey: string | undefined, {host, allowedOrigins, remote}: {host: string; allowedOrigins: string[]; remote: boolean}): Promise<void> {
   // HTTP mode keeps no session (MCP 2025-11-25 makes sessions optional): every POST is served by its own server and
   // transport, which are closed when the response closes. The Figma key comes from the request, or the fallback key.
   // The SDK's Express app parses JSON and, for a loopback `host`, refuses a Host header that is not localhost (DNS rebinding).
+  // In remote mode a server key would serve every caller who can reach the port, so each request must bring its own
+  // (the MCP spec says servers SHOULD authenticate all connections); on a loopback bind the server key is the user's own.
+  if (remote && figmaApiKey) Logger.log("The server's FIGMA_API_KEY is ignored in --remote mode: every request must carry its own Figma key");
+  const fallbackApiKey = remote ? undefined : figmaApiKey;
   const app = createMcpExpressApp({host});
   configureProjectPath(true);
 
@@ -94,7 +98,7 @@ export async function startHttpServer(port: number, figmaApiKey: string | undefi
     Logger.log("Received StreamableHTTP request");
 
     // Extract Figma API key from request
-    const userFigmaApiKey = extractFigmaApiKey(req, figmaApiKey);
+    const userFigmaApiKey = extractFigmaApiKey(req, fallbackApiKey);
     if (!userFigmaApiKey) {
       res.status(401).json({
         jsonrpc: "2.0",

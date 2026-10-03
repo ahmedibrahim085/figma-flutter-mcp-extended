@@ -218,6 +218,7 @@ When the HTTP server is running, it serves one endpoint:
 ### Who can reach the HTTP server
 
 - **Address:** it listens on `127.0.0.1` only, so another machine cannot reach it or spend its Figma key. `--host <address>` (or `HTTP_HOST`) listens elsewhere. `--remote` (a server for other machines, whose users send their own Figma key) listens on `0.0.0.0` unless `--host` says otherwise. Both are in `src/defaults.json` with their reasons.
+- **Figma key:** plain `--http` uses the server's key for a request that brings none (it listens on this machine only). `--remote` ignores the server's key and needs none to start: every request must carry its own (`Authorization: Bearer`, `X-Figma-Api-Key`, or `figmaApiKey`), and one without gets 401.
 - **Origin:** a request with no `Origin` header (a non-browser client) is served. An `Origin` whose hostname is `localhost`, `127.0.0.1` or `[::1]` (any port) is served and gets the matching CORS headers. Any other `Origin` gets 403 with a JSON-RPC error, as the MCP spec requires against DNS rebinding. `--allowed-origin <origin>` (repeatable) or `HTTP_ALLOWED_ORIGINS` (comma separated) trusts more.
 - **Host:** while it listens on a loopback address, a `Host` header that is not `localhost`, `127.0.0.1` or `[::1]` gets 403 (DNS rebinding), using the SDK's own check. With another `--host` the `Host` header is not checked, because the server cannot know its public name; the Figma key per request is the protection there.
 

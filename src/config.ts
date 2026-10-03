@@ -194,8 +194,8 @@ export function getServerConfig(): ServerConfig {
     }
     config.allowedOrigins = argv["allowed-origin"] ?? (process.env.HTTP_ALLOWED_ORIGINS?.split(",").map(origin => origin.trim()).filter(Boolean) ?? []);
 
-    // Validate configuration - Users must provide their own API key for ALL modes
-    if (!config.figmaApiKey) {
+    // Validate configuration - every mode but --remote needs a key at start-up; remote requests bring their own
+    if (!config.figmaApiKey && !config.isRemoteMode) {
         console.error("Error: FIGMA_API_KEY is required for all modes.");
         console.error("Please provide your Figma API key via one of these methods:");
         console.error("  1. CLI argument: --figma-api-key=YOUR_API_KEY");
@@ -203,15 +203,11 @@ export function getServerConfig(): ServerConfig {
         console.error("");
         console.error("Get your API key from: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens");
         console.error("");
-        if (config.isRemoteMode) {
-            console.error("Note: In remote mode, this key serves as a fallback.");
-            console.error("Users can still provide their own keys via HTTP headers for isolation.");
-        }
         console.error("");
         console.error("Examples:");
         console.error(`  ${defaults.installCommand} --figma-api-key=YOUR_KEY --stdio`);
         console.error(`  echo 'FIGMA_API_KEY=YOUR_KEY' > .env && ${defaults.installCommand} --stdio`);
-        console.error(`  ${defaults.installCommand} --figma-api-key=YOUR_KEY --remote`);
+        console.error(`  ${defaults.installCommand} --remote   (each request brings its own key)`);
         process.exit(1);
     }
 

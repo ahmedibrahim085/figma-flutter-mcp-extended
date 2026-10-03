@@ -73,3 +73,19 @@ test('by default the server listens on localhost only; --host opens it', {skip: 
         assert.ok(response.status > 0);
     }, {args: ['--host=0.0.0.0']});
 });
+
+test('plain --http uses the server\'s Figma key for a request that brings none; --remote does not', async () => {
+    await withHttpServer({}, async (endpoint) => {
+        const response = await httpRequest(endpoint, '', {message: LIST});
+
+        assert.equal(response.status, 200);
+    });
+    await withHttpServer({}, async (endpoint) => {
+        const without = await httpRequest(endpoint, '', {message: LIST});
+        const own = await httpRequest(endpoint, 'key-a', {message: LIST});
+
+        assert.equal(without.status, 401);
+        assert.match((await without.json()).error.message, /Figma API key required/);
+        assert.equal(own.status, 200);
+    }, {args: ['--remote']});
+});

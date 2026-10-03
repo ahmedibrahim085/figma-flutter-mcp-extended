@@ -12,11 +12,9 @@ async function startServer(): Promise<void> {
     } else if (config.isHttpMode) {
         if (config.isRemoteMode) {
             console.log('Starting Figma Flutter Server in REMOTE mode...');
-            if (config.figmaApiKey) {
-                console.log('✅ Server has fallback API key, but users can provide their own via:');
-            } else {
-                console.log('⚠️  Users MUST provide their own Figma API keys via:');
-            }
+            console.log(config.figmaApiKey
+                ? "⚠️  The server's FIGMA_API_KEY is ignored in remote mode. Users MUST provide their own Figma API keys via:"
+                : '⚠️  Users MUST provide their own Figma API keys via:');
             console.log('  - Authorization header (Bearer token)');
             console.log('  - X-Figma-Api-Key header');
             console.log('  - figmaApiKey query parameter');
@@ -24,7 +22,7 @@ async function startServer(): Promise<void> {
         } else {
             console.log('Starting Figma Flutter Server in HTTP mode...');
         }
-        await startHttpServer(config.httpPort, config.figmaApiKey, {host: config.httpHost, allowedOrigins: config.allowedOrigins});
+        await startHttpServer(config.httpPort, config.figmaApiKey, {host: config.httpHost, allowedOrigins: config.allowedOrigins, remote: config.isRemoteMode});
     } else {
         console.log('Starting Figma Flutter Server...');
         console.log('⚠️  You must provide your Figma API key via:');

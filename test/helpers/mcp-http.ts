@@ -56,11 +56,11 @@ export async function withHttpServer(routes: FakeRoutes, body: (endpoint: string
     }
 }
 
-/** One request with the client's Figma key, and no session id unless `session` is given. */
+/** One request with the client's Figma key (none when `key` is empty), and no session id unless `session` is given. */
 export function httpRequest(endpoint: string, key: string, init: {method?: string; message?: object; session?: string; headers?: Record<string, string>} = {}) {
     return fetch(endpoint, {
         method: init.method ?? 'POST',
-        headers: {'content-type': 'application/json', accept: 'application/json, text/event-stream', 'x-figma-api-key': key,
+        headers: {'content-type': 'application/json', accept: 'application/json, text/event-stream', ...(key ? {'x-figma-api-key': key} : {}),
             ...(init.session ? {'mcp-session-id': init.session} : {}), ...init.headers},
         body: init.message ? JSON.stringify(init.message) : undefined,
     });

@@ -15,9 +15,7 @@ src/cli.ts	string	Starting Figma Flutter Server in HTTP mode...	arg(console.log)
 src/cli.ts	string	Starting Figma Flutter Server in REMOTE mode...	arg(console.log)	startServer	1	K-TEXT	R5: log/console text
 src/cli.ts	string	Starting Figma Flutter Server...	arg(console.log)	startServer	1	K-TEXT	R5: log/console text
 src/cli.ts	string	Use --help for more options	arg(console.log)	startServer	1	K-TEXT	R5: log/console text
-src/cli.ts	string	⚠️  Users MUST provide their own Figma API keys via:	arg(console.log)	startServer	1	K-TEXT	R5: log/console text
 src/cli.ts	string	⚠️  You must provide your Figma API key via:	arg(console.log)	startServer	1	K-TEXT	R5: log/console text
-src/cli.ts	string	✅ Server has fallback API key, but users can provide their own via:	arg(console.log)	startServer	1	K-TEXT	R5: log/console text
 src/cli.ts	string	📝 Get API key: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens	arg(console.log)	startServer	1	K-TEXT	R5: log/console text
 src/cli.ts	string	📝 Get your API key: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens	arg(console.log)	startServer	1	K-TEXT	R5: log/console text
 src/config.ts	number	-4	arg(key.slice)	maskApiKey	1	K-TEXT	hand: log masking slice(-4) (config.ts:28)
@@ -33,14 +31,12 @@ src/config.ts	string	.env	arg(resolve)	getServerConfig	1	K-API	hand: dotenv defa
 src/config.ts	string	Error: FIGMA_API_KEY is required for all modes.	arg(console.error)	getServerConfig	1	K-TEXT	R5: log/console text
 src/config.ts	string	Examples:	arg(console.error)	getServerConfig	1	K-TEXT	R5: log/console text
 src/config.ts	string	Get your API key from: https://help.figma.com/hc/en-us/articles/8085703771159-Manage-personal-access-tokens	arg(console.error)	getServerConfig	1	K-TEXT	R5: log/console text
-src/config.ts	string	Note: In remote mode, this key serves as a fallback.	arg(console.error)	getServerConfig	1	K-TEXT	R5: log/console text
 src/config.ts	string	Path to custom .env file to load environment variables from	prop(description)	getServerConfig	1	K-SCHEMA	R10: tool/param title or description
 src/config.ts	string	Please provide your Figma API key via one of these methods:	arg(console.error)	getServerConfig	1	K-TEXT	R5: log/console text
 src/config.ts	string	Port number for HTTP server	prop(description)	getServerConfig	1	K-SCHEMA	R10: tool/param title or description
 src/config.ts	string	Run in HTTP mode for local testing	prop(description)	getServerConfig	1	K-SCHEMA	R10: tool/param title or description
 src/config.ts	string	Run in remote mode - users provide their own Figma API keys	prop(description)	getServerConfig	1	K-SCHEMA	R10: tool/param title or description
 src/config.ts	string	Run in stdio mode for MCP client communication	prop(description)	getServerConfig	1	K-SCHEMA	R10: tool/param title or description
-src/config.ts	string	Users can still provide their own keys via HTTP headers for isolation.	arg(console.error)	getServerConfig	1	K-TEXT	R5: log/console text
 src/config.ts	string	Your Figma API key (can also be set via FIGMA_API_KEY env var)	prop(description)	getServerConfig	1	K-SCHEMA	R10: tool/param title or description
 src/config.ts	string	\nConfiguration:	arg(console.log)	getServerConfig	1	K-TEXT	R5: log/console text
 src/config.ts	string	boolean	prop(type)	getServerConfig	3	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
@@ -63,7 +59,6 @@ src/config.ts	string	package.json	arg(join)	getPackageVersion	1	K-API	hand: npm 
 src/config.ts	string	string	prop(type)	getServerConfig	4	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/config.ts	string	true	binary(===)	getServerConfig	2	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/config.ts	string	utf8	arg(readFileSync)	getPackageVersion	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/config.ts	template	  ${…} --figma-api-key=YOUR_KEY --remote	arg(console.error)	getServerConfig	1	K-TEXT	report, label, log or error text
 src/config.ts	template	  ${…} --figma-api-key=YOUR_KEY --stdio	arg(console.error)	getServerConfig	1	K-TEXT	report, label, log or error text
 src/config.ts	template	  echo 'FIGMA_API_KEY=YOUR_KEY' > .env && ${…} --stdio	arg(console.error)	getServerConfig	1	K-TEXT	report, label, log or error text
 src/config.ts	template	****${…}	return	maskApiKey	1	K-TEXT	hand: masked key text
@@ -2397,3 +2392,7 @@ src/server.ts	template	Invalid Origin: ${…}	prop(message)	originValidation	1	K
 src/server.ts	template	HTTP server cannot listen on ${…}:${…}:	arg(Logger.error)	startHttpServer	1	K-TEXT	report, label, log or error text
 src/server.ts	number	1	arg(process.exit)	startHttpServer	1	K-API	hand: HTTP status / JSON-RPC code / process exit code
 src/server.ts	template	HTTP server listening on port ${…} (address ${…})	arg(Logger.log)	startHttpServer	1	K-TEXT	report, label, log or error text
+src/cli.ts	string	⚠️  The server's FIGMA_API_KEY is ignored in remote mode. Users MUST provide their own Figma API keys via:	ternary	startServer	1	K-TEXT	report, label, log or error text
+src/cli.ts	string	⚠️  Users MUST provide their own Figma API keys via:	ternary	startServer	1	K-TEXT	report, label, log or error text
+src/config.ts	template	  ${…} --remote   (each request brings its own key)	arg(console.error)	getServerConfig	1	K-TEXT	report, label, log or error text
+src/server.ts	string	The server's FIGMA_API_KEY is ignored in --remote mode: every request must carry its own Figma key	arg(Logger.log)	startHttpServer	1	K-TEXT	report, label, log or error text

@@ -67,7 +67,7 @@ export function generateSvgFilename(nodeName: string): string {
 }
 
 /** A download that answered with a non-2xx status; carries the status so callers need not parse the message. */
-export class DownloadError extends Error {
+class DownloadError extends Error {
     constructor(readonly status: number) {
         super(`Failed to download image: HTTP ${status}`);
     }

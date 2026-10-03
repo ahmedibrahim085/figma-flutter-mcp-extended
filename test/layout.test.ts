@@ -147,7 +147,7 @@ test('a nested frame keeps its own padding', async () => {
 
 test('an empty frame without decoration keeps its space as a sized box', async () => {
     const code = await widgetCode({
-        id: '49:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(100, 20),
+        id: '49:1', name: 'Strip', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(100, 20),
         children: [{id: '49:2', name: 'Spacer', type: 'FRAME', fills: [], absoluteBoundingBox: box(24, 8), children: []}],
     });
 
@@ -194,7 +194,7 @@ test('a nested frame with nothing but children renders its Row or Column directl
 
 test('a shape without a fill keeps its space as a sized box', async () => {
     const text = await toolText({
-        id: '58:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(100, 20),
+        id: '58:1', name: 'Strip', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(100, 20),
         children: [
             {id: '58:2', name: 'Gap', type: 'RECTANGLE', fills: [], absoluteBoundingBox: box(7, 7)},
             {id: '58:3', name: 'Cut', type: 'BOOLEAN_OPERATION', fills: [], absoluteBoundingBox: box(9, 9), children: []},
@@ -363,7 +363,7 @@ const alignmentFrame = (name: string) => JSON.parse(readFileSync(new URL('./fixt
 
 test('the item gap becomes a SizedBox between children, none at either end', async () => {
     const row = dedent(await widgetCode({
-        id: '70:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', itemSpacing: 12, fills: [], absoluteBoundingBox: box(100, 10), ...sized('HUG', 'HUG'),
+        id: '70:1', name: 'Strip', type: 'FRAME', layoutMode: 'HORIZONTAL', itemSpacing: 12, fills: [], absoluteBoundingBox: box(100, 10), ...sized('HUG', 'HUG'),
         children: [dot('70:2'), dot('70:3'), dot('70:4')],
     }));
     assert.equal(row.match(/SizedBox\(width: 12\),/g)?.length, 2, row);
@@ -371,7 +371,7 @@ test('the item gap becomes a SizedBox between children, none at either end', asy
     assert.ok(row.includes('),\n],'), row);
 
     const column = dedent(await widgetCode({
-        id: '71:1', name: 'Column', type: 'FRAME', layoutMode: 'VERTICAL', itemSpacing: 8, fills: [], absoluteBoundingBox: box(10, 100), ...sized('HUG', 'HUG'),
+        id: '71:1', name: 'Pile', type: 'FRAME', layoutMode: 'VERTICAL', itemSpacing: 8, fills: [], absoluteBoundingBox: box(10, 100), ...sized('HUG', 'HUG'),
         children: [dot('71:2'), dot('71:3')],
     }));
     assert.equal(column.match(/SizedBox\(height: 8\),/g)?.length, 1, column);
@@ -506,7 +506,7 @@ test('a FILL child in a HUG main axis keeps its measured size, like Figma', asyn
 
 test('a HUG cross axis with a cross-axis FILL child is wrapped in IntrinsicHeight / IntrinsicWidth', async () => {
     const row = dedent(await widgetCode({
-        id: '91:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(200, 40), ...sized('FIXED', 'HUG'),
+        id: '91:1', name: 'Strip', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], absoluteBoundingBox: box(200, 40), ...sized('FIXED', 'HUG'),
         children: [{id: '91:2', name: 'Tall', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(20, 40), ...sized('FIXED', 'FIXED')},
             {id: '91:3', name: 'Bar', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(20, 20), ...sized('FIXED', 'FILL')}],
     }));
@@ -602,13 +602,13 @@ test('a SCALE child as wide as its frame aligns at -1, and RIGHT/BOTTOM measure 
 test('z-order: an absolute layer before every flow child paints behind the flow; one between flow children is named', async () => {
     const flow = (id: string) => ({id, name: 'Flow', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: at(0, 0, 40, 40), ...sized('FIXED', 'FIXED')});
     const badge = (id: string) => pinned(id, 'Badge', at(30, 0, 10, 10), 'LEFT', 'TOP', {layoutPositioning: 'ABSOLUTE'});
-    const frame = (children: object[]) => ({id: '102:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], clipsContent: true,
+    const frame = (children: object[]) => ({id: '102:1', name: 'Strip', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], clipsContent: true,
         absoluteBoundingBox: at(0, 0, 80, 40), ...sized('HUG', 'HUG'), children});
 
     const behind = dedent(await widgetCode(frame([badge('102:2'), flow('102:3'), flow('102:4')])));
     assert.ok(behind.includes(['fit: StackFit.passthrough,', 'children: [', 'Positioned('].join('\n')), behind);
     const between = await toolText(frame([flow('102:5'), badge('102:6'), flow('102:7')]));
-    assert.match(between, /\/\/ approximate: "Badge" is absolute between flow children of "Row"; it is painted in front of them/);
+    assert.match(between, /\/\/ approximate: "Badge" is absolute between flow children of "Strip"; it is painted in front of them/);
 });
 
 test('clipping follows clipsContent: none when off, the default hard edge when on, ClipRRect when the frame is rounded', async () => {
@@ -634,7 +634,7 @@ test('a group in a frame without auto layout lends its layers to the frame: each
 test('itemReverseZIndex swaps which absolute layers paint behind and in front of the flow', async () => {
     const flow = {id: '106:2', name: 'Flow', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: at(0, 0, 40, 40), ...sized('FIXED', 'FIXED')};
     const badge = pinned('106:3', 'Badge', at(30, 0, 10, 10), 'LEFT', 'TOP', {layoutPositioning: 'ABSOLUTE'});
-    const code = dedent(await widgetCode({id: '106:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], clipsContent: true,
+    const code = dedent(await widgetCode({id: '106:1', name: 'Strip', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], clipsContent: true,
         itemReverseZIndex: true, absoluteBoundingBox: at(0, 0, 40, 40), ...sized('HUG', 'HUG'), children: [flow, badge]}));
     // Without the flag the badge (after the flow child) would paint in front; reversed, it paints behind the Row.
     assert.ok(code.includes(['fit: StackFit.passthrough,', 'children: [', 'Positioned('].join('\n')), code);
@@ -659,7 +659,7 @@ test('a CENTER child that crosses the frame edge keeps its size: no padding to s
 
 test('itemReverseZIndex reverses the whole paint order: the last absolute layer paints first', async () => {
     const flow = {id: '109:2', name: 'Flow', type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: at(0, 0, 40, 40), ...sized('FIXED', 'FIXED')};
-    const code = dedent(await widgetCode({id: '109:1', name: 'Row', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], clipsContent: true,
+    const code = dedent(await widgetCode({id: '109:1', name: 'Strip', type: 'FRAME', layoutMode: 'HORIZONTAL', fills: [], clipsContent: true,
         itemReverseZIndex: true, absoluteBoundingBox: at(0, 0, 40, 40), ...sized('HUG', 'HUG'), children: [flow,
             pinned('109:3', 'First', at(1, 0, 10, 10), 'LEFT', 'TOP', {layoutPositioning: 'ABSOLUTE'}),
             pinned('109:4', 'Second', at(2, 0, 10, 10), 'LEFT', 'TOP', {layoutPositioning: 'ABSOLUTE'})]}));

@@ -354,8 +354,9 @@ export class FlutterCodeGenerator {
 
   /**
    * The one BorderRadius emitter. Takes one radius, Figma's rectangleCornerRadii ([topLeft, topRight, bottomRight,
-   * bottomLeft], clockwise from the top left) or the extractor's corner object, and leaves zero corners out (Flutter's
-   * default is Radius.zero); '' when no corner is rounded.
+   * bottomLeft], clockwise from the top left) or the extractor's corner object; '' when no corner is rounded.
+   * Zero corners are left out because Flutter's BorderRadius.only defaults omitted corners to Radius.zero, so the
+   * result renders the same and prints less.
    */
   static borderRadius(radius: number | number[] | CornerRadii | undefined): string {
     if (typeof radius === 'number') return radius > 0 ? `BorderRadius.circular(${radius})` : '';

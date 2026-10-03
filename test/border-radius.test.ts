@@ -9,6 +9,7 @@ const RADII: Array<{name: string; corners: object; dart: string}> = [
     {name: 'one radius', corners: {cornerRadius: 8}, dart: 'BorderRadius.circular(8)'},
     {name: 'four different corners', corners: {rectangleCornerRadii: [4, 8, 12, 16]},
         dart: 'BorderRadius.only(topLeft: Radius.circular(4), topRight: Radius.circular(8), bottomRight: Radius.circular(12), bottomLeft: Radius.circular(16))'},
+    {name: 'a zero radius', corners: {cornerRadius: 0}, dart: ''},
     {name: 'a zero corner', corners: {rectangleCornerRadii: [12, 0, 12, 0]},
         dart: 'BorderRadius.only(topLeft: Radius.circular(12), bottomRight: Radius.circular(12))'},
 ];
@@ -25,7 +26,8 @@ for (const {name, corners, dart} of RADII) {
         const node = frame(corners);
         const {text} = await callToolOffline(nodeRoute(node.id, node), 'generate_flutter_implementation', {input: FILE_KEY, nodeId: node.id});
 
-        assert.ok(text.includes(`  borderRadius: ${dart},\n`), text);
+        assert.equal(text.includes('borderRadius:'), dart !== '', text);
+        if (dart) assert.ok(text.includes(`  borderRadius: ${dart},\n`), text);
     });
 
     test(`the plain analysis guidance prints ${name} as ${dart}`, async () => {
@@ -33,6 +35,7 @@ for (const {name, corners, dart} of RADII) {
         const {text} = await callToolOffline(nodeRoute(node.id, node), 'analyze_figma_component',
             {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, useDeduplication: false});
 
-        assert.ok(text.includes(`    borderRadius: ${dart},\n`), text);
+        assert.equal(text.includes('borderRadius:'), dart !== '', text);
+        if (dart) assert.ok(text.includes(`    borderRadius: ${dart},\n`), text);
     });
 }

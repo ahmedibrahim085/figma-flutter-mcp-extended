@@ -24,7 +24,7 @@ function summariseNode(node: any): any {
         summary.bounds = node.absoluteBoundingBox;
     }
     if (node.characters) {
-        summary.text = node.characters.slice(0, 200);
+        summary.text = node.characters;
     }
     if (node.visible === false) {
         summary.visible = false;

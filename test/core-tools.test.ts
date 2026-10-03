@@ -31,3 +31,16 @@ test('without depth no depth is sent, so Figma returns every level', async () =>
         'ff_get_design_context', {fileKey: FILE_KEY, nodeId: '1:1'});
     assert.deepEqual(context.requests.map((r) => r.query), [{ids: '1:1', geometry: 'paths', plugin_data: 'shared'}]);
 });
+
+test('a 300-character text comes back whole from both tree tools', async () => {
+    const long = `${'a'.repeat(299)}Z`;
+    const document = frame('1:1', {children: [{id: '1:2', name: 'Body', type: 'TEXT', characters: long}]});
+
+    const metadata = await callToolOffline(nodesRoute('ids=1:1', document),
+        'ff_get_metadata', {fileKey: FILE_KEY, nodeId: '1:1'});
+    assert.equal(JSON.parse(metadata.text).nodeTree.children[0].text, long);
+
+    const context = await callToolOffline(nodesRoute(DESIGN_CONTEXT_QUERY, document),
+        'ff_get_design_context', {fileKey: FILE_KEY, nodeId: '1:1'});
+    assert.equal(JSON.parse(context.text).tree.children[0].text, long);
+});

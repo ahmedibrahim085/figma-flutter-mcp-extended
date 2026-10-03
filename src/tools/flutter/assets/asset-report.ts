@@ -24,7 +24,7 @@ export async function assetUsageReport(assets: AssetInfo[], constants: WrittenCo
         `  ${assetPath.endsWith('.svg') ? 'SvgPicture' : 'Image'}.asset(${file.className}.${name}) // ${nodeNameOf(assetPath)}\n`));
     if (usage.length > 0) report += `Usage:\n${usage.join('')}`;
     if (constants.some(file => [...file.names.keys()].some(assetPath => assetPath.endsWith('.svg')))) {
-        report += `SvgPicture comes from flutter_svg: run \`flutter pub add flutter_svg\`, then import 'package:flutter_svg/flutter_svg.dart';\n`;
+        report += `Import: import 'package:flutter_svg/flutter_svg.dart'; (flutter_svg provides SvgPicture; run \`flutter pub add flutter_svg\`)\n`;
     }
 
     const skipped = constants.flatMap(file => file.skipped);

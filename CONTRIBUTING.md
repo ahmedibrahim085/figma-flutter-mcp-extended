@@ -210,13 +210,12 @@ To connect an MCP client to the local HTTP server, add this configuration to you
 
 ## Available Endpoints
 
-When the HTTP server is running, the following endpoints are available:
+When the HTTP server is running, it serves one endpoint:
 
-- **POST /mcp** - Main Streamable HTTP endpoint for MCP communication
-- **GET /mcp** - Session management for StreamableHTTP
-- **DELETE /mcp** - Session termination for StreamableHTTP  
-- **GET /sse** - Server-Sent Events endpoint (alternative transport)
-- **POST /messages** - Message endpoint for SSE transport
+- **POST /mcp** - Streamable HTTP endpoint for MCP communication. It keeps no session: every request is served on its own, so no `initialize` and no session id are needed, and no `Mcp-Session-Id` is issued. Send the Figma key with each request (`Authorization: Bearer`, `X-Figma-Api-Key`, or the `figmaApiKey` query parameter), or start the server with a key. A request with a `progressToken` is answered as an event stream carrying its progress; any other request is answered as JSON.
+- **GET /mcp** and **DELETE /mcp** answer 405.
+
+Over HTTP the server's working folder is not your Flutter project, so the tools that write files (`extract_theme_colors`, `extract_theme_typography`, `export_flutter_assets`, `export_svg_flutter_assets`, `generate_golden_file_test`) need `projectPath` and return an error without it. Over stdio, `projectPath` defaults to the current directory.
 
 ## Environment Variables
 

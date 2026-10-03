@@ -96,7 +96,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
                                 figmaService, fileId: parsedInput.fileId, projectPath, nodes: imageNodes,
                                 ratios: devicePixelRatios
                             });
-                            assetExportInfo = await analyseAssetSection(exported, projectPath, 'SCREEN ASSET EXPORT', 'screen asset(s)');
+                            assetExportInfo = await analyseAssetSection(exported, projectPath, 'SCREEN ASSET EXPORT');
                         }
                     } catch (assetError) {
                         assetExportInfo = `\nAsset Export Warning: ${assetError instanceof Error ? assetError.message : String(assetError)}\n`;

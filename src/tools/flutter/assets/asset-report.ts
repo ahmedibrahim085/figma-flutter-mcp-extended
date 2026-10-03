@@ -38,15 +38,15 @@ export async function assetUsageReport(assets: AssetInfo[], constants: WrittenCo
 
 /**
  * The asset section the analyse tools append to their report: what was exported (each file by its project path),
- * the export notes, and the usage report. `title` heads the box and `noun` follows the count ("2 <noun>:").
+ * the export notes, and the usage report. `title` heads the box.
  */
-export async function analyseAssetSection(exported: ExportedAssets, projectPath: string, title: string, noun: string): Promise<string> {
+export async function analyseAssetSection(exported: ExportedAssets, projectPath: string, title: string): Promise<string> {
     const notes = exported.notes.map(note => `   • ${note}\n`).join('');
     if (exported.assets.length === 0) return notes ? `\nExport notes:\n${notes}` : '';
 
     const rule = '='.repeat(50);
     let report = `\n${rule}\n🖼️  ${title}\n${rule}\n\n`;
-    report += `Found and exported ${exported.assets.length} ${noun}:\n\n`;
+    report += `Found and exported ${exported.assets.length} asset(s):\n\n`;
     report += exported.assets.map(asset => `   • ${asset.path} (${asset.size})\n`).join('');
     if (notes) report += `\nExport notes:\n${notes}`;
     report += `\n${await assetUsageReport(exported.assets, exported.constants, projectPath)}`;

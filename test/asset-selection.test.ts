@@ -254,7 +254,7 @@ test('the analyse tools name a node Figma returned no image for too', async (t) 
     const {text} = await callToolOffline(figma(root, [{ids: ['5:2', '5:3'], format: 'png', scale: 2, missing: ['5:3']}]), 'analyze_frame_as_screen',
         {input: FILE_KEY, nodeId: '5:1', extractAssets: true, projectPath: dir});
 
-    assert.match(text, /Found and exported 1 screen asset/);
+    assert.match(text, /Found and exported 1 asset\(s\)/);
     assert.match(text, /Lost \(5:3\): Figma returned no image/);
 });
 
@@ -280,7 +280,7 @@ test('the analyse tools name a download that failed too, and a run where every d
     const some = await callToolOffline(figma(root, [{ids: ['5:2'], format: 'png', scale: 2}, {ids: ['5:3'], format: 'png', scale: 3, failDownload: ['5:3']}]),
         'analyze_frame_as_screen', {input: FILE_KEY, nodeId: '5:1', extractAssets: true, projectPath: dir});
 
-    assert.match(some.text, /Found and exported 1 screen asset/);
+    assert.match(some.text, /Found and exported 1 asset\(s\)/);
     assert.match(some.text, /Broken \(5:3\): download failed for png at \dx \(HTTP 404\); not exported/);
     assert.match(some.text, /suffix "@big" is reported/);
 

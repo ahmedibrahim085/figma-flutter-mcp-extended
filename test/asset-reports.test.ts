@@ -94,6 +94,8 @@ for (const tool of TOOLS) {
         assert.match(text, /^\s*• assets\/images\/2\.0x\/my_logo\.png \(/m);
         assert.match(text, /^\s*• assets\/svgs\/mark\.svg \(/m);
         assert.doesNotMatch(text, /^\s*• (?:2\.0x\/my_logo\.png|mark\.svg) \(/m);
+        assert.match(text, /Found and exported 4 asset\(s\):/);
+        assert.doesNotMatch(text, /image asset|screen asset/);
     });
 
     test(`${tool[0]}: a PDF is listed with its path and gets no usage line`, async (t) => {

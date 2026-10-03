@@ -17,3 +17,4 @@ tools/render-check/flutter/test/host_matrix_test.dart
 tools/render-check/flutter/test/theme_host_test.dart
 tools/render-check/flutter/test/typography_host_test.dart
 tools/render-check/flutter/lib/theme/
+tools/render-check/flutter/failures/

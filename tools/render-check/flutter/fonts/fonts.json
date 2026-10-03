@@ -1,0 +1,8 @@
+{
+  "source": "Inter 4.1, https://github.com/rsms/inter/releases/tag/v4.1 (SIL Open Font License 1.1, see OFL.txt)",
+  "fonts": [
+    {"family": "Inter", "weight": 400, "file": "Inter-Regular.ttf"},
+    {"family": "Inter", "weight": 500, "file": "Inter-Medium.ttf"},
+    {"family": "Inter", "weight": 700, "file": "Inter-Bold.ttf"}
+  ]
+}

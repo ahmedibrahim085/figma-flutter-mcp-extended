@@ -9,10 +9,18 @@
 // --assets runs analyze_frame_as_screen on a frame with a raster image and an SVG, with real image bytes, in the given
 // project (run.sh passes a temp copy of the harness with flutter_svg added); a test pumps each Image.asset /
 // SvgPicture.asset line of the report, using the report's own import lines, in the four hosts.
+// Default mode compares the render with Figma (decision 26): in each host the widget's size and its children's
+// positions against the fixture's numbers (children are found by a ValueKey holding their Figma node id, which
+// only this check asks the generator for), and, in the bounded host, the image against Figma's own screenshot
+// of the node (test/fixtures/screenshots). Tolerances: tools/render-check/flutter/tolerances.json.
 import {existsSync, mkdirSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {isAbsolute, resolve} from 'node:path';
 import {callToolsOffline, nodeRoute, FILE_KEY} from '../../test/helpers/offline-tool.ts';
+import {startFakeFigma} from '../../test/helpers/fake-figma.ts';
+import {FigmaService} from '../../src/services/figma.ts';
+import {DeduplicatedComponentExtractor} from '../../src/extractors/components/deduplicated-extractor.ts';
+import {generateFlutterImplementation, referencedStyles, withNodeKeys} from '../../src/tools/flutter/components/deduplicated-helpers.ts';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const FLUTTER = fileURLToPath(new URL('./flutter/', import.meta.url));
@@ -193,25 +201,66 @@ void main() {
     process.exit(0);
 }
 
-const [implementation] = await callToolsOffline(nodeRoute(node.id, node), [
-    ['generate_flutter_implementation', {input: FILE_KEY, nodeId: node.id}],
-]);
-// The widget class and the style constants it refers to both come from generate_flutter_implementation.
-const styleDefinitions = [...implementation.text.matchAll(/^final \w+ = [\s\S]*?;$/gm)].map((m) => m[0]).join('\n');
-const classStart = implementation.text.indexOf('class ');
-const classEnd = implementation.text.indexOf('\n}\n', classStart) + 3;
-if (classStart < 0 || classEnd < 3) {
-    console.error('no widget class in the generate_flutter_implementation output:\n' + implementation.text);
+// The generator is called the way generate_flutter_implementation calls it, with one addition: withNodeKeys, so each
+// child carries the id of its Figma node. The node arrives through FigmaService from a fake Figma, as in the tool.
+const fakeFigma = await startFakeFigma(nodeRoute(node.id, node));
+process.env.FIGMA_API_BASE_URL = fakeFigma.baseUrl;
+const {document} = await new FigmaService('test-key').getNodeWithStyles(FILE_KEY, node.id);
+await fakeFigma.close();
+if (document.type === 'COMPONENT_SET') {
+    console.error(`${node.id} is a component set; the render check renders one component at a time`);
+    process.exit(2);
+}
+const extractor = new DeduplicatedComponentExtractor();
+const analysis = await extractor.analyzeComponent(document, true);
+const implementation = withNodeKeys(() => generateFlutterImplementation(analysis, extractor.styleLibrary));
+
+// Every font a text node names must be one the harness loads (fonts/fonts.json), or Flutter would silently use its test font.
+const loaded = JSON.parse(readFileSync(resolve(FLUTTER, 'fonts/fonts.json'), 'utf-8')).fonts as Array<{family: string; weight: number}>;
+const missing = new Set<string>();
+(function checkFonts(n: any) {
+    const {fontFamily, fontWeight} = n.style ?? {};
+    if (fontFamily && !loaded.some((font) => font.family === fontFamily && font.weight === fontWeight)) missing.add(`${fontFamily} w${fontWeight}`);
+    (n.children ?? []).forEach(checkFonts);
+})(node);
+if (missing.size > 0) {
+    console.error(`font ${[...missing].join(', ')} not loaded: add the file to tools/render-check/flutter/fonts/ and list it in fonts.json`);
     process.exit(1);
 }
-const widgetClass = implementation.text.slice(classStart, classEnd);
-// The test screen is the node's own Figma size, so a host gives it exactly the room the design has.
-// Without a Figma box the test keeps flutter_test's default view.
-const box = node.absoluteBoundingBox;
-const viewSetup = box
-    ? `tester.view.physicalSize = const Size(${Math.ceil(box.width)}, ${Math.ceil(box.height)});\n      tester.view.devicePixelRatio = 1;\n      addTearDown(tester.view.reset);\n      `
-    : '';
+
+// The widget class and the style constants it refers to both come from generate_flutter_implementation.
+const styleDefinitions = referencedStyles(implementation, extractor.styleLibrary).map((style) => `final ${style.id} = ${style.flutterCode};`).join('\n');
+const classStart = implementation.indexOf('class ');
+const classEnd = implementation.indexOf('\n}\n', classStart) + 3;
+if (classStart < 0 || classEnd < 3) {
+    console.error('no widget class in the generate_flutter_implementation output:\n' + implementation);
+    process.exit(1);
+}
+const widgetClass = implementation.slice(classStart, classEnd);
 const className = widgetClass.match(/^class (\w+) /)![1];
+
+// Figma's numbers: the root's size, and each keyed child's offset from the root and its size (absoluteBoundingBox).
+const box = node.absoluteBoundingBox;
+if (!box) {
+    console.error(`${node.id} has no absoluteBoundingBox in the fixture, so there is nothing to compare with`);
+    process.exit(2);
+}
+const keyed = [...new Set([...widgetClass.matchAll(/ValueKey\('([^']+)'\)/g)].map((m) => m[1]))];
+const dartBox = (id: string, b: {x: number; y: number; width: number; height: number}) =>
+    `FigmaBox('${id}', ${b.x - box.x}, ${b.y - box.y}, ${b.width}, ${b.height})`;
+const byId = (n: any, id: string): any => n.id === id ? n : (n.children ?? []).map((c: any) => byId(c, id)).find(Boolean);
+const childBoxes = keyed.flatMap((id) => {
+    const child = byId(node, id);
+    return child?.absoluteBoundingBox ? [`    ${dartBox(id, child.absoluteBoundingBox)},`] : [];
+});
+
+// Figma's screenshot of this node, when the manifest has one.
+const manifestPath = resolve(ROOT, 'test/fixtures/screenshots/manifest.json');
+const shot = existsSync(manifestPath)
+    ? JSON.parse(readFileSync(manifestPath, 'utf-8')).screenshots.find((s: any) => s.nodeId === node.id) : undefined;
+
+// The test screen is the node's own Figma size, so a host gives it exactly the room the design has.
+const viewSetup = `tester.view.physicalSize = const Size(${Math.ceil(box.width)}, ${Math.ceil(box.height)});\n      tester.view.devicePixelRatio = 1;\n      addTearDown(tester.view.reset);\n      `;
 
 // Git does not keep empty folders, so a fresh clone has neither lib/ nor test/ here.
 mkdirSync(resolve(FLUTTER, 'lib'), {recursive: true});
@@ -222,24 +271,42 @@ writeFileSync(resolve(FLUTTER, 'test/host_matrix_test.dart'), `import 'package:f
 import 'package:flutter_test/flutter_test.dart';
 import 'package:render_check/generated.dart';
 
-// The generated widget must lay out without a Flutter error in each host a screen can give it.
+import 'figma_checks.dart';
+
+// The generated widget must lay out without a Flutter error in each host a screen can give it, match Figma's
+// numbers there, and, in the bounded host, match Figma's screenshot of the node.
 void main() {
+  const root = ${dartBox(node.id, box)};
+  const children = <FigmaBox>[
+${childBoxes.join('\n')}
+  ];
   final hosts = ${HOSTS};
   for (final host in hosts.entries) {
     testWidgets('${className} in a \${host.key} host', (tester) async {
       ${viewSetup}final errors = <String>[];
       final previous = FlutterError.onError;
       FlutterError.onError = (details) => errors.add(details.exceptionAsString().split('\\n').first);
-      await tester.pumpWidget(MaterialApp(home: Scaffold(body: host.value(const ${className}()))));
+      await tester.pumpWidget(MaterialApp(
+        debugShowCheckedModeBanner: false,
+        home: Scaffold(body: host.value(const RepaintBoundary(key: ValueKey('render-check-image'), child: ${className}()))),
+      ));
       FlutterError.onError = previous;
       final size = tester.getSize(find.byType(${className}));
       // ignore: avoid_print
       print('\${host.key}: \${size.width} x \${size.height}');
-      expect(errors, isEmpty);
+      await expectRenderMatchesFigma(
+        tester,
+        widget: find.byType(${className}),
+        root: root,
+        children: children,
+        flutterErrors: errors,${shot ? `
+        imageBoundary: host.key == 'bounded' ? find.byKey(const ValueKey('render-check-image')) : null,
+        screenshot: '../../../../test/fixtures/screenshots/${shot.file}',` : ''}
+      );
     });
   }
 }
 `);
 // The text after the class lists approximations and notes; they belong next to the render result.
-console.log(implementation.text.slice(classEnd).trim());
+console.log(implementation.slice(classEnd).trim());
 console.log(`\nwrote ${className} to tools/render-check/flutter/lib/generated.dart`);

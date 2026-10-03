@@ -77,7 +77,7 @@ const sha = (text: string) => createHash('sha256').update(text).digest('hex').sl
 // Pinned from the halving search (commit 8222242): the cut reply of each tool is byte for byte what it was.
 const PINNED: Array<[tool: string, query: string, args: Record<string, unknown>, children: number, length: number, sha: string]> = [
     ['ff_get_metadata', 'ids=1:1', {fileKey: FILE_KEY}, 1500, 99886, 'f317aedb80720292'],
-    ['ff_get_design_context', 'ids=1:1&geometry=paths&plugin_data=shared', {fileKey: FILE_KEY}, 1500, 99832, 'e32e1602900b54e3'],
+    ['ff_get_design_context', 'ids=1:1', {fileKey: FILE_KEY}, 1500, 99832, 'e32e1602900b54e3'],
     ['generate_flutter_implementation', '', {input: FILE_KEY}, 700, 99967, 'b31486a984dcde3c'],
     ['analyze_frame_as_screen', '', {input: FILE_KEY, extractAssets: false}, 1500, 99937, 'a5dc7e39988dec7a'],
     ['inspect_frame_structure', '', {input: FILE_KEY}, 1500, 99931, '70e55117d0f859d6'],

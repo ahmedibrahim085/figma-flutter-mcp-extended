@@ -1060,6 +1060,7 @@ src/tools/flutter/components/deduplicated-helpers.ts	number	2	arg(indentTail)	co
 src/tools/flutter/components/deduplicated-helpers.ts	number	2	arg(indentTail)	fillCrossAxis	1	K-DART	rule: indentation of emitted Dart
 src/tools/flutter/components/deduplicated-helpers.ts	number	2	arg(indentTail)	fillLayerChild	1	K-DART	indent width of emitted Dart
 src/tools/flutter/components/deduplicated-helpers.ts	number	2	arg(indentTail)	flexWidget	3	K-DART	rule: indentation of emitted Dart
+src/tools/flutter/components/deduplicated-helpers.ts	number	2	arg(indentTail)	keyedChildWidget	1	K-DART	rule: indentation of emitted Dart
 src/tools/flutter/components/deduplicated-helpers.ts	number	2	arg(indentTail)	generateFlutterImplementation	2	K-DART	rule: indentation of emitted Dart
 src/tools/flutter/components/deduplicated-helpers.ts	number	2	arg(indentTail)	layoutWidget	1	K-DART	rule: indentation of emitted Dart
 src/tools/flutter/components/deduplicated-helpers.ts	number	2	arg(indentTail)	overflowLayout	1	K-DART	rule: indentation of emitted Dart
@@ -1237,6 +1238,7 @@ src/tools/flutter/components/deduplicated-helpers.ts	template	      🔑 Compone
 src/tools/flutter/components/deduplicated-helpers.ts	template	      🔧 Needs separate analysis: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	     Properties: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	     Usage count: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
+src/tools/flutter/components/deduplicated-helpers.ts	template	KeyedSubtree(\n  key: ValueKey(${…}),\n  child: ${…},\n)	ternary	keyedChildWidget	1	K-DART	rule: Dart syntax template carrying no design value (the node id is the only value, from Figma)
 src/tools/flutter/components/deduplicated-helpers.ts	template	    SizedBox(${…}: ${…}),\n	ternary	flexWidget	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	    return ${…};\n	binary(+=)	generateFlutterImplementation	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	   ${…}. ${…} (${…})\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	report, label, log or error text

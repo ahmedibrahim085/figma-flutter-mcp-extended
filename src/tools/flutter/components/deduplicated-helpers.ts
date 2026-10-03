@@ -320,7 +320,7 @@ function overflowLayout(layout: string, frame: LayoutInfo, children: Deduplicate
  */
 function positioned(child: DeduplicatedComponentChild, frame: LayoutInfo, styleLibrary: FlutterStyleLibrary, approximations: string[]): string {
   if (child.layout.boundsMissing) {
-    return approximate(`no absoluteBoundingBox from Figma for "${child.name}"; it is not positioned`, childWidget(child, styleLibrary, approximations) ?? sizedBox([]), approximations);
+    return approximate(`no absoluteBoundingBox from Figma for "${child.name}"; it is not positioned`, keyedChildWidget(child, styleLibrary, approximations) ?? sizedBox([]), approximations);
   }
   const origin = child.layout.origin ?? {x: 0, y: 0};
   const frameOrigin = frame.origin ?? {x: 0, y: 0};
@@ -363,7 +363,7 @@ function positioned(child: DeduplicatedComponentChild, frame: LayoutInfo, styleL
     }
     align.push(alignment);
   }
-  let code = childWidget(child, styleLibrary, approximations) ?? sizedBox([]);
+  let code = keyedChildWidget(child, styleLibrary, approximations) ?? sizedBox([]);
   if (boxSizes.length) code = box('SizedBox', [...boxSizes, `child: ${indentTail(code, 2)},`]);
   if (factors.length) code = box('FractionallySizedBox', [...factors, `child: ${indentTail(code, 2)},`]);
   if (wrapped) code = box('Align', [`alignment: Alignment(${align.map(dartNumber).join(', ')}),`, `child: ${indentTail(code, 2)},`]);
@@ -449,7 +449,7 @@ function flexWidget(
   });
   const items = clamped
     .map(child => {
-      const code = childWidget(child, styleLibrary, approximations);
+      const code = keyedChildWidget(child, styleLibrary, approximations);
       if (!code) return code;
       const filled = fillCrossAxis(code, child.layout, axis);
       return flexibleMax.has(child)
@@ -486,6 +486,29 @@ function approximate(note: string, widget: string, approximations: string[]): st
   const line = note.replace(/[\r\n]+/g, ' ');
   approximations.push(line);
   return `// approximate: ${line}\n${widget}`;
+}
+
+/** Whether keyedChildWidget wraps each child in a KeyedSubtree keyed by its Figma node id; the render check turns it on. */
+let nodeKeys = false;
+
+/**
+ * Runs `generate` with every child widget keyed by its Figma node id, so a test can find each node's widget
+ * and compare its box with Figma's. Normal output carries no keys.
+ * SHORTCUT: a module flag instead of a parameter threaded through layoutWidget, flexWidget, positioned and
+ * childWidget; generation is synchronous, so the flag cannot leak across calls. Thread it through if that changes.
+ */
+export function withNodeKeys<T>(generate: () => T): T {
+  nodeKeys = true;
+  try {
+    return generate();
+  } finally {
+    nodeKeys = false;
+  }
+}
+
+function keyedChildWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterStyleLibrary, approximations: string[]): string | undefined {
+  const widget = childWidget(child, styleLibrary, approximations);
+  return nodeKeys && widget ? `KeyedSubtree(\n  key: ValueKey(${dartString(child.nodeId)}),\n  child: ${indentTail(widget, 2)},\n)` : widget;
 }
 
 /** Dart for one analysed child: text, shape, frame (recursively) or a nested-component placeholder. */

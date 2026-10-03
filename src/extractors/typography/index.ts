@@ -13,7 +13,6 @@ export type {
     TypographyExtractionContext,
     TypographyExtractorFn,
     TypographyExtractionOptions,
-    TypographyGenerationOptions,
     FontWeightMapping,
     TextStyleHash
 } from './types.js';

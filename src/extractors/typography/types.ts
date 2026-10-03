@@ -61,16 +61,6 @@ export interface TypographyExtractionOptions {
 }
 
 /**
- * Flutter typography generation options
- */
-export interface TypographyGenerationOptions {
-    generateAppText?: boolean;
-    generateTextTheme?: boolean;
-    includeLineHeight?: boolean;
-    includeLetterSpacing?: boolean;
-}
-
-/**
  * Font weight mapping for Flutter
  */
 export interface FontWeightMapping {

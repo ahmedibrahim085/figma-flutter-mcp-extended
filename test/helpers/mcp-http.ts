@@ -3,11 +3,9 @@ import {spawn} from 'node:child_process';
 import {mkdtempSync} from 'node:fs';
 import {createServer} from 'node:net';
 import {tmpdir} from 'node:os';
-import {join, dirname} from 'node:path';
-import {fileURLToPath} from 'node:url';
+import {join} from 'node:path';
 import {startFakeFigma, type FakeRoutes} from './fake-figma.ts';
-
-const CLI = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'dist', 'cli.js');
+import {builtCliPath} from './mcp-stdio.ts';
 
 /** One `--http` server on a free port, with Figma replaced by the fake serving `routes`; `body` gets its MCP endpoint and its working folder. */
 export async function withHttpServer(routes: FakeRoutes, body: (endpoint: string, cwd: string) => Promise<void>) {
@@ -19,7 +17,7 @@ export async function withHttpServer(routes: FakeRoutes, body: (endpoint: string
         });
     });
     const cwd = mkdtempSync(join(tmpdir(), 'mcp-http-'));
-    const child = spawn(process.execPath, [CLI, '--http', `--port=${port}`], {
+    const child = spawn(process.execPath, [builtCliPath(), '--http', `--port=${port}`], {
         cwd,
         env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', FIGMA_API_BASE_URL: figma.baseUrl},
         stdio: 'ignore',

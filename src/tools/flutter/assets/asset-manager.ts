@@ -6,6 +6,7 @@ import {z} from 'zod';
 import type {FigmaService} from '../../../services/figma.js';
 import {isEffectivelyVisible} from '../../../utils/visibility.js';
 import {detectConstantsDir} from '../../../utils/project-conventions.js';
+import {isDartIdentifier, lowerCamelCase} from '../../../utils/dart-names.js';
 import defaults from '../../../defaults.json' with { type: 'json' };
 
 export interface AssetInfo {
@@ -51,7 +52,7 @@ export function generateAssetFilename(nodeName: string, format: string, scale: n
 }
 
 /** Strip a resolution-variant folder (`2.0x/`, `1.5x/`) so only the main asset path remains. */
-function toMainAssetPath(path: string): string {
+export function toMainAssetPath(path: string): string {
     return path.replace(/(^|\/)\d+(?:\.\d+)?x\//, '$1');
 }
 
@@ -98,32 +99,7 @@ export async function getFileStats(filepath: string): Promise<{size: string}> {
 }
 
 export async function updatePubspecAssets(pubspecPath: string, assets: Array<{path: string}>): Promise<void> {
-    let pubspecContent: string;
-
-    try {
-        pubspecContent = await readFile(pubspecPath, 'utf-8');
-    } catch {
-        // If pubspec doesn't exist, create a basic one
-        pubspecContent = `name: flutter_app
-description: A Flutter application
-
-version: 1.0.0+1
-
-environment:
-  sdk: '>=3.0.0 <4.0.0'
-
-dependencies:
-  flutter:
-    sdk: flutter
-
-dev_dependencies:
-  flutter_test:
-    sdk: flutter
-
-flutter:
-  uses-material-design: true
-`;
-    }
+    const pubspecContent = await readFile(pubspecPath, 'utf-8');
 
     // Only the top-level `flutter:` key owns the asset list. Matching the first
     // `flutter:` / `assets:` text instead hit `dependencies: flutter:` and
@@ -214,24 +190,6 @@ flutter:
     await writeFile(pubspecPath, `${lines.join(eol)}${eol}`);
 }
 
-const DART_RESERVED = new Set([
-    'abstract', 'as', 'assert', 'async', 'await', 'break', 'case', 'catch', 'class', 'const', 'continue',
-    'covariant', 'default', 'deferred', 'do', 'dynamic', 'else', 'enum', 'export', 'extends', 'extension',
-    'external', 'factory', 'false', 'final', 'finally', 'for', 'get', 'if', 'implements', 'import', 'in',
-    'interface', 'is', 'late', 'library', 'mixin', 'new', 'null', 'operator', 'part', 'required', 'rethrow',
-    'return', 'set', 'static', 'super', 'switch', 'sync', 'this', 'throw', 'true', 'try', 'typedef', 'var',
-    'void', 'while', 'with', 'yield',
-]);
-
-/** lowerCamelCase Dart identifier; leading digits get `prefix`, reserved words a trailing `_`. */
-function toDartIdentifier(name: string, prefix: string): string {
-    let identifier = toCamelCase(name) || prefix;
-    if (/^\d/.test(identifier)) {
-        identifier = prefix + identifier.charAt(0).toUpperCase() + identifier.slice(1);
-    }
-    return DART_RESERVED.has(identifier) ? `${identifier}_` : identifier;
-}
-
 /** True when the project generates its own `Assets` class with flutter_gen. */
 async function usesFlutterGen(projectPath: string): Promise<boolean> {
     try {
@@ -242,106 +200,65 @@ async function usesFlutterGen(projectPath: string): Promise<boolean> {
     }
 }
 
-export async function generateAssetConstants(assets: Array<{filename: string, nodeName: string}>, projectPath: string): Promise<string> {
-    const constantsDir = await detectConstantsDir(projectPath);
-    await mkdir(constantsDir, {recursive: true});
-
-    const constantsPath = join(constantsDir, defaults.output.assetConstantsFile);
-
-    // Read existing constants if they exist
-    const existingConstants = new Map<string, string>();
-    try {
-        const existingContent = await readFile(constantsPath, 'utf-8');
-        // Extract existing constants using regex
-        const constantMatches = existingContent.matchAll(/static const String (\w+) = '([^']+)';/g);
-        for (const match of constantMatches) {
-            existingConstants.set(match[1], match[2]);
-        }
-    } catch {
-        // File doesn't exist, that's fine
-    }
-
-    // Generate unique asset names from new assets
-    const uniqueAssets = assets.reduce((acc, asset) => {
-        const mainFilename = toMainAssetPath(asset.filename);
-        if (!acc[mainFilename]) {
-            acc[mainFilename] = asset;
-        }
-        return acc;
-    }, {} as Record<string, any>);
-
-    // Add new constants to existing ones
-    Object.entries(uniqueAssets).forEach(([mainFilename, asset]) => {
-        const constantName = toDartIdentifier(asset.nodeName, 'image');
-        existingConstants.set(constantName, `${defaults.output.imagesDir}/${mainFilename}`);
-    });
-
-    // flutter_gen generates its own `Assets` class; a second one breaks compilation.
-    const className = await usesFlutterGen(projectPath) ? 'FigmaAssets' : 'Assets';
-
-    // Generate the complete constants file
-    let constantsContent = `// Generated asset constants\n// Do not edit manually\n\nclass ${className} {\n`;
-
-    // Sort constants alphabetically for consistency
-    const sortedConstants = Array.from(existingConstants.entries()).sort(([a], [b]) => a.localeCompare(b));
-    sortedConstants.forEach(([constantName, assetPath]) => {
-        constantsContent += `  static const String ${constantName} = '${assetPath}';\n`;
-    });
-
-    constantsContent += `}\n`;
-
-    await writeFile(constantsPath, constantsContent);
-    return constantsPath;
+/** What a constants writer put in its file: the report reads this, never re-derives it. */
+export interface WrittenConstants {
+    path: string;
+    className: string;
+    /** Asset path to the constant that holds it in `path`. */
+    names: Map<string, string>;
+    /** Assets that got no constant, with the reason. */
+    skipped: Array<{assetPath: string; nodeName: string; reason: string}>;
 }
 
-export async function generateSvgAssetConstants(assets: Array<{filename: string, nodeName: string}>, projectPath: string): Promise<string> {
+/**
+ * Merge constants for `entries` into the class in `file`. A constant is the layer name in lowerCamelCase; a name
+ * that is not a valid Dart identifier, or that another asset already took, gets none. Nothing is invented.
+ */
+async function writeConstants(entries: Array<{assetPath: string; nodeName: string}>, projectPath: string, file: string, className: string, title: string): Promise<WrittenConstants> {
     const constantsDir = await detectConstantsDir(projectPath);
     await mkdir(constantsDir, {recursive: true});
+    const constantsPath = join(constantsDir, file);
 
-    const constantsPath = join(constantsDir, defaults.output.svgConstantsFile);
-
-    // Read existing SVG constants if they exist
-    const existingConstants = new Map<string, string>();
+    const constants = new Map<string, string>();
     try {
-        const existingContent = await readFile(constantsPath, 'utf-8');
-        // Extract existing constants using regex
-        const constantMatches = existingContent.matchAll(/static const String (\w+) = '([^']+)';/g);
-        for (const match of constantMatches) {
-            existingConstants.set(match[1], match[2]);
+        for (const match of (await readFile(constantsPath, 'utf-8')).matchAll(/static const String (\w+) = '([^']+)';/g)) {
+            constants.set(match[1], match[2]);
         }
     } catch {
         // File doesn't exist, that's fine
     }
 
-    // Generate unique SVG asset names from new assets
-    const uniqueAssets = assets.reduce((acc, asset) => {
-        const baseName = asset.filename.replace(/\.svg$/, '');
-        if (!acc[baseName]) {
-            acc[baseName] = asset;
-        }
-        return acc;
-    }, {} as Record<string, any>);
+    const unique = entries.filter((entry, index) => entries.findIndex(other => other.assetPath === entry.assetPath) === index);
+    const skipped: WrittenConstants['skipped'] = [];
+    for (const entry of unique) {
+        const name = lowerCamelCase(entry.nodeName);
+        if (isDartIdentifier(name)) constants.set(name, entry.assetPath);
+        else skipped.push({...entry, reason: 'not a valid Dart identifier'});
+    }
+    const names = new Map<string, string>();
+    for (const [name, assetPath] of constants) names.set(assetPath, name);
+    for (const entry of unique) {
+        if (!names.has(entry.assetPath)) skipped.push({...entry, reason: 'another asset has the same name'});
+    }
 
-    // Add new constants to existing ones
-    Object.entries(uniqueAssets).forEach(([baseName, asset]) => {
-        const constantName = toDartIdentifier(asset.nodeName, 'svg');
-        const assetPath = `${defaults.output.svgsDir}/${baseName}.svg`;
-        existingConstants.set(constantName, assetPath);
-    });
+    const body = Array.from(constants.entries()).sort(([a], [b]) => a.localeCompare(b))
+        .map(([name, assetPath]) => `  static const String ${name} = '${assetPath}';\n`).join('');
+    await writeFile(constantsPath, `// ${title}\n// Do not edit manually\n\nclass ${className} {\n${body}}\n`);
+    return {path: constantsPath, className, names: new Map(unique.filter(entry => names.has(entry.assetPath)).map(entry => [entry.assetPath, names.get(entry.assetPath)!])), skipped};
+}
 
-    // Generate the complete SVG constants file
-    let constantsContent = `// Generated SVG asset constants\n// Do not edit manually\n\nclass SvgAssets {\n`;
+export async function generateAssetConstants(assets: Array<{filename: string, nodeName: string}>, projectPath: string): Promise<WrittenConstants> {
+    // flutter_gen generates its own `Assets` class; a second one breaks compilation.
+    const className = await usesFlutterGen(projectPath) ? 'FigmaAssets' : 'Assets';
+    return writeConstants(
+        assets.map(asset => ({assetPath: `${defaults.output.imagesDir}/${toMainAssetPath(asset.filename)}`, nodeName: asset.nodeName})),
+        projectPath, defaults.output.assetConstantsFile, className, 'Generated asset constants');
+}
 
-    // Sort constants alphabetically for consistency
-    const sortedConstants = Array.from(existingConstants.entries()).sort(([a], [b]) => a.localeCompare(b));
-    sortedConstants.forEach(([constantName, assetPath]) => {
-        constantsContent += `  static const String ${constantName} = '${assetPath}';\n`;
-    });
-
-    constantsContent += `}\n`;
-
-    await writeFile(constantsPath, constantsContent);
-    return constantsPath;
+export async function generateSvgAssetConstants(assets: Array<{filename: string, nodeName: string}>, projectPath: string): Promise<WrittenConstants> {
+    return writeConstants(
+        assets.map(asset => ({assetPath: `${defaults.output.svgsDir}/${asset.filename}`, nodeName: asset.nodeName})),
+        projectPath, defaults.output.svgConstantsFile, 'SvgAssets', 'Generated SVG asset constants');
 }
 
 export function groupAssetsByBaseName(assets: Array<{filename: string, nodeName: string, size: string}>): Record<string, Array<{filename: string, size: string}>> {
@@ -356,15 +273,6 @@ export function groupAssetsByBaseName(assets: Array<{filename: string, nodeName:
         });
         return acc;
     }, {} as Record<string, Array<{filename: string, size: string}>>);
-}
-
-function toCamelCase(str: string): string {
-    return str
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '_')
-        .replace(/_+/g, '_')
-        .replace(/^_|_$/g, '')
-        .replace(/_(.)/g, (_, char) => char.toUpperCase());
 }
 
 // ── Which nodes to export, and how ──────────────────────────────────────────
@@ -475,7 +383,7 @@ function planNode(node: AssetNode, ratios: number[], fallbackFormat: AssetFormat
 export interface ExportedAssets {
     assets: AssetInfo[];
     notes: string[];
-    constantsFiles: string[];
+    constants: WrittenConstants[];
 }
 
 /**
@@ -534,13 +442,13 @@ export async function exportAssetNodes(options: {
         }
     }
 
-    const constantsFiles: string[] = [];
+    const constants: WrittenConstants[] = [];
     const raster = assets.filter(asset => !/\.(svg|pdf)$/.test(asset.filename));
     const svg = assets.filter(asset => asset.filename.endsWith('.svg'));
     // Constants first: updatePubspecAssets throws on pubspec shapes it refuses to edit
-    if (raster.length > 0) constantsFiles.push(await generateAssetConstants(raster, projectPath));
-    if (svg.length > 0) constantsFiles.push(await generateSvgAssetConstants(svg, projectPath));
+    if (raster.length > 0) constants.push(await generateAssetConstants(raster, projectPath));
+    if (svg.length > 0) constants.push(await generateSvgAssetConstants(svg, projectPath));
     if (assets.length > 0) await updatePubspecAssets(join(projectPath, 'pubspec.yaml'), assets);
 
-    return {assets, notes: [...plans.flatMap(plan => plan.notes), ...notes], constantsFiles};
+    return {assets, notes: [...plans.flatMap(plan => plan.notes), ...notes], constants};
 }

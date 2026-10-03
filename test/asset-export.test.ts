@@ -231,19 +231,21 @@ for (const [shape, pubspec, reason] of [
     });
 }
 
-test('constants keep the real extension and are valid Dart identifiers', async (t) => {
+test('constants keep the real extension; a layer name that is not a Dart identifier gets none, and the report says so', async (t) => {
     const dir = await tempProject(t, FLUTTER_CREATE_PUBSPEC);
-    await exportImages(dir, [HERO, image('2:2', '404 Illustration'), image('2:3', 'Default')], {format: 'jpg'});
+    const {text} = await exportImages(dir, [HERO, image('2:2', '404 Illustration'), image('2:3', 'Default')], {format: 'jpg'});
 
     assert.equal(await readFile(join(dir, 'lib/constants/assets.dart'), 'utf-8'), `// Generated asset constants
 // Do not edit manually
 
 class Assets {
-  static const String default_ = 'assets/images/default.jpg';
   static const String heroImage = 'assets/images/hero_image.jpg';
-  static const String image404Illustration = 'assets/images/404_illustration.jpg';
 }
 `);
+    // The files are still written and listed; the report names each missing constant with its reason.
+    assert.deepEqual(await readFile(join(dir, 'assets/images/2.0x/404_illustration.jpg')), PNG);
+    assert.match(text, /404 Illustration \(assets\/images\/404_illustration\.jpg\): not a valid Dart identifier/);
+    assert.match(text, /Default \(assets\/images\/default\.jpg\): not a valid Dart identifier/);
 });
 
 test('export_svg_flutter_assets writes the SVG, its constant, and the pubspec entry', async (t) => {

@@ -1,21 +1,25 @@
 // src/utils/project-conventions.mts
+import {existsSync} from 'fs';
 import {readFile, readdir} from 'fs/promises';
 import {join} from 'path';
 import defaults from '../defaults.json' with { type: 'json' };
 
-/** Read the Dart package name from pubspec.yaml, needed to build `package:<name>/...` imports. */
-export async function detectProjectName(projectPath: string): Promise<string> {
+/** The Dart package name in pubspec.yaml, needed to build `package:<name>/...` imports; undefined when the file or its `name:` is missing. */
+export async function detectProjectName(projectPath: string): Promise<string | undefined> {
     try {
         const pubspecContent = await readFile(join(projectPath, 'pubspec.yaml'), 'utf-8');
-        const nameMatch = pubspecContent.match(/^name:\s*(\S+)/m);
-        if (nameMatch) {
-            return nameMatch[1];
-        }
+        return pubspecContent.match(/^name:\s*(\S+)/m)?.[1];
     } catch {
-        // pubspec.yaml missing - fall through to default
+        return undefined;
     }
-    return 'flutter_app';
 }
+
+/** Why a tool that edits a Flutter project stops: there is no pubspec.yaml to build on, and none is invented. */
+export function missingPubspecMessage(projectPath: string): string {
+    return `No pubspec.yaml in ${projectPath}. Run this in a Flutter project (flutter create), or pass projectPath. Nothing was requested or written.`;
+}
+
+export const hasPubspec = (projectPath: string): boolean => existsSync(join(projectPath, 'pubspec.yaml'));
 
 /**
  * Detect an existing `subdirName` under `parentDir`, returning its path if

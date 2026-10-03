@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {existsSync, mkdtempSync, readFileSync} from 'node:fs';
+import {existsSync, mkdtempSync, readFileSync, writeFileSync} from 'node:fs';
 import {rm} from 'node:fs/promises';
 import {spawnSync} from 'node:child_process';
 import {tmpdir} from 'node:os';
@@ -68,14 +68,17 @@ test('stdio: server identifies as figma-flutter and lists exactly the registered
     assert.deepEqual(tools, EXPECTED_TOOLS);
 });
 
-test('stdio: generate_golden_file_test reports "Golden file test written to" the file it wrote', async (t) => {
+test('stdio: generate_golden_file_test reports "Golden file test written to" the file it wrote, importing the pubspec package', async (t) => {
     const dir = mkdtempSync(join(tmpdir(), 'golden-'));
     t.after(() => rm(dir, {recursive: true, force: true}));
+    writeFileSync(join(dir, 'pubspec.yaml'), 'name: my_shop\n');
     const {text, isError} = await callToolOffline({}, 'generate_golden_file_test',
         {widgetName: 'ContinueButton', widgetImportPath: 'widgets/continue_button.dart', projectPath: dir});
     assert.equal(isError, false);
     assert.match(text, /^Golden file test written to /);
-    assert.ok(existsSync(join(dir, 'test', 'continue_button_golden_test.dart')), text);
+    const written = join(dir, 'test', 'continue_button_golden_test.dart');
+    assert.ok(existsSync(written), text);
+    assert.match(readFileSync(written, 'utf-8'), /^import 'package:my_shop\/widgets\/continue_button\.dart';$/m);
 });
 
 test('stdio: README lists exactly the tools the server serves', async () => {

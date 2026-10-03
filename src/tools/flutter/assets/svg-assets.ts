@@ -12,6 +12,8 @@ import {
     type AssetInfo,
     generateSvgAssetConstants
 } from "./asset-manager.js";
+import {assetUsageReport} from "./asset-report.js";
+import {hasPubspec, missingPubspecMessage} from "../../../utils/project-conventions.js";
 import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
 import {isEffectivelyVisible} from "../../../utils/visibility.js";
 import defaults from '../../../defaults.json' with { type: 'json' };
@@ -38,6 +40,10 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
                         text: "Error: Figma access token not configured."
                     }]
                 };
+            }
+
+            if (!hasPubspec(projectPath)) {
+                return {isError: true, content: [{type: "text", text: missingPubspecMessage(projectPath)}]};
             }
 
             try {
@@ -90,7 +96,7 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
                 }
 
                 // Constants first: updatePubspecAssets throws on pubspec shapes it refuses to edit
-                const constantsFile = await generateSvgAssetConstants(downloadedAssets, projectPath);
+                const constants = await generateSvgAssetConstants(downloadedAssets, projectPath);
 
                 // Update pubspec.yaml with SVG assets
                 const pubspecPath = join(projectPath, 'pubspec.yaml');
@@ -104,17 +110,7 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
                     output += `- ${asset.filename} (${asset.size})\n`;
                 });
 
-                output += `\nPubspec Configuration:\n`;
-                output += `- Merged SVG asset declarations into pubspec.yaml\n`;
-                output += `- SVG assets available under: ${defaults.output.svgsDir}/\n\n`;
-
-                output += `Generated Code:\n`;
-                output += `- Merged SVG asset constants into: ${constantsFile}\n`;
-                output += `- Import in your Flutter code: import 'package:your_app/constants/svg_assets.dart';\n\n`;
-
-                output += `Usage Note:\n`;
-                output += `- Use flutter_svg package to display SVG assets\n`;
-                output += `- Add 'flutter_svg: ^2.0.0' to your pubspec.yaml dependencies if not already added\n`;
+                output += `\n${await assetUsageReport(downloadedAssets, [constants], projectPath)}`;
 
                 return {
                     content: [{type: "text", text: output}]

@@ -10,6 +10,8 @@ import {
     groupAssetsByBaseName,
     selectAssetNodes
 } from "./asset-manager.js";
+import {assetUsageReport} from "./asset-report.js";
+import {hasPubspec, missingPubspecMessage} from "../../../utils/project-conventions.js";
 import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
 import defaults from '../../../defaults.json' with { type: 'json' };
 
@@ -40,6 +42,10 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                 };
             }
 
+            if (!hasPubspec(projectPath)) {
+                return {isError: true, content: [{type: "text", text: missingPubspecMessage(projectPath)}]};
+            }
+
             try {
                 const figmaService = new FigmaService(token);
 
@@ -56,7 +62,7 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                     };
                 }
 
-                const {assets: downloadedAssets, notes, constantsFiles} = await exportAssetNodes({
+                const {assets: downloadedAssets, notes, constants} = await exportAssetNodes({
                     figmaService, fileId, projectPath, nodes: imageNodes, ratios: devicePixelRatios, fallbackFormat: format
                 });
 
@@ -82,13 +88,7 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                     output += `\nExport notes:\n${notes.map(note => `- ${note}\n`).join('')}`;
                 }
 
-                output += `\nPubspec Configuration:\n`;
-                output += `- Merged asset declarations into pubspec.yaml\n`;
-                output += `- Assets available under: ${defaults.output.imagesDir}/\n\n`;
-
-                output += `Generated Code:\n`;
-                output += `- Merged asset constants into: ${constantsFiles.join(', ')}\n`;
-                output += `- Import in your Flutter code: import 'package:your_app/constants/assets.dart';\n`;
+                output += `\n${await assetUsageReport(downloadedAssets, constants, projectPath)}`;
 
                 return {
                     content: [{type: "text", text: output}]

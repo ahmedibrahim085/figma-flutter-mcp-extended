@@ -21,6 +21,8 @@ import {
     selectAssetNodes,
     type AssetInfo
 } from "../assets/asset-manager.js";
+import {assetUsageReport} from "../assets/asset-report.js";
+import {hasPubspec, missingPubspecMessage} from "../../../utils/project-conventions.js";
 import {join} from 'path';
 
 export function registerScreenTools(server: McpServer, figmaApiKey: string) {
@@ -88,6 +90,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
                 let assetExportInfo = '';
                 if (extractAssets) {
                     try {
+                        if (!hasPubspec(projectPath)) throw new Error(missingPubspecMessage(projectPath));
                         // Descendants only: the analysed frame itself is never exported.
                         const imageNodes = selectAssetNodes(Object.values(await figmaService.getNodes(parsedInput.fileId, [parsedInput.nodeId])), false);
                         if (imageNodes.length > 0) {
@@ -95,7 +98,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
                                 figmaService, fileId: parsedInput.fileId, projectPath, nodes: imageNodes,
                                 ratios: devicePixelRatios
                             });
-                            assetExportInfo = generateAssetExportReport(exported.assets, exported.notes);
+                            assetExportInfo = generateAssetExportReport(exported.assets, exported.notes, await assetUsageReport(exported.assets, exported.constants, projectPath));
                         }
                     } catch (assetError) {
                         assetExportInfo = `\nAsset Export Warning: ${assetError instanceof Error ? assetError.message : String(assetError)}\n`;
@@ -191,7 +194,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
 /**
  * Generate asset export report for screens
  */
-function generateAssetExportReport(exportedAssets: AssetInfo[], notes: string[]): string {
+function generateAssetExportReport(exportedAssets: AssetInfo[], notes: string[], usage: string): string {
     if (exportedAssets.length === 0) {
         return notes.length > 0 ? `\nExport notes:\n${notes.map(note => `   • ${note}\n`).join('')}` : '';
     }
@@ -215,24 +218,7 @@ function generateAssetExportReport(exportedAssets: AssetInfo[], notes: string[])
         report += `\nExport notes:\n${notes.map(note => `   • ${note}\n`).join('')}`;
     }
 
-    report += `\n✅ Assets Configuration:\n`;
-    report += `   • Images saved to: assets/images/\n`;
-    report += `   • pubspec.yaml updated with asset declarations\n`;
-    report += `   • Asset constants generated in: lib/constants/assets.dart\n\n`;
-
-    report += `🚀 Usage in Flutter Screen:\n`;
-    report += `   import 'package:your_app/constants/assets.dart';\n\n`;
-    
-    exportedAssets.forEach(asset => {
-        const constantName = asset.filename
-            .replace(/\.[^/.]+$/, '') // Remove extension
-            .replace(/[^a-zA-Z0-9]/g, '_') // Replace special chars with underscore
-            .replace(/_+/g, '_') // Replace multiple underscores with single
-            .replace(/^_|_$/g, '') // Remove leading/trailing underscores
-            .toLowerCase();
-        
-        report += `   Image.asset(Assets.${constantName}) // ${asset.nodeName}\n`;
-    });
+    report += `\n${usage}`;
 
     report += `\n${'='.repeat(50)}\n`;
 

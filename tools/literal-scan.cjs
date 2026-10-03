@@ -17,7 +17,9 @@ const files = [];
     }
 })(path.join(repo, 'src'));
 
-const clean = (s) => s.replace(/\t/g, '\\t').replace(/\r?\n/g, '\\n').slice(0, 160);
+// Tab and newline are written as \t and \n; any other control character (a NUL separator in a hash input) as \xNN, so a
+// baseline line never holds a byte that tools treat as the end of the line.
+const clean = (s) => s.replace(/\t/g, '\\t').replace(/\r?\n/g, '\\n').replace(/[\x00-\x1f\x7f]/g, (c) => `\\x${c.charCodeAt(0).toString(16).padStart(2, '0')}`).slice(0, 160);
 
 function fnName(node) {
     for (let n = node.parent; n; n = n.parent) {
@@ -110,6 +112,13 @@ if (!checking) {
     }
     const seen = new Map();
     const problems = [];
+    for (const [key, {line}] of allowed) {
+        const [, , , , , , klass, reason] = line.split('\t');
+        const missing = [klass?.trim() ? '' : 'no class', reason?.trim() ? '' : 'no reason'].filter(Boolean);
+        if (missing.length > 0) {
+            problems.push(`tools/literal-baseline.tsv: ${key}\n  has ${missing.join(' and ')}. Every baseline row needs its class and the reason the literal may stay.\n  ${line}`);
+        }
+    }
     for (const {line, cells} of rows) {
         const key = keyOf(cells);
         const n = (seen.get(key) ?? 0) + 1;

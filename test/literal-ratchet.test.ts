@@ -75,6 +75,36 @@ test('a baselined literal that left src fails the check until its line is delete
     });
 });
 
+test('a baseline row without a class fails the check, naming the file and the literal', () => {
+    const row = [CAP_KEY, '1', '', 'a fixture constant'].join('\t');
+    withFixture('export const CAP = 37;\n', [row], (repo) => {
+        const result = check(repo);
+        assert.equal(result.status, 1, result.stderr);
+        assert.match(result.stderr, /src\/tools\/x\.ts/);
+        assert.match(result.stderr, /number\t37|37/);
+        assert.match(result.stderr, /no class/);
+    });
+});
+
+test('a baseline row without a reason fails the check, naming the file and the literal', () => {
+    const row = [CAP_KEY, '1', 'K-CONV', ''].join('\t');
+    withFixture('export const CAP = 37;\n', [row], (repo) => {
+        const result = check(repo);
+        assert.equal(result.status, 1, result.stderr);
+        assert.match(result.stderr, /src\/tools\/x\.ts/);
+        assert.match(result.stderr, /no reason/);
+    });
+});
+
+test('a control character in a literal is written escaped, so no baseline line holds a raw NUL', () => {
+    withFixture("export const SEP = 'a\\0b';\n", [], (repo) => {
+        const result = spawnSync('node', [SCANNER, repo], {encoding: 'utf-8'});
+        assert.equal(result.status, 0, result.stderr);
+        assert.ok(!result.stdout.includes('\0'), 'the inventory holds a raw NUL byte');
+        assert.ok(result.stdout.includes('a\\x00b'), result.stdout);
+    });
+});
+
 test('the real src tree matches the committed baseline', () => {
     const result = check(ROOT);
     assert.equal(result.status, 0, result.stderr);
@@ -82,7 +112,9 @@ test('the real src tree matches the committed baseline', () => {
 
 test('every baseline line has an allowed class and a reason; a fact class names the ticket that removes it', () => {
     const allowed = ['K-TEXT', 'K-API', 'K-DART', 'K-CONV', 'K-SCHEMA', 'F-HEUR', 'F-DEFAULT', 'F-FACT', 'F-GUIDE', 'F-LEAK'];
-    const lines = readFileSync(BASELINE, 'utf-8').split('\n').filter((line) => line !== '');
+    const raw = readFileSync(BASELINE, 'utf-8');
+    assert.ok(!/[\x00-\x08\x0b-\x1f\x7f]/.test(raw), 'the baseline holds a raw control character: a tool may read the line as ending there');
+    const lines = raw.split('\n').filter((line) => line !== '');
     assert.equal(lines[0], HEADER);
     assert.ok(lines.length > 1, 'the baseline must list the literals that exist today');
     for (const line of lines.slice(1)) {

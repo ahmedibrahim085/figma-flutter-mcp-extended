@@ -2290,7 +2290,7 @@ src/utils/visibility.ts	string	TEXT	binary(===)	hasOwnVisualContent	1	K-API	R13:
 src/utils/visibility.ts	string	string	binary(===)	hasOwnVisualContent	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/utils/visibility.ts	type-string	visible	LiteralType	isNodeExplicitlyHidden	1	K-API	R2: TS literal type mirroring a Figma REST enum / export format
 src/extractors/flutter/style-library.ts	string	sha256	arg(createHash)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
-src/extractors/flutter/style-library.ts	template	${…} ${…}	arg(createHash('sha256').update)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
+src/extractors/flutter/style-library.ts	template	${…}\x00${…}	arg(createHash('sha256').update)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
 src/extractors/flutter/style-library.ts	string	hex	arg(${flutterCode}\0${semanticHash}`).digest)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
 src/extractors/flutter/style-library.ts	template	0x${…}	arg(BigInt)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
 src/extractors/flutter/style-library.ts	number	0	arg(digest.slice)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
@@ -2321,7 +2321,7 @@ src/services/figma-cache.ts	string	Cache	arg(join)	figmaCacheDir	1	K-API	cache f
 src/services/figma-cache.ts	string	.cache	arg(join)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
 src/services/figma-cache.ts	regex	/^[A-Za-z0-9_-]+$/	PropertyAccessExpression	isCacheableFileKey	1	K-API	file key shape: only these are used as a folder name
 src/services/figma-cache.ts	string	sha256	arg(createHash)	digest	1	K-CONV	hash and entry naming for the cache; not a design fact
-src/services/figma-cache.ts	string	 	arg(parts.join)	digest	1	K-CONV	hash and entry naming for the cache; not a design fact
+src/services/figma-cache.ts	string	\x00	arg(parts.join)	digest	1	K-CONV	hash and entry naming for the cache; not a design fact
 src/services/figma-cache.ts	string	hex	arg(sha256').update(parts.join('\0')).digest)	digest	1	K-CONV	hash and entry naming for the cache; not a design fact
 src/services/figma-cache.ts	number	0	arg(st([path, JSON.stringify(sorted)]).slice)	entryName	1	K-CONV	hash and entry naming for the cache; not a design fact
 src/services/figma-cache.ts	number	32	arg(st([path, JSON.stringify(sorted)]).slice)	entryName	1	K-CONV	hash and entry naming for the cache; not a design fact

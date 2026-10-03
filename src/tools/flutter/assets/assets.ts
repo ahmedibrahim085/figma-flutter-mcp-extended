@@ -4,6 +4,7 @@ import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
 import {join} from 'path';
 import {
+    DEVICE_PIXEL_RATIOS,
     devicePixelRatiosInput,
     exportAssetNodes,
     groupAssetsByBaseName,
@@ -19,7 +20,7 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
         "export_flutter_assets",
         {
             title: "Export Flutter Assets",
-            description: "Export the given Figma nodes, plus descendants that have exportSettings or a visible IMAGE fill, into the Flutter assets folders and pubspec.yaml. A node's exportSettings give its format and scale (SVG and PDF at 1x; WIDTH/HEIGHT are converted to the nearest ratio of 1, 1.5, 2, 3, 4); a node without them is exported in `format` at each of devicePixelRatios.",
+            description: "Export the given Figma nodes, plus descendants that have exportSettings or a visible IMAGE fill, into the Flutter assets folders and pubspec.yaml. A node's exportSettings give its format and scale (SVG and PDF at 1x; WIDTH/HEIGHT are converted to the nearest ratio of " + DEVICE_PIXEL_RATIOS.join(', ') + "); a node without them is exported in `format` at each of devicePixelRatios.",
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
                 nodeIds: z.array(z.string()).describe("Array of node IDs to export; each is exported, and so are its descendants with exportSettings or a visible IMAGE fill"),

@@ -149,13 +149,19 @@ test('devicePixelRatios outside Flutter\'s documented ratios, or empty, is an er
     }
 });
 
-test('the old scale and includeMultipleResolutions inputs are gone from export_flutter_assets', async () => {
-    let properties: Record<string, unknown> = {};
+test('the old scale and includeMultipleResolutions inputs are gone from export_flutter_assets, and the ratio list reads the same everywhere', async () => {
+    let properties: Record<string, any> = {};
+    let description = '';
     await withServer(async (s) => {
         await s.initialize();
         const list: any = await s.request('tools/list');
-        properties = list.result.tools.find((tool: any) => tool.name === 'export_flutter_assets').inputSchema.properties;
+        const tool = list.result.tools.find((tool: any) => tool.name === 'export_flutter_assets');
+        properties = tool.inputSchema.properties;
+        description = tool.description;
     });
+
+    assert.match(description, /nearest ratio of 1, 1\.5, 2, 3, 4\)/);
+    assert.match(properties.devicePixelRatios.description, /\(1, 1\.5, 2, 3, 4\)/);
 
     assert.ok('devicePixelRatios' in properties);
     assert.ok(!('scale' in properties) && !('includeMultipleResolutions' in properties));

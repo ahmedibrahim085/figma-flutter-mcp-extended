@@ -1,9 +1,10 @@
 import type {ColorInfo, StrokeInfo} from '../extractors/components/types.js';
+import {effectiveAlpha} from './dart-color.js';
 
 /** `#RRGGBB` (or the paint type) plus the effective opacity, the colour's alpha times the paint opacity, when not 100%. */
 function describeFill(fill: ColorInfo): string {
     const base = fill.hex ?? fill.type;
-    const alpha = (fill.color?.a ?? 1) * (fill.opacity ?? 1);
+    const alpha = fill.color ? effectiveAlpha(fill.color, fill.opacity) : (fill.opacity ?? 1);
     return alpha === 1 ? base : `${base} (${Math.round(alpha * 100)}% opacity)`;
 }
 
@@ -21,5 +22,5 @@ export function formatFills(fills: ColorInfo[] | undefined, indent: string = '',
 export function describeStrokeWeight(stroke: StrokeInfo): string {
     const sides = stroke.individualWeights;
     if (sides) return `top ${sides.top}px, right ${sides.right}px, bottom ${sides.bottom}px, left ${sides.left}px`;
-    return stroke.weight === undefined ? 'strokeWeight not set by Figma,' : `${stroke.weight}px`;
+    return stroke.weight === undefined ? 'strokeWeight not set by Figma' : `${stroke.weight}px`;
 }

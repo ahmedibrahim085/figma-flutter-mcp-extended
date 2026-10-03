@@ -293,6 +293,11 @@ export class FlutterStyleLibrary {
   }
 }
 
+/** Multi-line code with every line after the first indented by `spaces`, to sit inside an indented property. */
+export function indentContinuation(code: string, spaces: number): string {
+  return code.split('\n').join(`\n${' '.repeat(spaces)}`);
+}
+
 export class FlutterCodeGenerator {
   /** BoxDecoration for the bottom fill, with the radius, border and shadows. Later fills are layers (generateFillLayers). */
   static generateDecoration(properties: any): string {
@@ -340,10 +345,9 @@ export class FlutterCodeGenerator {
 
   /** The layers as nested DecoratedBoxes (the first outermost) around `inner`, or nothing when there are none. */
   static nestFillLayers(layers: string[], inner?: string): string {
-    const indent = (code: string) => code.split('\n').join('\n  ');
     let code = inner;
     for (let i = layers.length - 1; i >= 0; i--) {
-      code = `DecoratedBox(\n  decoration: ${indent(layers[i])},\n${code ? `  child: ${indent(code)},\n` : ''})`;
+      code = `DecoratedBox(\n  decoration: ${indentContinuation(layers[i], 2)},\n${code ? `  child: ${indentContinuation(code, 2)},\n` : ''})`;
     }
     return code ?? '';
   }

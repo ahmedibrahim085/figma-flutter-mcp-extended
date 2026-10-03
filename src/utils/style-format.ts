@@ -49,7 +49,7 @@ export function formatStrokes(
     let output = '';
     strokes.forEach((stroke, index) => {
         const label = strokes.length > 1 ? ` ${index + 1}` : '';
-        output += `${indent}${linePrefix}Border${label}: ${describeStrokeWeight(stroke)} solid ${stroke.hex}`;
+        output += `${indent}${linePrefix}Border${label}: ${describeStrokeWeight(stroke)}${stroke.weight === undefined && !stroke.individualWeights ? ',' : ''} solid ${stroke.hex}`;
         if (stroke.align) {
             output += ` align ${stroke.align}`;
         }

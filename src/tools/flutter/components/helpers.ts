@@ -1,6 +1,6 @@
 import {dartColor} from "../../../utils/dart-color.js";
 import {formatFills} from "../../../utils/paint-format.js";
-import {FlutterCodeGenerator} from "../../../extractors/flutter/style-library.js";
+import {FlutterCodeGenerator, indentContinuation} from "../../../extractors/flutter/style-library.js";
 import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
 import type {ComponentAnalysis} from "../../../extractors/components/types.js";
 import {generateFlutterTextWidget, convertFillToColorInfo} from "../../../extractors/components/extractor.js";
@@ -286,7 +286,7 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
 
         // Fills after the first are layers; the last is drawn on top (Figma order).
         const layers = FlutterCodeGenerator.generateFillLayers({fills: analysis.styling.fills, cornerRadius: analysis.styling.cornerRadius});
-        guidance += `  child: ${layers.length > 0 ? FlutterCodeGenerator.nestFillLayers(layers, '/* Your content here */').split('\n').join('\n  ') + ',' : '/* Your content here */'}\n`;
+        guidance += `  child: ${layers.length > 0 ? indentContinuation(FlutterCodeGenerator.nestFillLayers(layers, '/* Your content here */'), 2) + ',' : '/* Your content here */'}\n`;
         guidance += `)\n\n`;
     }
 

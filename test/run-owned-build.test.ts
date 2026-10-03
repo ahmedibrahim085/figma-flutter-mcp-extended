@@ -1,8 +1,8 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtempSync, readFileSync, writeFileSync} from 'node:fs';
+import {existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
-import {join} from 'node:path';
+import {dirname, join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {withServer} from './helpers/mcp-stdio.ts';
 
@@ -13,7 +13,9 @@ const REPO_CLI = fileURLToPath(new URL('../dist/cli.js', import.meta.url));
 
 test('a server starts from the run-owned build while the repo dist/cli.js is being rewritten', {skip: process.env[RUN_DIST] ? false : `a run by hand uses the repo dist/; start it with npm test (${RUN_DIST} unset)`}, async () => {
     // tsc opens every output file with flag "w", which empties it first; a server loading it then sees no module.
-    const original = readFileSync(REPO_CLI);
+    // A fresh checkout has no repo dist/ (npm test no longer builds it); the test then creates and removes the file.
+    const original = existsSync(REPO_CLI) ? readFileSync(REPO_CLI) : undefined;
+    mkdirSync(dirname(REPO_CLI), {recursive: true});
     writeFileSync(REPO_CLI, '');
     try {
         await withServer(async (server) => {
@@ -21,7 +23,7 @@ test('a server starts from the run-owned build while the repo dist/cli.js is bei
             assert.equal(reply.result.serverInfo.name.length > 0, true);
         });
     } finally {
-        writeFileSync(REPO_CLI, original);
+        if (original) writeFileSync(REPO_CLI, original); else rmSync(REPO_CLI);
     }
 });
 

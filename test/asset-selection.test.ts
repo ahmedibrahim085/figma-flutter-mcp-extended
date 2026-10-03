@@ -16,7 +16,7 @@ const SVG = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>');
 const PUBSPEC = 'name: app\n\ndependencies:\n  flutter:\n    sdk: flutter\n\nflutter:\n  uses-material-design: true\n';
 
 type Format = 'png' | 'jpg' | 'svg';
-interface ImageCall {ids: string[]; format: Format; scale?: number; missing?: string[]}
+interface ImageCall {ids: string[]; format: Format; scale?: number; missing?: string[]; failDownload?: string[]}
 
 const box = (width: number, height: number) => ({x: 0, y: 0, width, height});
 const setting = (format: string, type: string, value: number, suffix = '') => ({suffix, format, constraint: {type, value}});
@@ -39,10 +39,12 @@ function figma(root: {id: string}, calls: ImageCall[]): FakeRoutes {
         const routes: Record<string, FakeResponse> = {
             [`/files/${FILE_KEY}/nodes?ids=${root.id}`]: {body: {nodes: {[root.id]: {document: root}}}},
         };
-        for (const {ids, format, scale, missing = []} of calls) {
+        for (const {ids, format, scale, missing = [], failDownload = []} of calls) {
             const query = format === 'svg' ? `ids=${ids.join(',')}&format=svg` : `ids=${ids.join(',')}&format=${format}&scale=${scale}`;
             routes[`/images/${FILE_KEY}?${query}`] = {body: {images: Object.fromEntries(ids.map((id) => [id, missing.includes(id) ? null : `${baseUrl}/render/${format}/${scale ?? 1}/${id}`]))}};
-            for (const id of ids.filter((id) => !missing.includes(id))) routes[`/render/${format}/${scale ?? 1}/${id}`] = {body: format === 'svg' ? SVG : PNG};
+            for (const id of ids.filter((id) => !missing.includes(id))) {
+                routes[`/render/${format}/${scale ?? 1}/${id}`] = failDownload.includes(id) ? {status: 404, body: 'gone'} : {body: format === 'svg' ? SVG : PNG};
+            }
         }
         return routes;
     };
@@ -254,4 +256,38 @@ test('the analyse tools name a node Figma returned no image for too', async (t) 
 
     assert.match(text, /Found and exported 1 screen asset/);
     assert.match(text, /Lost \(5:3\): Figma returned no image/);
+});
+
+// ── 8. A download that fails is named, with a short reason, and not counted ─
+
+test('export_flutter_assets names a download that failed, keeps the notes of the rest, and counts only what it wrote', async (t) => {
+    const dir = await tempProject(t);
+    const root = screen([photo('5:2', 'Kept'), photo('5:3', 'Broken')]);
+    const {text} = await callToolOffline(figma(root, [
+        {ids: ['5:1', '5:2', '5:3'], format: 'png', scale: 2, failDownload: ['5:3']},
+    ]), 'export_flutter_assets', {fileId: FILE_KEY, nodeIds: ['5:1'], projectPath: dir});
+
+    assert.match(text, /Successfully exported 2 image assets/);
+    assert.match(text, /Broken \(5:3\): download failed \(HTTP 404\); not exported/);
+    assert.doesNotMatch(text, /render\/|http:\/\//);
+    assert.equal(existsSync(join(dir, 'assets/images/2.0x/broken.png')), false);
+    assert.deepEqual(await readFile(join(dir, 'assets/images/2.0x/kept.png')), PNG);
+});
+
+test('the analyse tools name a download that failed too, and a run where every download fails says so', async (t) => {
+    const dir = await tempProject(t);
+    const root = screen([photo('5:2', 'Kept'), photo('5:3', 'Broken', {exportSettings: [setting('PNG', 'WIDTH', 300, '@big')]})]);
+    const some = await callToolOffline(figma(root, [{ids: ['5:2'], format: 'png', scale: 2}, {ids: ['5:3'], format: 'png', scale: 3, failDownload: ['5:3']}]),
+        'analyze_frame_as_screen', {input: FILE_KEY, nodeId: '5:1', extractAssets: true, projectPath: dir});
+
+    assert.match(some.text, /Found and exported 1 screen asset/);
+    assert.match(some.text, /Broken \(5:3\): download failed \(HTTP 404\); not exported/);
+    assert.match(some.text, /suffix "@big" is reported/);
+
+    const none = await tempProject(t);
+    const all = await callToolOffline(figma(screen([photo('5:2', 'Only')]), [{ids: ['5:2'], format: 'png', scale: 2, failDownload: ['5:2']}]),
+        'analyze_figma_component', {input: FILE_KEY, nodeId: '5:1', userDefinedComponent: true, exportAssets: true, projectPath: none, useDeduplication: false});
+
+    assert.match(all.text, /Only \(5:2\): download failed \(HTTP 404\); not exported/);
+    assert.equal(existsSync(join(none, 'assets/images/2.0x/only.png')), false);
 });

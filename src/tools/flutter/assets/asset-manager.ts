@@ -69,7 +69,7 @@ export function generateSvgFilename(nodeName: string): string {
 export async function downloadImage(url: string, filepath: string): Promise<void> {
     const response = await fetch(url);
     if (!response.ok) {
-        throw new Error(`Failed to download image: ${response.statusText}`);
+        throw new Error(`Failed to download image: HTTP ${response.status}`);
     }
 
     const buffer = await response.arrayBuffer();
@@ -405,6 +405,14 @@ export function selectAssetNodes(roots: any[], includeRoots: boolean): AssetNode
     return [...found.values()];
 }
 
+/** A download error as a few words: the network error code (ENOTFOUND) or the HTTP status; never the URL. */
+function shortReason(error: unknown): string {
+    const code = (error as {cause?: {code?: string}})?.cause?.code;
+    if (code) return code;
+    const message = error instanceof Error ? error.message : String(error);
+    return message.replace(/^Failed to download image: /, '');
+}
+
 const vectorFormat = (format: AssetFormat): boolean => format === 'svg' || format === 'pdf';
 
 /** The nearest of Flutter's documented ratios. */
@@ -474,10 +482,8 @@ export async function exportAssetNodes(options: {
     nodes: AssetNode[];
     ratios?: number[];
     fallbackFormat?: AssetFormat;
-    /** Warn and go on when one download fails (the analyse tools), instead of failing the export. */
-    skipFailedDownloads?: boolean;
 }): Promise<ExportedAssets> {
-    const {figmaService, fileId, projectPath, nodes, skipFailedDownloads = false} = options;
+    const {figmaService, fileId, projectPath, nodes} = options;
     const ratios = options.ratios ?? defaults.output.devicePixelRatios;
     const plans = nodes.map(node => planNode(node, ratios, options.fallbackFormat ?? 'png'));
     const groups = new Map<string, AssetRequest[]>();
@@ -506,8 +512,8 @@ export async function exportAssetNodes(options: {
                 try {
                     await downloadImage(url, filepath);
                 } catch (error) {
-                    if (!skipFailedDownloads) throw error;
-                    console.warn(`Failed to download ${node.name}:`, error);
+                    // The agent sees only the tool's text, so the failure goes there; the URL carries a signed token and stays out.
+                    notes.push(`${node.name} (${node.id}): download failed (${shortReason(error)}); not exported`);
                     continue;
                 }
                 assets.push({

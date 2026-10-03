@@ -226,7 +226,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                         if (imageNodes.length > 0) {
                             const exported = await exportAssetNodes({
                                 figmaService, fileId: parsedInput.fileId, projectPath, nodes: imageNodes,
-                                ratios: devicePixelRatios, skipFailedDownloads: true
+                                ratios: devicePixelRatios
                             });
                             assetExportInfo = generateAssetExportReport(exported.assets, exported.notes);
                         }

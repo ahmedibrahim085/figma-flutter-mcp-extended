@@ -20,6 +20,7 @@ import {
 } from "../../../utils/style-format.js";
 import {generateFigmaUrl} from "../../../utils/figma-url-parser.js";
 import {typeName} from "../../../utils/dart-names.js";
+import {budgetNote} from "../../../utils/budget.js";
 
 export function generateChildLayoutEvidence(
     children: ComponentChild[],
@@ -165,7 +166,12 @@ export function generateScreenAnalysisReport(
 /**
  * Generate screen structure inspection report
  */
-export function generateScreenStructureReport(node: any, showAllChildren: boolean): string {
+/** The child layers a structure report lists: the visible ones, or every one with showAllChildren. */
+export const structureChildren = (node: any, showAllChildren: boolean): any[] =>
+    showAllChildren ? node.children ?? [] : filterEffectivelyVisibleChildren(node.children ?? [], false);
+
+/** `limit` keeps the first n listed child layers; the others are named in omittedNodeIds (the response budget). */
+export function generateScreenStructureReport(node: any, showAllChildren: boolean, limit = Infinity): string {
     let output = `Screen Structure Inspection\n\n`;
 
     output += `Screen: ${node.name}\n`;
@@ -191,14 +197,12 @@ export function generateScreenStructureReport(node: any, showAllChildren: boolea
         return output;
     }
 
-    const sectionsSource = showAllChildren
-        ? node.children
-        : filterEffectivelyVisibleChildren(node.children, false);
+    const sectionsSource = structureChildren(node, showAllChildren);
     const hiddenSkipped = (node.children?.length || 0) - sectionsSource.length;
 
     output += `Screen Structure:\n`;
 
-    sectionsSource.forEach((section: any, index: number) => {
+    sectionsSource.slice(0, limit).forEach((section: any, index: number) => {
         const isComponent = section.type === 'COMPONENT' || section.type === 'INSTANCE';
         const componentMark = isComponent ? ' [COMPONENT]' : '';
         const hiddenMark = section.visible === false ? ' [HIDDEN]' : '';
@@ -255,7 +259,7 @@ export function generateScreenStructureReport(node: any, showAllChildren: boolea
         output += `- Found ${componentSections.length} component child layers for separate analysis\n`;
     }
 
-    return output;
+    return output + budgetNote(sectionsSource.slice(limit).map((section: any) => section.id));
 }
 
 /**

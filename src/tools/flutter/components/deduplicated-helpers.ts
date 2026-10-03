@@ -624,8 +624,10 @@ export function generateComprehensiveDeduplicatedReport(
 
   // Children analysis with enhanced details
   if (analysis.children.length > 0) {
-    output += `👶 Children Analysis (${analysis.children.length} children):\n`;
-    analysis.children.forEach((child, index) => {
+    // A child left out of the budget is not listed here; its id is in the report's omittedNodeIds.
+    const listed = analysis.children.filter(child => !child.omitted);
+    output += `👶 Children Analysis (${listed.length} children):\n`;
+    listed.forEach((child, index) => {
       output += `   ${index + 1}. ${child.name} (${child.type})\n`;
       output += formatInteractions(child.interactions, '      ');
       output += formatNestedInteractions(child.children, '      ');

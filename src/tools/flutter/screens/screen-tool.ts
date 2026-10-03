@@ -1,6 +1,7 @@
 // src/tools/flutter/screens/screen-tool.mts
 
 import defaults from '../../../defaults.json' with { type: 'json' };
+import {budgetNote, renderWithinBudget} from '../../../utils/budget.js';
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
@@ -13,7 +14,8 @@ import {
 
 import {
     generateScreenAnalysisReport,
-    generateScreenStructureReport
+    generateScreenStructureReport,
+    structureChildren
 } from "./helpers.js";
 
 import {
@@ -93,13 +95,18 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
                 }
             }
 
-            // Generate analysis report
-            const analysisReport = generateScreenAnalysisReport(screenAnalysis, parsedInput);
+            // Over the response budget the child layers are cut in layer order; the cut layers' ids end the text.
+            const render = (limit: number) => {
+                const children = screenAnalysis.children.slice(0, limit);
+                const components = children.flatMap(child => child.components).filter((comp, index, all) => all.findIndex(other => other.nodeId === comp.nodeId) === index);
+                return generateScreenAnalysisReport({...screenAnalysis, children, components}, parsedInput) + assetExportInfo
+                    + budgetNote(screenAnalysis.children.slice(limit).map(child => child.nodeId));
+            };
 
             return {
                 content: [{
                     type: "text",
-                    text: analysisReport + assetExportInfo
+                    text: renderWithinBudget(screenAnalysis.children.length, render, 0)
                 }]
             };
         })
@@ -143,7 +150,8 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
                 };
             }
 
-            const output = generateScreenStructureReport(screenNode, showAllChildren);
+            const output = renderWithinBudget(structureChildren(screenNode, showAllChildren).length,
+                (limit) => generateScreenStructureReport(screenNode, showAllChildren, limit), 0);
 
             return {
                 content: [{type: "text", text: output}]

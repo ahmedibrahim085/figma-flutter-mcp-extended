@@ -1,7 +1,7 @@
 // src/tools/flutter/component/component-tool.mts
 
 import defaults from '../../../defaults.json' with { type: 'json' };
-import {budgetNote, countNodes, cutTree, newCut, renderWithinBudget} from '../../../utils/budget.js';
+import {budgetNote, countNodes, cutTree, newCut, renderWithinBudget, type Cut} from '../../../utils/budget.js';
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
@@ -22,7 +22,8 @@ import {typeName} from "../../../utils/dart-names.js";
 
 import {
     generateComponentAnalysisReport,
-    generateStructureInspectionReport
+    generateStructureInspectionReport,
+    inspectedChildren
 } from "./helpers.js";
 import {
     generateFlutterImplementation,
@@ -158,12 +159,12 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 maxChildNodes,
                 extractTextContent: true
             });
-            const reports: string[] = [];
+            // Each report is built for a cut (see render below), so one that is too long can drop nodes in document order.
+            const reports: Array<(cut: Cut) => string> = [];
+            let analysedNodes = 0;
             let firstDeduplicatedAnalysis: DeduplicatedComponentAnalysis | undefined;
 
             for (const {variant, node} of targets) {
-                let analysisReport: string;
-
                 if (useDeduplication) {
                     Logger.info(`🔧 Using enhanced deduplication for component analysis`);
                     const deduplicatedAnalysis: DeduplicatedComponentAnalysis = await deduplicatedExtractor.analyzeComponent(node, true);
@@ -175,33 +176,24 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                         newStyleDefinitions: deduplicatedAnalysis.newStyleDefinitions ? Object.keys(deduplicatedAnalysis.newStyleDefinitions).length : 0
                     });
 
-                    analysisReport = generateComprehensiveDeduplicatedReport(deduplicatedAnalysis, deduplicatedExtractor.styleLibrary, true);
-
                     firstDeduplicatedAnalysis ??= deduplicatedAnalysis;
-
-                    if (generateFlutterCode) {
-                        const implementation = generateFlutterImplementation(deduplicatedAnalysis, deduplicatedExtractor.styleLibrary);
-                        analysisReport += "\n\n" + styleDefinitionsSection(implementation, deduplicatedExtractor.styleLibrary) + implementation;
-                    }
+                    analysedNodes += countNodes(deduplicatedAnalysis.children);
+                    const styleLibrary = deduplicatedExtractor.styleLibrary;
+                    reports.push((cut) => {
+                        const analysed = {...deduplicatedAnalysis, children: cutTree(deduplicatedAnalysis.children, cut)};
+                        let analysisReport = generateComprehensiveDeduplicatedReport(analysed, styleLibrary, true);
+                        if (generateFlutterCode) {
+                            const implementation = generateFlutterImplementation(analysed, styleLibrary);
+                            analysisReport += "\n\n" + styleDefinitionsSection(implementation, styleLibrary) + implementation;
+                        }
+                        return variant ? `Variant: ${variant.name}${variant.isDefault ? ' (default)' : ''}\n${'─'.repeat(30)}\n${analysisReport}` : analysisReport;
+                    });
                 } else {
                     const componentAnalysis: ComponentAnalysis = await componentExtractor.analyzeComponent(node, userDefinedComponent);
-                    analysisReport = generateComponentAnalysisReport(componentAnalysis, parsedInput);
+                    const analysisReport = generateComponentAnalysisReport(componentAnalysis, parsedInput);
+                    reports.push(() => variant ? `Variant: ${variant.name}${variant.isDefault ? ' (default)' : ''}\n${'─'.repeat(30)}\n${analysisReport}` : analysisReport);
                 }
-
-                reports.push(variant ? `Variant: ${variant.name}${variant.isDefault ? ' (default)' : ''}\n${'─'.repeat(30)}\n${analysisReport}` : analysisReport);
             }
-
-            let analysisReport = variantHeader + reports.join('\n\n');
-
-            // The set's visual context (its URL and node id) is printed once, from the first analysed variant.
-            if (firstDeduplicatedAnalysis && parsedInput.source === 'url') {
-                analysisReport += "\n\n" + addVisualContextToDeduplicatedReport(
-                    firstDeduplicatedAnalysis,
-                    generateFigmaUrl(parsedInput.fileId, parsedInput.nodeId),
-                    parsedInput.nodeId
-                );
-            }
-
 
             // Detect and export image assets if enabled
             let assetExportInfo = '';
@@ -222,10 +214,26 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 }
             }
 
+            // Over the response budget the tree is cut at whole nodes in document order; the cut nodes' ids end the text.
+            const render = (limit: number) => {
+                const cut = newCut(limit);
+                let analysisReport = variantHeader + reports.map(report => report(cut)).join('\n\n');
+
+                // The set's visual context (its URL and node id) is printed once, from the first analysed variant.
+                if (firstDeduplicatedAnalysis && parsedInput.source === 'url') {
+                    analysisReport += "\n\n" + addVisualContextToDeduplicatedReport(
+                        firstDeduplicatedAnalysis,
+                        generateFigmaUrl(parsedInput.fileId, parsedInput.nodeId),
+                        parsedInput.nodeId
+                    );
+                }
+                return analysisReport + assetExportInfo + budgetNote(cut.omitted);
+            };
+
             return {
                 content: [{
                     type: "text",
-                    text: analysisReport + assetExportInfo
+                    text: renderWithinBudget(analysedNodes, render, 0)
                 }]
             };
         })
@@ -349,7 +357,8 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 }
             }
 
-            const output = generateStructureInspectionReport(componentNode, showAllChildren);
+            const output = renderWithinBudget(inspectedChildren(componentNode, showAllChildren).length,
+                (limit) => generateStructureInspectionReport(componentNode, showAllChildren, limit), 0);
 
             return {
                 content: [{type: "text", text: output}]

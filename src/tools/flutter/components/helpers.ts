@@ -12,6 +12,7 @@ import {filterEffectivelyVisibleChildren, isEffectivelyVisible} from "../../../u
 import {formatPadding, formatStrokes, formatSizingAlignment} from "../../../utils/style-format.js";
 import {generateFigmaUrl} from "../../../utils/figma-url-parser.js";
 import {typeName} from "../../../utils/dart-names.js";
+import {budgetNote} from "../../../utils/budget.js";
 
 /**
  * Generate comprehensive component analysis report
@@ -318,7 +319,12 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
 /**
  * Generate structure inspection report
  */
-export function generateStructureInspectionReport(node: any, showAllChildren: boolean): string {
+/** The children an inspection lists: the visible ones, or every one with showAllChildren. */
+export const inspectedChildren = (node: any, showAllChildren: boolean): any[] =>
+    showAllChildren ? node.children ?? [] : filterEffectivelyVisibleChildren(node.children ?? [], false);
+
+/** `limit` keeps the first n listed children; the others are named in omittedNodeIds (the response budget). */
+export function generateStructureInspectionReport(node: any, showAllChildren: boolean, limit = Infinity): string {
     let output = `Component Structure Inspection\n\n`;
 
     output += `Component: ${node.name}\n`;
@@ -343,14 +349,12 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
         return output;
     }
 
-    const childrenSource = showAllChildren
-        ? node.children
-        : filterEffectivelyVisibleChildren(node.children, false);
+    const childrenSource = inspectedChildren(node, showAllChildren);
     const hiddenSkipped = (node.children?.length || 0) - childrenSource.length;
 
     output += `Child Structure:\n`;
 
-    childrenSource.forEach((child: any, index: number) => {
+    childrenSource.slice(0, limit).forEach((child: any, index: number) => {
         const isComponent = child.type === 'COMPONENT' || child.type === 'INSTANCE';
         const componentMark = isComponent ? ' [COMPONENT]' : '';
         const hiddenMark = child.visible === false ? ' [HIDDEN]' : '';
@@ -398,7 +402,7 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
         output += `- Found ${textChildren.length} text nodes for content extraction\n`;
     }
 
-    return output;
+    return output + budgetNote(childrenSource.slice(limit).map((child: any) => child.id));
 }
 
 // Helper functions

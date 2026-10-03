@@ -121,3 +121,35 @@ test('the analysis tools declare the response budget to the client', async () =>
         assert.equal(tools.find((tool) => tool.name === name)?._meta?.['anthropic/maxResultSizeChars'], BUDGET, name);
     }
 });
+
+const frameOf = (count: number, nodeId = '83:0') => ({id: nodeId, name: 'Big', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(375, 5000),
+    children: Array.from({length: count}, (_, i) => rect(`83:${i + 1}`, `Layer ${i + 1}`))});
+
+/** Each of `ids` is a child of a report that was cut: it is listed in omittedNodeIds, or printed as an entry. */
+function everyChildOnce(text: string, count: number) {
+    const omitted = new Set((text.match(/^omittedNodeIds: (.*)$/m)?.[1] ?? '').split(', ').filter(Boolean));
+    for (let i = 1; i <= count; i++) {
+        const id = `83:${i}`;
+        const entries = (text.match(new RegExp(`Layer ${i} \\(`, 'g')) ?? []).length;
+        assert.equal(entries + (omitted.has(id) ? 1 : 0), 1, `${id}: ${entries} entries, ${omitted.has(id) ? 'also' : 'not'} omitted`);
+    }
+    return omitted;
+}
+
+for (const [tool, args] of [
+    ['analyze_frame_as_screen', {extractAssets: false}],
+    ['inspect_frame_structure', {}],
+    ['inspect_component_structure', {userDefinedComponent: true}],
+    ['analyze_figma_component', {exportAssets: false, userDefinedComponent: true}],
+] as Array<[string, Record<string, unknown>]>) {
+    test(`${tool} over the budget is cut at whole child layers; every child is an entry or in omittedNodeIds`, async () => {
+        const count = 1500;
+        const node = frameOf(count);
+        const {text} = await callToolOffline(nodeRoute(node.id, node), tool, {input: FILE_KEY, nodeId: node.id, ...args});
+
+        assert.ok(text.length <= BUDGET, `${text.length} characters`);
+        assert.match(text, /^truncated: true$/m);
+        const omitted = everyChildOnce(text, count);
+        assert.ok(omitted.size > 0 && omitted.size < count, `omitted ${omitted.size}`);
+    });
+}

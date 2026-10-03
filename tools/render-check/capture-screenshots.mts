@@ -66,7 +66,7 @@ try {
         }});
         const image = reply.result?.content?.[0];
         if (reply.result?.isError || image?.type !== 'image') {
-            throw new Error(`${shot.nodeId}: ${image?.text ?? JSON.stringify(reply.error ?? reply.result)}`);
+            throw new Error(`${shot.nodeId}: ${image?.text ?? JSON.stringify(reply.error ?? reply.result)}`.replaceAll(fileKey, '<file key>'));
         }
         const png = Buffer.from(image.data, 'base64');
         writeFileSync(join(outDir, shot.file), png);

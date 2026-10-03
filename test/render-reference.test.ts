@@ -102,3 +102,32 @@ test('render-check:all refuses a node id that is not in the list, instead of run
     assert.equal(code, 2, output);
     assert.match(output, /NOT IN LIST not-a-node/);
 });
+
+test('the recapture script does not print the file key when the server answers with an error that holds it', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ff-capture-error-'));
+    // A server that answers initialize, then answers the screenshot call with an error naming the file key.
+    writeFileSync(join(dir, 'cli.js'), `
+process.stdin.setEncoding('utf8');
+let buffer = '';
+process.stdin.on('data', (chunk) => {
+    buffer += chunk;
+    for (let n; (n = buffer.indexOf('\\n')) !== -1;) {
+        const message = JSON.parse(buffer.slice(0, n));
+        buffer = buffer.slice(n + 1);
+        if (message.method === 'initialize') console.log(JSON.stringify({jsonrpc: '2.0', id: message.id, result: {}}));
+        if (message.method === 'tools/call') console.log(JSON.stringify({jsonrpc: '2.0', id: message.id, result: {isError: true,
+            content: [{type: 'text', text: 'ff_get_screenshot error: Figma 404: /images/' + message.params.arguments.fileKey + ' not found'}]}}));
+    }
+});
+`);
+    const run = spawn(process.execPath, ['--import', 'tsx', 'tools/render-check/capture-screenshots.mts', '--cli', join(dir, 'cli.js'), '--out', dir], {
+        cwd: ROOT, env: {PATH: process.env.PATH, FIGMA_FILE_KEY: FILE_KEY}, stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let output = '';
+    run.stdout.on('data', (chunk) => { output += chunk; });
+    run.stderr.on('data', (chunk) => { output += chunk; });
+    const code = await new Promise((resolve) => run.once('exit', resolve));
+    assert.equal(code, 1, output);
+    assert.match(output, /ff_get_screenshot error: Figma 404: \/images\/<file key> not found/);
+    assert.equal(output.includes(FILE_KEY), false, 'the file key was printed');
+});

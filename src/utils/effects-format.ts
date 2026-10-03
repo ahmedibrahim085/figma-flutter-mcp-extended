@@ -17,7 +17,7 @@ export function formatCategorizedEffects(
     const formatShadow = (label: string, shadow: CategorizedEffects['dropShadows'][number], index: number): string => {
         let line = `${indent}- ${label} ${index + 1}: ${shadow.hex} ` +
             `opacity ${Math.round(shadow.opacity * 100)}% ` +
-            `offset(${shadow.offset.x}, ${shadow.offset.y}) ` +
+            (shadow.offset ? `offset(${shadow.offset.x}, ${shadow.offset.y}) ` : `offset not set by Figma `) +
             `blur ${shadow.radius}px`;
         if (shadow.spread) {
             line += ` spread ${shadow.spread}px`;

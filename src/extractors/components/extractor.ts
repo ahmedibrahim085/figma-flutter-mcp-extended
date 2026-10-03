@@ -59,10 +59,12 @@ export function extractMetadata(node: FigmaNode, userDefinedAsComponent: boolean
 export function extractLayoutInfo(node: FigmaNode): LayoutInfo {
     const layout: LayoutInfo = {
         type: determineLayoutType(node),
+        layoutMode: node.layoutMode,
         dimensions: {
-            width: node.absoluteBoundingBox?.width || 0,
-            height: node.absoluteBoundingBox?.height || 0
+            width: node.absoluteBoundingBox?.width ?? 0,
+            height: node.absoluteBoundingBox?.height ?? 0
         },
+        ...(node.absoluteBoundingBox ? {} : {boundsMissing: true}),
         sizingHorizontal: node.layoutSizingHorizontal,
         sizingVertical: node.layoutSizingVertical,
         layoutAlign: node.layoutAlign,
@@ -78,6 +80,11 @@ export function extractLayoutInfo(node: FigmaNode): LayoutInfo {
         minHeight: node.minHeight ?? undefined,
         maxHeight: node.maxHeight ?? undefined
     };
+
+    // GRID auto layout: reported as Figma names it, placed by its children's positions (no Row or Column).
+    if (node.layoutMode === 'GRID') {
+        layout.grid = {rows: node.gridRowCount, columns: node.gridColumnCount, rowGap: node.gridRowGap, columnGap: node.gridColumnGap};
+    }
 
     // Auto-layout specific properties
     if (layout.type === 'auto-layout') {
@@ -112,7 +119,7 @@ export function extractStylingInfo(node: FigmaNode): StylingInfo {
 
     // Fills (background colors/gradients)
     if (node.fills && node.fills.length > 0) {
-        styling.fills = node.fills.map(convertFillToColorInfo);
+        styling.fills = node.fills.filter(fill => fill.visible !== false).map(convertFillToColorInfo);
     }
 
     // Strokes (borders) — weight/align are node-level in Figma REST
@@ -277,7 +284,8 @@ export function isComponentNode(node: FigmaNode): boolean {
  */
 export function determineLayoutType(node: FigmaNode): 'auto-layout' | 'absolute' | 'frame' {
     // REST can send layoutMode NONE for a frame without auto layout.
-    if (node.layoutMode && node.layoutMode !== 'NONE') {
+    // GRID is placed by its children's positions (like a frame), not as a Row or Column.
+    if (node.layoutMode && node.layoutMode !== 'NONE' && node.layoutMode !== 'GRID') {
         return 'auto-layout';
     }
     if (node.type === 'FRAME' || node.type === 'COMPONENT') {
@@ -317,7 +325,8 @@ export function extractPadding(node: FigmaNode): PaddingInfo {
 export function convertFillToColorInfo(fill: any): ColorInfo {
     const colorInfo: ColorInfo = {
         type: fill.type,
-        opacity: fill.opacity
+        opacity: fill.opacity,
+        ...(fill.blendMode && fill.blendMode !== 'NORMAL' ? {blendMode: fill.blendMode} : {})
     };
 
     if (fill.color) {
@@ -340,7 +349,8 @@ export function convertStrokeInfo(stroke: any, node?: FigmaNode): StrokeInfo {
         type: stroke.type,
         color: stroke.color,
         hex: rgbaToHex(stroke.color),
-        weight: node?.strokeWeight ?? stroke.strokeWeight ?? 1,
+        weight: node?.strokeWeight ?? stroke.strokeWeight,
+        ...(node?.individualStrokeWeights ? {individualWeights: node.individualStrokeWeights} : {}),
         align: node?.strokeAlign ?? stroke.strokeAlign
     };
 }
@@ -360,19 +370,19 @@ export function categorizeEffects(effects: FigmaEffect[]): CategorizedEffects {
             categorized.dropShadows.push({
                 color: effect.color!,
                 hex: rgbaToHex(effect.color!),
-                offset: effect.offset || {x: 0, y: 0},
+                offset: effect.offset,
                 radius: effect.radius,
                 spread: effect.spread,
-                opacity: effect.color?.a || 1
+                opacity: effect.color?.a ?? 1
             });
         } else if (effect.type === 'INNER_SHADOW' && effect.visible !== false) {
             categorized.innerShadows.push({
                 color: effect.color!,
                 hex: rgbaToHex(effect.color!),
-                offset: effect.offset || {x: 0, y: 0},
+                offset: effect.offset,
                 radius: effect.radius,
                 spread: effect.spread,
-                opacity: effect.color?.a || 1
+                opacity: effect.color?.a ?? 1
             });
         } else if ((effect.type === 'LAYER_BLUR' || effect.type === 'BACKGROUND_BLUR') && effect.visible !== false) {
             categorized.blurs.push({
@@ -430,7 +440,7 @@ export function extractBasicStyling(node: FigmaNode): Partial<StylingInfo> {
     const styling: Partial<StylingInfo> = {};
 
     if (node.fills && node.fills.length > 0) {
-        styling.fills = node.fills.slice(0, 1).map(convertFillToColorInfo); // Limit to primary fill
+        styling.fills = node.fills.filter(fill => fill.visible !== false).map(convertFillToColorInfo);
     }
 
     if (node.strokes && node.strokes.length > 0) {

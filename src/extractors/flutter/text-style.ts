@@ -4,6 +4,7 @@
 // (the deduplicated style library and the plain text-widget guidance) call it, so a
 // text renders the same whichever path runs. Conversion rules: research 03b.
 
+import {argbHex} from '../../utils/dart-color.js';
 import type {FigmaFill, FigmaTextStyle} from '../../types/figma.js';
 
 /** The Figma text properties the generated TextStyle is built from. */
@@ -61,14 +62,6 @@ export interface TextOverrides {
   styleOverrideTable?: Record<string, Partial<FigmaTextStyle> & {fills?: FigmaFill[]}>;
   /** The node's first fill: the base color a run's own fill replaces. */
   baseFill?: FigmaFill;
-}
-
-/** `#AARRGGBB` of a solid fill: the color's alpha times the paint opacity. */
-function argbHex(fill: FigmaFill): string | undefined {
-  if (!fill.color) return undefined;
-  const {r, g, b, a} = fill.color;
-  const alpha = (a ?? 1) * (fill.opacity ?? 1);
-  return `#${[alpha, r, g, b].map(v => Math.round(v * 255).toString(16).padStart(2, '0')).join('').toUpperCase()}`;
 }
 
 /**

@@ -1,5 +1,7 @@
 // src/tools/flutter/screens/helpers.mts
 
+import {formatFills} from "../../../utils/paint-format.js";
+import {convertFillToColorInfo} from "../../../extractors/components/extractor.js";
 import {formatBreakpointLines} from "../../../extractors/screens/breakpoints.js";
 import {extractScreenMetadata} from "../../../extractors/screens/extractor.js";
 import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
@@ -248,13 +250,7 @@ export function generateScreenStructureReport(node: any, showAllChildren: boolea
         }
 
         // Show basic styling info
-        if (section.fills && section.fills.length > 0) {
-            const fill = section.fills[0];
-            if (fill.color) {
-                const hex = rgbaToHex(fill.color);
-                output += `   Background: ${hex}\n`;
-            }
-        }
+        output += formatFills((section.fills ?? []).filter((fill: any) => fill.visible !== false && fill.color).map(convertFillToColorInfo), '   ', '');
 
         output += formatFigmaNodeBoxEvidence(section, '   ');
         output += formatFigmaEffects(section.effects, '   ');
@@ -357,12 +353,4 @@ function toPascalCase(str: string): string {
         .replace(/[^a-zA-Z0-9]/g, ' ')
         .replace(/\w+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
         .replace(/\s/g, '');
-}
-
-function rgbaToHex(color: {r: number; g: number; b: number; a?: number}): string {
-    const r = Math.round(color.r * 255);
-    const g = Math.round(color.g * 255);
-    const b = Math.round(color.b * 255);
-
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
 }

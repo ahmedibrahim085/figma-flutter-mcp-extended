@@ -1,5 +1,6 @@
 // src/extractors/flutter/style-library.mts
 
+import {argbHex, dartColor} from '../../utils/dart-color.js';
 import { Logger } from '../../utils/logger.js';
 import { textStyleCode, type TextStyleFields } from './text-style.js';
 
@@ -223,7 +224,8 @@ export class FlutterStyleLibrary {
     // Group similar properties - be more specific to avoid false matches
     if (properties.fills && properties.fills.length > 0) {
       // Use the actual hex value to distinguish different colors
-      key.color = properties.fills[0].hex?.toLowerCase();
+      key.color = (argbHex(properties.fills[0]) ?? properties.fills[0].hex)?.toLowerCase();
+      if (properties.fills.some((fill: any) => fill.blendMode)) key.fills = properties.fills;
       // Gradient/image and stacked fills have no single hex; without the full
       // fills every such style shared one key.
       if (properties.fills.length > 1 || (properties.fills[0] && properties.fills[0].type !== 'SOLID')) {
@@ -257,7 +259,7 @@ export class FlutterStyleLibrary {
       key.shadowIntensity = properties.effects.dropShadows.length;
       // Include shadow details for more specificity
       key.shadowDetails = properties.effects.dropShadows.map((s: any) => ({
-        color: s.hex,
+        color: argbHex({color: s.color})?.toLowerCase() ?? s.hex,
         blur: s.radius,
         offset: s.offset
       }));
@@ -292,36 +294,27 @@ export class FlutterStyleLibrary {
 }
 
 export class FlutterCodeGenerator {
+  /** BoxDecoration for the bottom fill, with the radius, border and shadows. Later fills are layers (generateFillLayers). */
   static generateDecoration(properties: any): string {
     let code = 'BoxDecoration(\n';
     
     if (properties.fills?.length > 0) {
-      const fill = properties.fills[0];
-      if (fill.hex) {
-        code += `  color: Color(0xFF${fill.hex.substring(1)}),\n`;
+      const color = dartColor(properties.fills[0]);
+      if (color) {
+        code += `${FlutterCodeGenerator.blendNote(properties.fills[0])}  color: ${color},\n`;
       }
     }
     
-    if (properties.cornerRadius !== undefined) {
-      if (typeof properties.cornerRadius === 'number') {
-        code += `  borderRadius: BorderRadius.circular(${properties.cornerRadius}),\n`;
-      } else {
-        const r = properties.cornerRadius;
-        code += `  borderRadius: BorderRadius.only(\n`;
-        code += `    topLeft: Radius.circular(${r.topLeft}),\n`;
-        code += `    topRight: Radius.circular(${r.topRight}),\n`;
-        code += `    bottomLeft: Radius.circular(${r.bottomLeft}),\n`;
-        code += `    bottomRight: Radius.circular(${r.bottomRight}),\n`;
-        code += `  ),\n`;
-      }
-    }
+    code += FlutterCodeGenerator.radiusLines(properties);
     
     if (properties.effects?.dropShadows?.length > 0) {
       code += `  boxShadow: [\n`;
       properties.effects.dropShadows.forEach((shadow: any) => {
         code += `    BoxShadow(\n`;
-        code += `      color: Color(0xFF${shadow.hex.substring(1)}).withOpacity(${shadow.opacity}),\n`;
-        code += `      offset: Offset(${shadow.offset.x}, ${shadow.offset.y}),\n`;
+        code += `      color: ${dartColor({color: shadow.color})},\n`;
+        code += shadow.offset
+          ? `      offset: Offset(${shadow.offset.x}, ${shadow.offset.y}),\n`
+          : `      // offset: not set by Figma\n`;
         code += `      blurRadius: ${shadow.radius},\n`;
         if (shadow.spread) {
           code += `      spreadRadius: ${shadow.spread},\n`;
@@ -333,6 +326,45 @@ export class FlutterCodeGenerator {
     
     code += ')';
     return code;
+  }
+
+  /**
+   * One BoxDecoration per fill after the first, bottom to top: Figma draws the last fill on top, so each is
+   * nested inside the previous one (DecoratedBox paints behind its child).
+   */
+  static generateFillLayers(properties: any): string[] {
+    // A layer with no solid colour (a gradient or image fill) paints nothing here; those fills are not converted yet.
+    return (properties.fills ?? []).slice(1).filter((fill: any) => dartColor(fill)).map((fill: any) =>
+      `BoxDecoration(\n${FlutterCodeGenerator.blendNote(fill)}  color: ${dartColor(fill)},\n${FlutterCodeGenerator.radiusLines(properties)})`);
+  }
+
+  /** The layers as nested DecoratedBoxes (the first outermost) around `inner`, or nothing when there are none. */
+  static nestFillLayers(layers: string[], inner?: string): string {
+    const indent = (code: string) => code.split('\n').join('\n  ');
+    let code = inner;
+    for (let i = layers.length - 1; i >= 0; i--) {
+      code = `DecoratedBox(\n  decoration: ${indent(layers[i])},\n${code ? `  child: ${indent(code)},\n` : ''})`;
+    }
+    return code ?? '';
+  }
+
+  /** A blend mode other than NORMAL is not applied to a DecoratedBox fill; say so in the code. */
+  private static blendNote(fill: any): string {
+    return fill.blendMode ? `  // approximate: blend ${fill.blendMode} not applied\n` : '';
+  }
+
+  private static radiusLines(properties: any): string {
+    if (properties.cornerRadius === undefined) return '';
+    if (typeof properties.cornerRadius === 'number') {
+      return `  borderRadius: BorderRadius.circular(${properties.cornerRadius}),\n`;
+    }
+    const r = properties.cornerRadius;
+    return `  borderRadius: BorderRadius.only(\n`
+      + `    topLeft: Radius.circular(${r.topLeft}),\n`
+      + `    topRight: Radius.circular(${r.topRight}),\n`
+      + `    bottomLeft: Radius.circular(${r.bottomLeft}),\n`
+      + `    bottomRight: Radius.circular(${r.bottomRight}),\n`
+      + `  ),\n`;
   }
   
   static generatePadding(properties: any): string {

@@ -68,6 +68,12 @@ export interface LayoutInfo {
     origin?: {x: number; y: number};
     positioning?: 'AUTO' | 'ABSOLUTE';
     clipsContent?: boolean;
+    /** The node's layoutMode as Figma names it (NONE, HORIZONTAL, VERTICAL, GRID). */
+    layoutMode?: string;
+    /** GRID auto layout counts and gaps, when Figma sends them. */
+    grid?: {rows?: number; columns?: number; rowGap?: number; columnGap?: number};
+    /** True when Figma sent no absoluteBoundingBox: `dimensions` and `origin` are then placeholders. */
+    boundsMissing?: boolean;
     /** One radius, or [topLeft, topRight, bottomRight, bottomLeft] from rectangleCornerRadii. */
     cornerRadius?: number | number[];
     rotation?: number;
@@ -106,6 +112,7 @@ export interface StylingInfo {
  */
 export interface ColorInfo {
     type: string;
+    blendMode?: string;
     color?: FigmaColor;
     hex?: string;
     opacity?: number;
@@ -122,7 +129,10 @@ export interface StrokeInfo {
     type: string;
     color: FigmaColor;
     hex: string;
-    weight: number;
+    /** Undefined when Figma sent no strokeWeight. */
+    weight?: number;
+    /** Per-side weights, when Figma sent individualStrokeWeights. */
+    individualWeights?: {top: number; right: number; bottom: number; left: number};
     align?: string;
 }
 
@@ -152,7 +162,8 @@ export interface CategorizedEffects {
 export interface DropShadowEffect {
     color: FigmaColor;
     hex: string;
-    offset: {x: number; y: number};
+    /** Undefined when Figma sent no offset. */
+    offset?: {x: number; y: number};
     radius: number;
     spread?: number;
     opacity: number;
@@ -164,7 +175,8 @@ export interface DropShadowEffect {
 export interface InnerShadowEffect {
     color: FigmaColor;
     hex: string;
-    offset: {x: number; y: number};
+    /** Undefined when Figma sent no offset. */
+    offset?: {x: number; y: number};
     radius: number;
     spread?: number;
     opacity: number;

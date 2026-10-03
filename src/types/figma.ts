@@ -73,6 +73,13 @@ export interface FigmaNode {
     strokeAlign?: string;
     cornerRadius?: number;
     rectangleCornerRadii?: number[];
+    /** Per-side stroke weights, when the sides differ. */
+    individualStrokeWeights?: {top: number; right: number; bottom: number; left: number};
+    /** GRID auto layout (layoutMode: 'GRID'). */
+    gridRowCount?: number;
+    gridColumnCount?: number;
+    gridRowGap?: number;
+    gridColumnGap?: number;
     // Text-specific properties
     characters?: string; // Actual text content for TEXT nodes
     characterStyleOverrides?: number[];
@@ -152,6 +159,7 @@ export interface FigmaFill {
         position: number;
     }>;
     visible?: boolean;
+    blendMode?: string;
     /** Paint opacity, 0-1 (Figma REST Paint.opacity; absent means 1). */
     opacity?: number;
 }

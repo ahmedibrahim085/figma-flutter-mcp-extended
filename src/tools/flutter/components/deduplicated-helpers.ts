@@ -2,7 +2,7 @@
 
 import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
 import { MAX_CHILD_DEPTH, NESTED_COMPONENT_TYPES, type DeduplicatedComponentAnalysis, type DeduplicatedComponentChild } from '../../../extractors/components/deduplicated-extractor.js';
-import { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
+import { FlutterStyleLibrary, FlutterCodeGenerator } from '../../../extractors/flutter/style-library.js';
 import { dartString, indentTail, textWidgetCode } from '../../../extractors/flutter/text-style.js';
 import { generateComponentVisualContext } from '../visual-context.js';
 import type { ComponentAnalysis, LayoutInfo } from '../../../extractors/components/types.js';
@@ -109,13 +109,18 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
     }
   }
   if (analysis.styleRefs.decoration) rootProps.push(`decoration: ${analysis.styleRefs.decoration},`);
+  const rootFillLayers = analysis.styleRefs.decoration
+    ? FlutterCodeGenerator.generateFillLayers(styleLibrary.getStyle(analysis.styleRefs.decoration)!.properties) : [];
   const rootPaddingInside = paddingInsideStack(analysis.layout, analysis.children);
   if (analysis.styleRefs.padding && !rootPaddingInside) rootProps.push(`padding: ${analysis.styleRefs.padding},`);
   const approximations: string[] = [];
   if (analysis.children.length > 0) {
     const layout = layoutWidget(analysis.children, analysis.layout, analysis.metadata.name, styleLibrary, approximations,
       rootPaddingInside ? analysis.styleRefs.padding : undefined);
-    rootProps.push(`child: ${indentTail(overflowLayout(layout, analysis.layout, analysis.children, analysis.metadata.name, approximations), 2)},`);
+    const content = overflowLayout(layout, analysis.layout, analysis.children, analysis.metadata.name, approximations);
+    rootProps.push(`child: ${indentTail(FlutterCodeGenerator.nestFillLayers(rootFillLayers, content) || content, 2)},`);
+  } else {
+    rootProps.push(...fillLayerChild(rootFillLayers));
   }
   let root = hugLimits(box('Container', rootProps), analysis.layout);
   // A FILL axis's max sits between the LimitedBox and the infinite Container (research 06 P16: 400 bounded, 360 unbounded).
@@ -140,6 +145,7 @@ const BOUNDING_BOX_TYPES = new Set(['LINE', 'STAR', 'POLYGON', 'BOOLEAN_OPERATIO
  * Nodes outside auto layout have no sizing in the REST response and keep their measured size.
  */
 function fixedSizeProps(layout: LayoutInfo): string[] {
+  if (layout.boundsMissing) return [];
   return [axisSize('width', layout.sizingHorizontal, layout.dimensions.width), axisSize('height', layout.sizingVertical, layout.dimensions.height)]
     .filter(Boolean);
 }
@@ -174,7 +180,8 @@ function layoutWidget(
     const layers = children.flatMap(function lift(child): DeduplicatedComponentChild[] {
       return child.type === 'GROUP' && child.children?.length ? child.children.flatMap(lift) : [child];
     });
-    return clipStack(layers.map(layer => positioned(layer, frame, styleLibrary, approximations)), [], frame);
+    const stack = clipStack(layers.map(layer => positioned(layer, frame, styleLibrary, approximations)), [], frame);
+    return frame.layoutMode === 'GRID' ? approximate("GRID auto layout placed by its children's Figma positions", stack, approximations) : stack;
   }
   if (!paddingInsideStack(frame, children)) return flexWidget(children, frame, name, styleLibrary, approximations);
   const absoluteAt = children.map(child => child.layout.positioning === 'ABSOLUTE');
@@ -226,8 +233,8 @@ function borderRadius(radius: number | number[] | undefined): string {
   return `BorderRadius.only(${corners.join(', ')})`;
 }
 
-/** A number for generated Dart: at most 4 decimals, no trailing zeros. */
-const dartNumber = (value: number) => String(Math.round(value * 10000) / 10000 || 0);
+/** A number for generated Dart: the shortest string that reads back as the same number. */
+const dartNumber = (value: number) => String(value || 0);
 
 const MIN_KEY = {width: 'minWidth', height: 'minHeight'} as const;
 const MAX_KEY = {width: 'maxWidth', height: 'maxHeight'} as const;
@@ -277,7 +284,7 @@ function overflowLayout(layout: string, frame: LayoutInfo, children: Deduplicate
   if (!overflowsMax(frame, children)) return layout;
   const widget = box('UnconstrainedBox', [
     `constrainedAxis: ${frame.direction === 'horizontal' ? 'Axis.vertical' : 'Axis.horizontal'},`,
-    'alignment: Alignment.topLeft,',
+    'alignment: AlignmentDirectional.topStart,',
     'clipBehavior: Clip.hardEdge,',
     `child: ${indentTail(layout, 2)},`,
   ]);
@@ -293,6 +300,9 @@ function overflowLayout(layout: string, frame: LayoutInfo, children: Deduplicate
  * Align > FractionallySizedBox (SCALE) > SizedBox (CENTER size; infinite on a stretch axis, which Align would loosen).
  */
 function positioned(child: DeduplicatedComponentChild, frame: LayoutInfo, styleLibrary: FlutterStyleLibrary, approximations: string[]): string {
+  if (child.layout.boundsMissing) {
+    return approximate(`no absoluteBoundingBox from Figma for "${child.name}"; it is not positioned`, childWidget(child, styleLibrary, approximations) ?? sizedBox([]), approximations);
+  }
   const origin = child.layout.origin ?? {x: 0, y: 0};
   const frameOrigin = frame.origin ?? {x: 0, y: 0};
   const axes = [
@@ -466,20 +476,22 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
     if (!child.textContent) return undefined;
     const textStyleId = styleOf('text');
     // Only an explicit FIXED width is emitted: a text node sizes itself by textAutoResize otherwise.
-    const width = child.layout.sizingHorizontal === 'FIXED' ? Math.round(child.layout.dimensions.width) : undefined;
+    const width = child.layout.sizingHorizontal === 'FIXED' && !child.layout.boundsMissing ? Math.round(child.layout.dimensions.width) : undefined;
     return hugLimits(textWidgetCode(child.textWidget ?? {text: child.textContent}, textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined, width), child.layout);
   }
   // A placeholder stands in for content that is not rendered, so it keeps the measured size except on a FILL axis.
-  const w = child.layout.sizingHorizontal === 'FILL' ? undefined : Math.round(child.layout.dimensions.width);
-  const h = child.layout.sizingVertical === 'FILL' ? undefined : Math.round(child.layout.dimensions.height);
+  const noBox = child.layout.boundsMissing;
+  const w = child.layout.sizingHorizontal === 'FILL' || noBox ? undefined : Math.round(child.layout.dimensions.width);
+  const h = child.layout.sizingVertical === 'FILL' || noBox ? undefined : Math.round(child.layout.dimensions.height);
   const placeholderSize = [w === undefined ? '' : `width: ${w},`, h === undefined ? '' : `height: ${h},`].filter(Boolean);
   const placeholder = sizedBox(placeholderSize);
   if (NESTED_COMPONENT_TYPES.has(child.type)) {
     return approximate(`component "${child.name}" is not inlined; analyze it separately`, placeholder, approximations);
   }
   const decoration = styleOf('decoration');
+  const fillLayers = decoration ? FlutterCodeGenerator.generateFillLayers(styleLibrary.getStyle(decoration)!.properties) : [];
   if (child.truncated) {
-    const widget = decoration ? box('Container', [...placeholderSize, `decoration: ${decoration},`]) : placeholder;
+    const widget = decoration ? box('Container', [...placeholderSize, `decoration: ${decoration},`, ...fillLayerChild(fillLayers)]) : placeholder;
     return approximate(`"${child.name}" is deeper than ${MAX_CHILD_DEPTH} levels; its children are not rendered`, widget, approximations);
   }
   const props = fixedSizeProps(child.layout);
@@ -493,17 +505,22 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
       paddingInside ? styleOf('padding') : undefined), child.layout, child.children, child.name, approximations);
     // A Container holding only a child adds nothing (avoid_unnecessary_containers); a HUG min/max still applies.
     if (props.length === 0) return hugLimits(layout, child.layout);
-    props.push(`child: ${indentTail(layout, 2)},`);
+    props.push(`child: ${indentTail(FlutterCodeGenerator.nestFillLayers(fillLayers, layout) || layout, 2)},`);
     // Nothing drawn: a SizedBox holds the size and the child (sized_box_for_whitespace).
     widget = box(decoration || padding ? 'Container' : 'SizedBox', props);
   } else {
-    widget = decoration || padding ? box('Container', props) : sizedBox(props);
+    widget = decoration || padding ? box('Container', [...props, ...fillLayerChild(fillLayers)]) : sizedBox(props);
   }
   widget = hugLimits(widget, child.layout);
   if (BOUNDING_BOX_TYPES.has(child.type)) {
     return approximate(`"${child.name}" (${child.type}) is drawn as its bounding box`, widget, approximations);
   }
   return widget;
+}
+
+/** The `child:` property holding a frame's fills after the first, nested bottom to top; none when there are no layers. */
+function fillLayerChild(layers: string[]): string[] {
+  return layers.length > 0 ? [`child: ${indentTail(FlutterCodeGenerator.nestFillLayers(layers), 2)},`] : [];
 }
 
 /** A multi-line widget call, one property per line. */
@@ -531,7 +548,9 @@ export function generateComprehensiveDeduplicatedReport(
   output += `   • Name: ${analysis.metadata.name}\n`;
   output += `   • Type: ${analysis.metadata.type}\n`;
   output += `   • Node ID: ${analysis.metadata.nodeId}\n`;
-  output += `   • Size: ${Math.round(analysis.layout.dimensions.width)}×${Math.round(analysis.layout.dimensions.height)}px\n`;
+  output += analysis.layout.boundsMissing
+    ? `   • Size: not set by Figma\n`
+    : `   • Size: ${Math.round(analysis.layout.dimensions.width)}×${Math.round(analysis.layout.dimensions.height)}px\n`;
   output += formatSizingAlignment({
     horizontal: analysis.layout.sizingHorizontal,
     vertical: analysis.layout.sizingVertical,
@@ -574,7 +593,9 @@ export function generateComprehensiveDeduplicatedReport(
         output += `      📝 Text: "${child.textContent}"\n`;
       }
 
-      output += `      📐 Size: ${Math.round(child.layout.dimensions.width)}×${Math.round(child.layout.dimensions.height)}px\n`;
+      output += child.layout.boundsMissing
+        ? `      📐 Size: not set by Figma\n`
+        : `      📐 Size: ${Math.round(child.layout.dimensions.width)}×${Math.round(child.layout.dimensions.height)}px\n`;
       output += formatSizingAlignment({
         horizontal: child.layout.sizingHorizontal,
         vertical: child.layout.sizingVertical,

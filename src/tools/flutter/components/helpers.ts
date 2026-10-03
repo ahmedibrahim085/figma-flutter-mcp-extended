@@ -1,6 +1,9 @@
+import {dartColor} from "../../../utils/dart-color.js";
+import {formatFills} from "../../../utils/paint-format.js";
+import {FlutterCodeGenerator} from "../../../extractors/flutter/style-library.js";
 import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
 import type {ComponentAnalysis} from "../../../extractors/components/types.js";
-import {generateFlutterTextWidget} from "../../../extractors/components/extractor.js";
+import {generateFlutterTextWidget, convertFillToColorInfo} from "../../../extractors/components/extractor.js";
 import {generateComponentVisualContext} from "../visual-context.js";
 import {formatComponentProperties} from "../../../utils/component-properties.js";
 import {formatInteractions, formatNestedInteractions} from "../../../utils/interactions.js";
@@ -32,7 +35,15 @@ export function generateComponentAnalysisReport(
     // Layout information
     output += `Layout Structure:\n`;
     output += `- Type: ${analysis.layout.type}\n`;
-    output += `- Dimensions: ${Math.round(analysis.layout.dimensions.width)}×${Math.round(analysis.layout.dimensions.height)}px\n`;
+    output += analysis.layout.boundsMissing
+        ? `- Dimensions: not set by Figma\n`
+        : `- Dimensions: ${Math.round(analysis.layout.dimensions.width)}×${Math.round(analysis.layout.dimensions.height)}px\n`;
+    if (analysis.layout.grid) {
+        const {rows, columns, rowGap, columnGap} = analysis.layout.grid;
+        const counts = [rows !== undefined && `${rows} rows`, columns !== undefined && `${columns} columns`].filter(Boolean).join(' × ');
+        const parts = [counts, rowGap !== undefined && `row gap ${rowGap}`, columnGap !== undefined && `column gap ${columnGap}`].filter(Boolean);
+        output += `- layoutMode: ${analysis.layout.layoutMode}${parts.length ? ` (${parts.join(', ')})` : ''}\n`;
+    }
 
     if (analysis.layout.direction) {
         output += `- Direction: ${analysis.layout.direction}\n`;
@@ -57,12 +68,7 @@ export function generateComponentAnalysisReport(
     // Styling information
     output += `Visual Styling:\n`;
     if (analysis.styling.fills && analysis.styling.fills.length > 0) {
-        const fill = analysis.styling.fills[0];
-        output += `- Background: ${fill.hex || fill.type}`;
-        if (fill.opacity && fill.opacity !== 1) {
-            output += ` (${Math.round(fill.opacity * 100)}% opacity)`;
-        }
-        output += `\n`;
+        output += formatFills(analysis.styling.fills);
     }
     output += formatStrokes(analysis.styling.strokes);
     if (analysis.styling.cornerRadius !== undefined) {
@@ -90,7 +96,9 @@ export function generateComponentAnalysisReport(
             output += formatInteractions(child.interactions, '   ');
             output += formatNestedInteractions(child.children, '   ');
 
-            if (child.basicInfo?.layout?.dimensions) {
+            if (child.basicInfo?.layout?.boundsMissing) {
+                output += `   Size: not set by Figma\n`;
+            } else if (child.basicInfo?.layout?.dimensions) {
                 const dims = child.basicInfo.layout.dimensions;
                 output += `   Size: ${Math.round(dims.width)}×${Math.round(dims.height)}px\n`;
             }
@@ -102,7 +110,7 @@ export function generateComponentAnalysisReport(
             output += formatPadding(child.basicInfo?.layout?.padding, '   ', '');
 
             if (child.basicInfo?.styling?.fills && child.basicInfo.styling.fills.length > 0) {
-                output += `   Background: ${child.basicInfo.styling.fills[0].hex}\n`;
+                output += formatFills(child.basicInfo.styling.fills, '   ', '');
             }
             output += formatStrokes(child.basicInfo?.styling?.strokes, '   ', undefined, '');
             if (child.basicInfo?.styling?.cornerRadius !== undefined) {
@@ -120,7 +128,7 @@ export function generateComponentAnalysisReport(
                     const fontParts = [];
                     if (textInfo.fontFamily) fontParts.push(textInfo.fontFamily);
                     if (textInfo.fontSize) fontParts.push(`${textInfo.fontSize}px`);
-                    if (textInfo.fontWeight && textInfo.fontWeight !== 400) fontParts.push(`weight: ${textInfo.fontWeight}`);
+                    if (textInfo.fontWeight) fontParts.push(`weight: ${textInfo.fontWeight}`);
                     output += `   Typography: ${fontParts.join(' ')}\n`;
                 }
 
@@ -214,18 +222,24 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
         guidance += `  decoration: BoxDecoration(\n`;
 
         if (analysis.styling.fills && analysis.styling.fills.length > 0) {
-            const fill = analysis.styling.fills[0];
-            if (fill.hex) {
-                guidance += `    color: Color(0xFF${fill.hex.substring(1)}),\n`;
+            const color = dartColor(analysis.styling.fills[0]);
+            if (color) {
+                guidance += `    color: ${color},\n`;
             }
         }
 
         if (analysis.styling.strokes && analysis.styling.strokes.length > 0) {
             const stroke = analysis.styling.strokes[0];
-            guidance += `    border: Border.all(\n`;
-            guidance += `      color: Color(0xFF${stroke.hex.substring(1)}),\n`;
-            guidance += `      width: ${stroke.weight},\n`;
-            guidance += `    ),\n`;
+            const side = (width: number | undefined) =>
+                `BorderSide(color: ${dartColor(stroke)}${width === undefined ? '' : `, width: ${width}`})`;
+            if (stroke.individualWeights) {
+                const w = stroke.individualWeights;
+                guidance += `    border: Border(\n      top: ${side(w.top)},\n      right: ${side(w.right)},\n      bottom: ${side(w.bottom)},\n      left: ${side(w.left)},\n    ),\n`;
+            } else if (stroke.weight === undefined) {
+                guidance += `    border: Border.all(\n      color: ${dartColor(stroke)},\n      // width: strokeWeight not set by Figma\n    ),\n`;
+            } else {
+                guidance += `    border: Border.all(\n      color: ${dartColor(stroke)},\n      width: ${stroke.weight},\n    ),\n`;
+            }
         }
 
         if (analysis.styling.cornerRadius !== undefined) {
@@ -246,8 +260,10 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
             guidance += `    boxShadow: [\n`;
             analysis.styling.effects.dropShadows.forEach(shadow => {
                 guidance += `      BoxShadow(\n`;
-                guidance += `        color: Color(0xFF${shadow.hex.substring(1)}).withOpacity(${shadow.opacity.toFixed(2)}),\n`;
-                guidance += `        offset: Offset(${shadow.offset.x}, ${shadow.offset.y}),\n`;
+                guidance += `        color: ${dartColor({color: shadow.color})},\n`;
+                guidance += shadow.offset
+                    ? `        offset: Offset(${shadow.offset.x}, ${shadow.offset.y}),\n`
+                    : `        // offset: not set by Figma\n`;
                 guidance += `        blurRadius: ${shadow.radius},\n`;
                 if (shadow.spread) {
                     guidance += `        spreadRadius: ${shadow.spread},\n`;
@@ -268,7 +284,9 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
             }
         }
 
-        guidance += `  child: /* Your content here */\n`;
+        // Fills after the first are layers; the last is drawn on top (Figma order).
+        const layers = FlutterCodeGenerator.generateFillLayers({fills: analysis.styling.fills, cornerRadius: analysis.styling.cornerRadius});
+        guidance += `  child: ${layers.length > 0 ? FlutterCodeGenerator.nestFillLayers(layers, '/* Your content here */').split('\n').join('\n  ') + ',' : '/* Your content here */'}\n`;
         guidance += `)\n\n`;
     }
 
@@ -371,13 +389,7 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
         }
 
         // Show basic styling info
-        if (child.fills && child.fills.length > 0) {
-            const fill = child.fills[0];
-            if (fill.color) {
-                const hex = rgbaToHex(fill.color);
-                output += `   Background: ${hex}\n`;
-            }
-        }
+        output += formatFills((child.fills ?? []).filter((fill: any) => fill.visible !== false && fill.color).map(convertFillToColorInfo), '   ', '');
     });
 
     if (hasMore) {
@@ -443,12 +455,4 @@ export function toPascalCase(str: string): string {
         .replace(/[^a-zA-Z0-9]/g, ' ')
         .replace(/\w+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
         .replace(/\s/g, '');
-}
-
-export function rgbaToHex(color: {r: number; g: number; b: number; a?: number}): string {
-    const r = Math.round(color.r * 255);
-    const g = Math.round(color.g * 255);
-    const b = Math.round(color.b * 255);
-
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
 }

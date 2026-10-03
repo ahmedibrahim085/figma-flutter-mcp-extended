@@ -182,8 +182,7 @@ const DEDUP_CASES: Array<{name: string; a: object; b: object; expect: 'merge' | 
         a: frame('8:1', [solid(red)], [], {effects: [shadow('DROP_SHADOW', 4, false)]}), b: frame('8:2', [solid(red)])},
     {name: 'D different drop shadows, same fill', expect: 'split', kind: 'decoration',
         a: frame('8:1', [solid(red)], [], {effects: [shadow('DROP_SHADOW', 4)]}), b: frame('8:2', [solid(red)], [], {effects: [shadow('DROP_SHADOW', 12)]})},
-    // Known defect (backlog B3.18): opacity is ignored, so these merge. Flip to 'split' when fixed.
-    {name: 'E same colour, different opacity (known defect B3.18)', expect: 'merge', kind: 'decoration',
+    {name: 'E same colour, different opacity', expect: 'split', kind: 'decoration',
         a: frame('8:1', [solid(red, 0.5)]), b: frame('8:2', [solid(red)])},
     {name: 'F uniform radius as number vs per-corner', expect: 'merge', kind: 'decoration',
         a: frame('8:1', [solid(red)], [], {cornerRadius: 8}), b: frame('8:2', [solid(red)], [], {rectangleCornerRadii: [8, 8, 8, 8]})},

@@ -138,7 +138,7 @@ test('Paints fixture: each shape child renders as a sized container in the Row',
     assert.equal(code.match(/Container\(\n\s+width: 140,\n\s+height: 100,\n\s+decoration: /g)?.length, 13, code);
 });
 
-test('Paints fixture: gradients and a second fill are dropped from the decoration (pins current behaviour, slice 3 replaces this)', async () => {
+test('Paints fixture: gradient fills are dropped from the decoration (pins current behaviour, slice 7 replaces this)', async () => {
     const {routes} = fixture('paints-frame.json', '1:20');
     const decorations = await childDecorations(routes, '1:20');
 
@@ -154,9 +154,9 @@ test('Paints fixture: gradients and a second fill are dropped from the decoratio
     assert.equal(new Set(gradients.slice(0, 3).map(idOf)).size, 1);
     assert.equal(new Set(gradients.slice(3, 5).map(idOf)).size, 1);
     assert.equal(new Set(gradients.map(idOf)).size, 4);
-    // Gradient over solid keeps only the solid; the 50% fill opacity is lost too.
+    // Gradient over solid keeps the solid (the gradient layer is not converted); the 50% fill opacity is kept.
     assert.equal(decorations.get('Paint / gradient over solid (2 fills)')?.code, 'BoxDecoration(\n  color: Color(0xFFF2F2F2),\n  borderRadius: BorderRadius.circular(8),\n)');
-    assert.equal(decorations.get('Paint / solid 50% opacity')?.code, 'BoxDecoration(\n  color: Color(0xFF0066E5),\n  borderRadius: BorderRadius.circular(8),\n)');
+    assert.equal(decorations.get('Paint / solid 50% opacity')?.code, 'BoxDecoration(\n  color: Color(0x800066E5),\n  borderRadius: BorderRadius.circular(8),\n)');
 });
 
 test('Paints fixture: image fills lose the image and their scale mode (pins current behaviour, slice 7 replaces this)', async () => {

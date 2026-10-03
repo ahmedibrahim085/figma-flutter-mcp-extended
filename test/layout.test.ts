@@ -585,8 +585,8 @@ test('constraint recipes: LEFT_RIGHT/TOP_BOTTOM stretch, CENTER pads then aligns
     assert.ok(code.includes(['Positioned(', 'left: 15,', 'right: -15,', 'top: 0,', 'bottom: 0,', 'child: Align(',
         'alignment: Alignment(0, 0),', 'child: SizedBox(', 'width: 20,', 'height: 20,'].join('\n')), code);
     assert.doesNotMatch(code, /EdgeInsets\.only/);
-    // SCALE: alignment x = 2·10/(100−70) − 1 = -0.3333; widthFactor 70/100 = 0.7; TOP keeps top/height on the Positioned.
-    assert.ok(code.includes(['Positioned(', 'left: 0,', 'right: 0,', 'top: 0,', 'height: 50,', 'child: Align(', 'alignment: Alignment(-0.3333, -1),',
+    // SCALE: alignment x = 2·10/(100−70) − 1 = -0.33333333333333337 (JS floating point, printed as the shortest round-trip number); widthFactor 70/100 = 0.7; TOP keeps top/height on the Positioned.
+    assert.ok(code.includes(['Positioned(', 'left: 0,', 'right: 0,', 'top: 0,', 'height: 50,', 'child: Align(', 'alignment: Alignment(-0.33333333333333337, -1),',
         'child: FractionallySizedBox(', 'widthFactor: 0.7,'].join('\n')), code);
 });
 
@@ -708,7 +708,7 @@ test('a HUG frame clamped by a max narrower than its children clips them like Fi
     // OverflowBoxFit (research 06's recipe) is not exported by material.dart, so generated code could not compile; an
     // UnconstrainedBox clips the same way (100 wide, children at 0, 0 errors in bounded, scroll and Row hosts).
     assert.ok(clipped.includes(['ConstrainedBox(', 'constraints: BoxConstraints(maxWidth: 100),', 'child: Container('].join('\n')), clipped);
-    assert.ok(clipped.includes(['child: UnconstrainedBox(', 'constrainedAxis: Axis.vertical,', 'alignment: Alignment.topLeft,',
+    assert.ok(clipped.includes(['child: UnconstrainedBox(', 'constrainedAxis: Axis.vertical,', 'alignment: AlignmentDirectional.topStart,',
         'clipBehavior: Clip.hardEdge,', 'child: Row('].join('\n')), clipped);
     assert.doesNotMatch(clipped, /OverflowBox|ClipRect/);
     // Content that fits needs only the ConstrainedBox.

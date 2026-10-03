@@ -7,6 +7,7 @@ import type {
     LayoutInfo
 } from '../extractors/components/types.js';
 import { rgbaToHex } from '../extractors/components/extractor.js';
+import { describeStrokeWeight } from './paint-format.js';
 
 /**
  * Format padding for MCP text reports. Emits nothing when absent/zero.
@@ -48,7 +49,7 @@ export function formatStrokes(
     let output = '';
     strokes.forEach((stroke, index) => {
         const label = strokes.length > 1 ? ` ${index + 1}` : '';
-        output += `${indent}${linePrefix}Border${label}: ${stroke.weight}px solid ${stroke.hex}`;
+        output += `${indent}${linePrefix}Border${label}: ${describeStrokeWeight(stroke)} solid ${stroke.hex}`;
         if (stroke.align) {
             output += ` align ${stroke.align}`;
         }
@@ -168,7 +169,8 @@ export function strokePaintToStrokeInfo(
         type: stroke.type,
         color: stroke.color,
         hex: rgbaToHex(stroke.color),
-        weight: node.strokeWeight ?? stroke.strokeWeight ?? 1,
+        weight: node.strokeWeight ?? stroke.strokeWeight,
+        ...(node.individualStrokeWeights ? {individualWeights: node.individualStrokeWeights} : {}),
         align: node.strokeAlign
     };
 }

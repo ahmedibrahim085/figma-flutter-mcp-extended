@@ -179,12 +179,22 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     .number()
                     .optional()
                     .describe(`Scale factor 0.01-4 (default: ${defaults.screenshotScale}). Higher = more detail.`),
+                useAbsoluteBounds: z
+                    .boolean()
+                    .optional()
+                    .describe(
+                        'Figma use_absolute_bounds (default: false): use the full dimensions of the node ' +
+                        'regardless of whether or not it is cropped or the space around it is empty. ' +
+                        'Use this to export text nodes without cropping.',
+                    ),
             },
         },
-        figmaTool('ff_get_screenshot error', async ({fileKey, nodeId, format = 'png', scale = defaults.screenshotScale}) => {
+        figmaTool('ff_get_screenshot error', async ({fileKey, nodeId, format = 'png', scale = defaults.screenshotScale, useAbsoluteBounds = false}) => {
             const image = (await figma.getImageBytes(fileKey, [nodeId], {
                 format: format as ImageOptions['format'],
                 scale: Math.min(Math.max(scale, 0.01), 4),
+                // Only when true: the cache entry of a call without it keeps the key it had before the argument existed.
+                ...(useAbsoluteBounds ? {useAbsoluteBounds: true} : {}),
             }))[nodeId];
             if (!image) {
                 return {content: [{type: 'text' as const, text: `No image returned for node ${nodeId}`}]};

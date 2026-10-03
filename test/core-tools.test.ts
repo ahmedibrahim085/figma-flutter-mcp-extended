@@ -98,6 +98,23 @@ test('ff_get_screenshot defaults to scale 1, one pixel per Figma unit', async ()
     assert.equal(isError, false);
 });
 
+test('ff_get_screenshot with useAbsoluteBounds asks Figma for the node\'s full box, not its cropped render bounds', async () => {
+    const {requests, isError} = await callToolOffline((baseUrl) => ({
+        [`/images/${FILE_KEY}?ids=1:1&format=png&scale=1&use_absolute_bounds=true`]: {body: {images: {'1:1': `${baseUrl}/render/1`}}},
+        '/render/1': {body: Buffer.from('png-bytes')},
+    }), 'ff_get_screenshot', {fileKey: FILE_KEY, nodeId: '1:1', useAbsoluteBounds: true});
+    assert.deepEqual(requests[0].query, {ids: '1:1', format: 'png', scale: '1', use_absolute_bounds: 'true'});
+    assert.equal(isError, false);
+});
+
+test('ff_get_screenshot sends no use_absolute_bounds when the argument is false', async () => {
+    const {requests} = await callToolOffline((baseUrl) => ({
+        [`/images/${FILE_KEY}?ids=1:1&format=png&scale=1`]: {body: {images: {'1:1': `${baseUrl}/render/1`}}},
+        '/render/1': {body: Buffer.from('png-bytes')},
+    }), 'ff_get_screenshot', {fileKey: FILE_KEY, nodeId: '1:1', useAbsoluteBounds: false});
+    assert.deepEqual(requests[0].query, {ids: '1:1', format: 'png', scale: '1'});
+});
+
 // ── response budget ──────────────────────────────────────────
 
 const BUDGET = 100000;

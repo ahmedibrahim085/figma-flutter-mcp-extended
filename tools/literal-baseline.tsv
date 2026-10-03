@@ -641,6 +641,10 @@ src/tools/figma-core/core-tools.ts	string	Get Figma Variable Definitions	prop(ti
 src/tools/figma-core/core-tools.ts	string	Get the node tree structure of a Figma file or a specific node. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	How deep into the node tree to traverse; omit for all levels. 	binary(+)	registerCoreTools	2	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	Image format: png, jpg, svg, or pdf (default: png)	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	Figma use_absolute_bounds (default: false): use the full dimensions of the node 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	regardless of whether or not it is cropped or the space around it is empty. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	Use this to export text nodes without cropping.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	true	prop(use_absolute_bounds)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	Maps to the Figma REST API /v1/files/:key/variables/local endpoint.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Node ID to extract (e.g. "12:3458")	arg(z.string().describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Node ID to screenshot (e.g. "12:3458")	arg(z.string().describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description

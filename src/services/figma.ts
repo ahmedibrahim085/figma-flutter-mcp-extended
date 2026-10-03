@@ -35,6 +35,8 @@ export type ImageOptions = {
     svgIncludeId?: boolean;
     svgSimplifyStroke?: boolean;
     svgOutlineText?: boolean;
+    /** Figma use_absolute_bounds: the node's full box, not its render bounds (a cropped text node). */
+    useAbsoluteBounds?: boolean;
 };
 
 export class FigmaService {
@@ -232,6 +234,10 @@ export class FigmaService {
 
         if (options.scale && ['png', 'jpg'].includes(options.format || 'png')) {
             params.append('scale', options.scale.toString());
+        }
+
+        if (options.useAbsoluteBounds) {
+            params.append('use_absolute_bounds', 'true');
         }
 
         if (options.format === 'svg') {

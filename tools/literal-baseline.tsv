@@ -947,10 +947,10 @@ src/tools/flutter/assets/svg-assets.ts	template	Successfully exported ${…} SVG
 src/tools/flutter/assets/svg-assets.ts	template	\n${…}	binary(+=)	registerSvgAssetTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	number	0	arg(input.substring)	registerComponentTools	1	K-TEXT	rule: log truncation (Logger.info input preview)
 src/tools/flutter/components/component-tool.ts	number	0	binary(===)	registerComponentTools	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/component-tool.ts	number	0	binary(>)	registerComponentTools	4	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/tools/flutter/components/component-tool.ts	number	0	binary(>)	registerComponentTools	3	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/component-tool.ts	number	0	ternary	registerComponentTools	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/component-tool.ts	number	10	BindingElement	registerComponentTools	1	F-HEUR	analysis cap; removed by ticket 15
-src/tools/flutter/components/component-tool.ts	number	30	arg('─'.repeat)	registerComponentTools	2	K-TEXT	rule: separator width in report text
+src/tools/flutter/components/component-tool.ts	number	30	arg('─'.repeat)	registerComponentTools	1	K-TEXT	rule: separator width in report text
 src/tools/flutter/components/component-tool.ts	number	50	arg('='.repeat)	registerComponentTools	1	K-TEXT	rule: separator width in report text
 src/tools/flutter/components/component-tool.ts	number	50	arg(input.substring)	registerComponentTools	1	K-TEXT	rule: log truncation (Logger.info input preview)
 src/tools/flutter/components/component-tool.ts	string		arg(.isDefault ? ' (default)' : ''}\n`).join)	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
@@ -997,7 +997,6 @@ src/tools/flutter/components/component-tool.ts	string	Treat a FRAME as a compone
 src/tools/flutter/components/component-tool.ts	string	Use style deduplication for token efficiency (default: true)	arg(z.boolean().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Variant names to analyze instead of every variant of a component set	arg(z.array(z.string()).optional().describe)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/components/component-tool.ts	string	\n	arg(?? node.name} ${variant.name}`))))).join)	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/component-tool.ts	string	\n	binary(+=)	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	\n\n	arg(reports.join)	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	\n\n	binary(+)	registerComponentTools	2	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	analyze_figma_component	arg(server.registerTool)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
@@ -1006,15 +1005,12 @@ src/tools/flutter/components/component-tool.ts	string	inspect_component_structur
 src/tools/flutter/components/component-tool.ts	string	list_component_variants	arg(server.registerTool)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	text	prop(type)	registerComponentTools	17	K-API	rule: MCP content type
 src/tools/flutter/components/component-tool.ts	string	url	binary(===)	registerComponentTools	1	K-SCHEMA	rule: value of our own analysis/style-category schema
-src/tools/flutter/components/component-tool.ts	string	─	PropertyAccessExpression	registerComponentTools	2	K-TEXT	rule: separator/whitespace/padding char
+src/tools/flutter/components/component-tool.ts	string	─	PropertyAccessExpression	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	🏗️  Flutter Implementation\n	var(output)	registerComponentTools	1	K-TEXT	rule: user-facing/log text, no design fact
-src/tools/flutter/components/component-tool.ts	string	📋 Style Definitions:\n	binary(+=)	registerComponentTools	1	K-TEXT	rule: user-facing/log text, no design fact
 src/tools/flutter/components/component-tool.ts	template	${…} ${…}	arg(typeName)	registerComponentTools	2	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	template	${…}\n	binary(+)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/component-tool.ts	template	${…}\n	binary(+=)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/component-tool.ts	template	${…}\n\n	binary(+=)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/component-tool.ts	template	- ${…}${…}\n	ArrowFunction	registerComponentTools	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/component-tool.ts	template	// ${…} (${…})\n	binary(+=)	registerComponentTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	template	Analyzed variants (${…} of ${…}):\n	binary(+)	registerComponentTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	template	Component Set: ${…}\n\n	binary(+)	registerComponentTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	template	Component Set: ${…}\n\n${…}\n	var(output)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
@@ -1031,7 +1027,6 @@ src/tools/flutter/components/component-tool.ts	template	Node "${…}" is not a c
 src/tools/flutter/components/component-tool.ts	template	Variant: ${…}${…}\n${…}\n${…}	ternary	registerComponentTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	template	\n	binary(+)	registerComponentTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	template	\nAsset Export Warning: ${…}\n	binary(=)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/component-tool.ts	template	final ${…} = ${…};\n\n	binary(+=)	registerComponentTools	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/component-tool.ts	template	🎯 Component Analysis Started:	arg(Logger.info)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/component-tool.ts	template	📊 Deduplication analysis complete:	arg(Logger.info)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/component-tool.ts	template	🔧 Using enhanced deduplication for component analysis	arg(Logger.info)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
@@ -2378,3 +2373,11 @@ src/extractors/flutter/style-library.ts	template	  borderRadius: ${…},\n	terna
 src/extractors/flutter/style-library.ts	string		ternary	radiusLines	1	K-TEXT	separator or empty text
 src/tools/flutter/components/helpers.ts	template	    borderRadius: ${…},\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
 src/tools/figma-core/core-tools.ts	string	base64	arg(image.toString)	registerCoreTools	1	K-API	Figma image format or base64 encoding token
+src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(===)	styleDefinitionsSection	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/tools/flutter/components/deduplicated-helpers.ts	string		return	styleDefinitionsSection	1	K-TEXT	report, label, log or error text
+src/tools/flutter/components/deduplicated-helpers.ts	template	📋 Style Definitions:\n${…}\n	binary(+)	styleDefinitionsSection	1	K-TEXT	report, label, log or error text
+src/tools/flutter/components/deduplicated-helpers.ts	string	─	PropertyAccessExpression	styleDefinitionsSection	1	K-TEXT	rule: separator/whitespace/padding char
+src/tools/flutter/components/deduplicated-helpers.ts	number	30	arg('─'.repeat)	styleDefinitionsSection	1	K-TEXT	rule: separator width in report text
+src/tools/flutter/components/deduplicated-helpers.ts	template	// ${…} (${…})\nfinal ${…} = ${…};\n\n	ArrowFunction	styleDefinitionsSection	1	K-DART	emitted Dart code
+src/tools/flutter/components/deduplicated-helpers.ts	string		arg(e.id} = ${style.flutterCode};\n\n`).join)	styleDefinitionsSection	1	K-TEXT	report, label, log or error text
+src/tools/flutter/components/deduplicated-helpers.ts	template	\n	binary(+)	styleDefinitionsSection	1	K-TEXT	report, label, log or error text

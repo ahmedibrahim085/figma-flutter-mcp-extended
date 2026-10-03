@@ -80,8 +80,16 @@ function wrapForMainAxisSizing(
 }
 
 /** The styles of `styleLibrary` that `code` refers to by id; the library also holds the styles of other nodes. */
-export function referencedStyles(code: string, styleLibrary: FlutterStyleLibrary) {
+function referencedStyles(code: string, styleLibrary: FlutterStyleLibrary) {
   return styleLibrary.getAllStyles().filter(style => new RegExp(`\\b${style.id}\\b`).test(code));
+}
+
+/** The "Style Definitions" section for the styles `code` refers to, as Dart constants; '' when it refers to none. */
+export function styleDefinitionsSection(code: string, styleLibrary: FlutterStyleLibrary): string {
+  const styles = referencedStyles(code, styleLibrary);
+  if (styles.length === 0) return '';
+  return `📋 Style Definitions:\n${'─'.repeat(30)}\n`
+    + styles.map(style => `// ${style.id} (${style.category})\nfinal ${style.id} = ${style.flutterCode};\n\n`).join('') + `\n`;
 }
 
 const NAME_THE_CLASS = 'Pass widgetName to generate_flutter_implementation to name the class.';

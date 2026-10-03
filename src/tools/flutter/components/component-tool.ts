@@ -24,7 +24,7 @@ import {
 } from "./helpers.js";
 import {
     generateFlutterImplementation,
-    referencedStyles,
+    styleDefinitionsSection,
     generateComprehensiveDeduplicatedReport,
     addVisualContextToDeduplicatedReport
 } from "./deduplicated-helpers.js";
@@ -177,7 +177,8 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                     firstDeduplicatedAnalysis ??= deduplicatedAnalysis;
 
                     if (generateFlutterCode) {
-                        analysisReport += "\n\n" + generateFlutterImplementation(deduplicatedAnalysis, deduplicatedExtractor.styleLibrary);
+                        const implementation = generateFlutterImplementation(deduplicatedAnalysis, deduplicatedExtractor.styleLibrary);
+                        analysisReport += "\n\n" + styleDefinitionsSection(implementation, deduplicatedExtractor.styleLibrary) + implementation;
                     }
                 } else {
                     const componentAnalysis: ComponentAnalysis = await componentExtractor.analyzeComponent(node, userDefinedComponent);
@@ -386,16 +387,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
             let output = "🏗️  Flutter Implementation\n";
             output += `${'='.repeat(50)}\n\n`;
 
-            const styles = referencedStyles(implementation, extractor.styleLibrary);
-            if (includeStyleDefinitions && styles.length > 0) {
-                output += "📋 Style Definitions:\n";
-                output += `${'─'.repeat(30)}\n`;
-                styles.forEach(style => {
-                    output += `// ${style.id} (${style.category})\n`;
-                    output += `final ${style.id} = ${style.flutterCode};\n\n`;
-                });
-                output += "\n";
-            }
+            if (includeStyleDefinitions) output += styleDefinitionsSection(implementation, extractor.styleLibrary);
 
             output += implementation;
 

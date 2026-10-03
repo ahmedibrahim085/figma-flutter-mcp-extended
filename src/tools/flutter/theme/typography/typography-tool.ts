@@ -4,7 +4,7 @@ import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../../services/figma.js";
 import {extractThemeTypography} from "../../../../extractors/typography/index.js";
-import {TypographyGenerator} from "./typography-generator.js";
+import {TypographyGenerator, typographyConstants} from "./typography-generator.js";
 import {join} from 'path';
 import {validateAndConvertNodeId} from "../../../../utils/figma-url-parser.js";
 import defaults from '../../../../defaults.json' with { type: 'json' };
@@ -40,7 +40,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
 
                 // Get the specific frame node
                 nodeId = validateAndConvertNodeId(nodeId);
-                const themeFrame = await figmaService.getNode(fileId, nodeId);
+                const {document: themeFrame, styles} = await figmaService.getNodeWithStyles(fileId, nodeId);
 
                 if (!themeFrame) {
                     return {
@@ -52,7 +52,7 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 }
 
                 // Extract typography from the frame
-                const themeTypography = extractThemeTypography(themeFrame);
+                const themeTypography = extractThemeTypography(themeFrame, styles);
 
                 if (themeTypography.length === 0) {
                     return {
@@ -64,58 +64,65 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 }
 
                 // Generate AppText class
+                const constantSet = typographyConstants(themeTypography);
                 const outputPath = join(projectPath, 'lib', defaults.output.themeSubdir);
-                const generatedFilePath = await generator.generateAppText(themeTypography, outputPath, {
-                    generateTextTheme,
-                    includeLineHeight: true,
-                    includeLetterSpacing: true
-                });
-
-                // Determine primary font family (the list is non-empty: an empty one returned above)
-                const fontFamilies = new Set(themeTypography.map(t => t.fontFamily));
-                const primaryFontFamily = [...fontFamilies].reduce((a, b) =>
-                    themeTypography.filter(t => t.fontFamily === a).length >
-                    themeTypography.filter(t => t.fontFamily === b).length ? a : b
-                );
+                const generatedFilePath = await generator.generateAppText(constantSet, outputPath, generateTextTheme);
+                const textThemeWritten = generateTextTheme && constantSet.slots.length > 0;
 
                 // Create success report
                 let output = `Successfully extracted theme typography!\n\n`;
                 output += `Frame: ${themeFrame.name}\n`;
                 output += `Node ID: ${nodeId}\n`;
                 output += `Typography styles found: ${themeTypography.length}\n`;
-                output += `Primary font family: ${primaryFontFamily}\n`;
                 output += `Generated: ${generatedFilePath}\n`;
-                if (generateTextTheme) {
+                if (textThemeWritten) {
                     output += `Text Theme: ${join(outputPath, defaults.output.textThemeFile)}\n`;
                 }
                 output += `\n`;
 
                 output += `Extracted Typography Styles:\n`;
                 themeTypography.forEach((style, index) => {
+                    const {fields} = style;
                     output += `${index + 1}. ${style.name}:\n`;
-                    output += `   Font: ${style.fontFamily}\n`;
-                    output += `   Size: ${style.fontSize}px\n`;
-                    output += `   Weight: ${style.fontWeight}\n`;
-                    output += `   Line Height: ${style.lineHeight}px\n`;
-                    if (style.letterSpacing) {
-                        output += `   Letter Spacing: ${style.letterSpacing}px\n`;
+                    output += `   Font: ${fields.fontFamily ?? 'missing'}\n`;
+                    output += `   Size: ${fields.fontSize === undefined ? 'missing' : `${fields.fontSize}px`}\n`;
+                    output += `   Weight: ${fields.fontWeight ?? 'missing'}\n`;
+                    output += `   Height: ${fields.height ?? 'missing'}\n`;
+                    output += `   Letter Spacing: ${fields.letterSpacing}px\n`;
+                    if (style.unsupported.length > 0) {
+                        output += `   Not in a Flutter TextStyle: ${style.unsupported.join(', ')}\n`;
                     }
                     output += `\n`;
                 });
-
-                output += `Generated Files:\n`;
-                output += `• ${defaults.output.textStylesFile} - Typography style constants\n`;
+                constantSet.skipped.forEach(({style, reason}) => {
+                    output += `Note: not generated: "${style.name}": ${reason}.\n`;
+                });
+                constantSet.slotClashes.forEach(({style, slot}) => {
+                    output += `Note: "${style.name}" also equals the TextTheme slot ${slot}; the first style fills it.\n`;
+                });
                 if (generateTextTheme) {
+                    if (constantSet.slots.length === 0) {
+                        output += `Note: No style name equals a TextTheme slot: no TextTheme was generated.\n`;
+                    }
+                    const unfilled = defaults.textThemeSlots.filter(slot => !constantSet.slots.some(filled => filled.slot === slot));
+                    if (unfilled.length > 0) {
+                        output += `Unfilled TextTheme slots: ${unfilled.join(', ')}\n`;
+                    }
+                }
+
+                output += `\nGenerated Files:\n`;
+                output += `• ${defaults.output.textStylesFile} - Typography style constants\n`;
+                if (textThemeWritten) {
                     output += `• ${defaults.output.textThemeFile} - Material Design TextTheme\n`;
                 }
 
                 output += `\nUsage Examples:\n`;
-                output += `// Typography:\n`;
-                const firstStyle = themeTypography[0];
-                const dartName = firstStyle.name.charAt(0).toLowerCase() + firstStyle.name.slice(1).replace(/[^a-zA-Z0-9]/g, '');
-                output += `Text('Hello World', style: AppText.${dartName})\n`;
-                
-                if (generateTextTheme) {
+                if (constantSet.generated.length > 0) {
+                    output += `// Typography:\n`;
+                    output += `Text('Hello World', style: AppText.${constantSet.generated[0].name})\n`;
+                }
+
+                if (textThemeWritten) {
                     output += `\n// Material Design Theme:\n`;
                     output += `MaterialApp(\n`;
                     output += `  theme: ThemeData(\n`;
@@ -192,13 +199,13 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                         // Show text style if it has one
                         if (child.type === 'TEXT' && child.style) {
                             textNodesFound++;
-                            output += `   Font: ${child.style.fontFamily || 'default'}\n`;
-                            output += `   Size: ${child.style.fontSize || 16}px\n`;
-                            output += `   Weight: ${child.style.fontWeight || 400}\n`;
-                            if (child.style.lineHeightPx) {
+                            output += `   Font: ${child.style.fontFamily ?? 'missing'}\n`;
+                            output += `   Size: ${child.style.fontSize === undefined ? 'missing' : `${child.style.fontSize}px`}\n`;
+                            output += `   Weight: ${child.style.fontWeight ?? 'missing'}\n`;
+                            if (child.style.lineHeightPx !== undefined) {
                                 output += `   Line Height: ${child.style.lineHeightPx}px\n`;
                             }
-                            if (child.style.letterSpacing) {
+                            if (child.style.letterSpacing !== undefined) {
                                 output += `   Letter Spacing: ${child.style.letterSpacing}px\n`;
                             }
                         }

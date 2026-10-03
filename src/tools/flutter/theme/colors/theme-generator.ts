@@ -4,24 +4,7 @@ import {join} from 'path';
 import type {ThemeColor, ThemeGenerationOptions} from '../../../../extractors/colors/index.js';
 import defaults from '../../../../defaults.json' with { type: 'json' };
 import {dartColor} from '../../../../utils/dart-color.js';
-
-/** `Brand/Primary` → `brandPrimary`: split on anything but letters and digits; a word keeps its inner capitals unless it is all capitals. */
-function lowerCamelCase(name: string): string {
-    return name
-        .split(/[^A-Za-z0-9]+/)
-        .filter(word => word.length > 0)
-        .map(word => word === word.toUpperCase() ? word.toLowerCase() : word)
-        .map((word, index) => index === 0 ? word.charAt(0).toLowerCase() + word.slice(1) : word.charAt(0).toUpperCase() + word.slice(1))
-        .join('');
-}
-
-// Dart's reserved words: https://dart.dev/language/keywords (built-in identifiers may be field names).
-const DART_RESERVED_WORDS = new Set([
-    'assert', 'break', 'case', 'catch', 'class', 'const', 'continue', 'default', 'do', 'else', 'enum', 'extends',
-    'false', 'final', 'finally', 'for', 'if', 'in', 'is', 'new', 'null', 'rethrow', 'return', 'super', 'switch',
-    'this', 'throw', 'true', 'try', 'var', 'void', 'while', 'with',
-]);
-const isDartIdentifier = (name: string) => /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) && !DART_RESERVED_WORDS.has(name);
+import {nameConstants} from '../../../../utils/dart-names.js';
 
 export interface ThemeConstants {
     /** Colours that get a constant, in frame order, with its name. */
@@ -30,34 +13,13 @@ export interface ThemeConstants {
     skipped: Array<{color: ThemeColor; reason: string}>;
 }
 
-/**
- * Dart constants for the colours: the last "/" segment of each name, or the full path when that
- * segment is not a valid identifier or another name shares it. A colour whose full path is still
- * not valid, or that another colour of a different value shares, is skipped. The same name and
- * colour twice gives one constant.
- */
+/** Dart constants for the colours, named by the shared rule in `nameConstants`. */
 export function themeConstants(colors: ThemeColor[]): ThemeConstants {
-    const unique = colors.filter((color, index) =>
-        colors.findIndex(other => other.name === color.name && dartColor(other.fill) === dartColor(color.fill)) === index);
-    const leaves = unique.map(color => lowerCamelCase(color.name.split('/').pop() ?? ''));
-    const named = unique.map((color, index) => {
-        const leaf = leaves[index];
-        const name = isDartIdentifier(leaf) && leaves.filter(other => other === leaf).length === 1 ? leaf : lowerCamelCase(color.name);
-        return {color, name};
-    });
-
-    const generated: ThemeConstants['generated'] = [];
-    const skipped: ThemeConstants['skipped'] = [];
-    for (const entry of named) {
-        if (!isDartIdentifier(entry.name)) {
-            skipped.push({color: entry.color, reason: 'not a valid Dart identifier'});
-        } else if (named.some(other => other !== entry && other.name === entry.name)) {
-            skipped.push({color: entry.color, reason: 'another color has the same name'});
-        } else {
-            generated.push(entry);
-        }
-    }
-    return {generated, skipped};
+    const {generated, skipped} = nameConstants(colors, color => dartColor(color.fill), 'color');
+    return {
+        generated: generated.map(({item, name}) => ({color: item, name})),
+        skipped: skipped.map(({item, reason}) => ({color: item, reason})),
+    };
 }
 
 export class SimpleThemeGenerator {

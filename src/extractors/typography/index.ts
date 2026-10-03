@@ -4,10 +4,7 @@
 export { TypographyExtractor, extractThemeTypography } from './core.js';
 
 // Extractor functions
-export {
-    extractTypographyFromThemeFrame,
-    isTypographyDemoNode
-} from './extractor.js';
+export {extractTypographyFromThemeFrame} from './extractor.js';
 
 // Types
 export type {

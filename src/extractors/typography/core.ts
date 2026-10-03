@@ -13,8 +13,8 @@ export class TypographyExtractor {
     /**
      * Extract theme typography from a specific frame
      */
-    extractThemeFromFrame(frameNode: FigmaNode): TypographyStyle[] {
-        return extractTypographyFromThemeFrame(frameNode);
+    extractThemeFromFrame(frameNode: FigmaNode, styles?: Record<string, {name: string; styleType: string}>): TypographyStyle[] {
+        return extractTypographyFromThemeFrame(frameNode, styles);
     }
 
 }
@@ -22,7 +22,7 @@ export class TypographyExtractor {
 /**
  * Convenience function to extract theme typography from a frame
  */
-export function extractThemeTypography(frameNode: FigmaNode): TypographyStyle[] {
+export function extractThemeTypography(frameNode: FigmaNode, styles?: Record<string, {name: string; styleType: string}>): TypographyStyle[] {
     const extractor = new TypographyExtractor();
-    return extractor.extractThemeFromFrame(frameNode);
+    return extractor.extractThemeFromFrame(frameNode, styles);
 }

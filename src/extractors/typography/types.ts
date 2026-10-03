@@ -1,21 +1,18 @@
 // src/extractors/typography/types.mts
 
 import type {FigmaNode} from '../../types/figma.js';
+import type {TextStyleFields} from '../flutter/text-style.js';
 
 /**
  * Typography style definition from theme extraction
  */
 export interface TypographyStyle {
+    /** The text style's name when the node uses one, else the layer name. */
     name: string;
-    fontFamily: string;
-    fontSize: number;
-    fontWeight: number;
-    lineHeight: number;
-    letterSpacing: number;
     nodeId: string;
-    // Optional properties for enhanced text styles
-    textAlign?: string;
-    textDecoration?: string;
+    fields: TextStyleFields;
+    /** Figma text properties a Flutter TextStyle cannot hold, each with its value. */
+    unsupported: string[];
 }
 
 /**

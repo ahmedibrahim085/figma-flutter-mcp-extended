@@ -81,7 +81,7 @@ test('a baseline row without a class fails the check, naming the file and the li
         const result = check(repo);
         assert.equal(result.status, 1, result.stderr);
         assert.match(result.stderr, /src\/tools\/x\.ts/);
-        assert.match(result.stderr, /number\t37|37/);
+        assert.ok(result.stderr.includes(CAP_KEY), result.stderr);
         assert.match(result.stderr, /no class/);
     });
 });
@@ -91,7 +91,7 @@ test('a baseline row without a reason fails the check, naming the file and the l
     withFixture('export const CAP = 37;\n', [row], (repo) => {
         const result = check(repo);
         assert.equal(result.status, 1, result.stderr);
-        assert.match(result.stderr, /src\/tools\/x\.ts/);
+        assert.ok(result.stderr.includes(CAP_KEY), result.stderr);
         assert.match(result.stderr, /no reason/);
     });
 });
@@ -110,7 +110,8 @@ test('the real src tree matches the committed baseline', () => {
     assert.equal(result.status, 0, result.stderr);
 });
 
-test('every baseline line has an allowed class and a reason; a fact class names the ticket that removes it', () => {
+// --check fails a row with no class or no reason (tested above); this checks what --check does not: the class is a known one, the count is sane, a fact class names its owner.
+test('every baseline line has an allowed class and a sane count; a fact class names the ticket that removes it', () => {
     const allowed = ['K-TEXT', 'K-API', 'K-DART', 'K-CONV', 'K-SCHEMA', 'F-HEUR', 'F-DEFAULT', 'F-FACT', 'F-GUIDE', 'F-LEAK'];
     const raw = readFileSync(BASELINE, 'utf-8');
     assert.ok(!/[\x00-\x08\x0b-\x1f\x7f]/.test(raw), 'the baseline holds a raw control character: a tool may read the line as ending there');
@@ -121,7 +122,6 @@ test('every baseline line has an allowed class and a reason; a fact class names 
         const [, , , , , count, klass, reason] = line.split('\t');
         assert.match(count, /^[1-9]\d*$/, line);
         assert.ok(allowed.includes(klass), `unknown class ${klass}: ${line}`);
-        assert.ok(reason && reason.trim() !== '', `no reason: ${line}`);
         if (klass.startsWith('F-')) assert.match(reason, /ticket \d+|B3\.\d+|decision \d+/, `fact row without an owner: ${line}`);
     }
 });

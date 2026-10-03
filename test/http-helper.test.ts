@@ -3,8 +3,9 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createServer} from 'node:net';
 import {withHttpServer} from './helpers/mcp-http.ts';
+import {START_FAILURE_TEST_TIMEOUT_MS} from './helpers/mcp-stdio.ts';
 
-test('a server that exits at start-up fails the helper within seconds, with the server\'s error text', {timeout: 20000}, async () => {
+test('a server that exits at start-up fails the helper within seconds, with the server\'s error text', {timeout: START_FAILURE_TEST_TIMEOUT_MS}, async () => {
     const taken = createServer();
     await new Promise<void>((resolve) => taken.listen(0, resolve));
     const {port} = taken.address() as {port: number};

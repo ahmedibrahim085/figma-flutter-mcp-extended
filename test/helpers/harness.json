@@ -2,5 +2,7 @@
     "serverStartTimeoutMs": 60000,
     "serverStartTimeoutReason": "Measured 2026-10-03 (node 22, 14 cores, load 13-35): a server answers initialize in 0.4 s alone, 4.5 s with 26 starting at once, 14.8 s p50 with 52, 31 s p50 with 100. Two full suites at once start more than 52 servers, so 15000 ms failed 101 to 135 tests per suite.",
     "killGraceMs": 5000,
-    "killGraceReason": "A server that has not exited 5 s after its stdin closed is hung; SIGKILL turns it into a failed test."
+    "killGraceReason": "A server that has not exited 5 s after its stdin closed is hung; SIGKILL turns it into a failed test.",
+    "startFailureTestTimeoutMs": 30000,
+    "startFailureTestTimeoutReason": "A server that exits at start-up must fail the HTTP helper with its own error long before serverStartTimeoutMs (60 s), which a helper that ignores the exit would wait for. Node starts and crashes in 0.4 s alone and 15 s p50 with 52 servers starting; 30 s is above that and below the 60 s the broken helper would take, so the test tells the two apart."
 }

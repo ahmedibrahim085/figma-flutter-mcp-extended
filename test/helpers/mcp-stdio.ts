@@ -8,11 +8,14 @@ import {join, dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
 const REPO_DIST = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'dist');
-const harness: {serverStartTimeoutMs: number; killGraceMs: number} =
+const harness: {serverStartTimeoutMs: number; killGraceMs: number; startFailureTestTimeoutMs: number} =
     JSON.parse(readFileSync(new URL('./harness.json', import.meta.url), 'utf8'));
 
 /** How long a server may take to answer `initialize`; the value and its reason are in harness.json. */
 export const SERVER_START_TIMEOUT_MS = harness.serverStartTimeoutMs;
+
+/** How long the test of a server that cannot start may take; the value and its reason are in harness.json. */
+export const START_FAILURE_TEST_TIMEOUT_MS = harness.startFailureTestTimeoutMs;
 
 /** Set by tools/test-run.mjs: names the folder it built for this run (dist/ inside it, package.json beside it). */
 export const RUN_DIR_ENV = 'FIGMA_FLUTTER_TEST_RUN_DIR';

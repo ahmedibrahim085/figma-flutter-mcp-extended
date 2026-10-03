@@ -42,10 +42,10 @@ export async function withHttpServer(routes: FakeRoutes, body: (endpoint: string
         const timedOut = new Promise<string>((resolve) => {
             timer = setTimeout(() => resolve(`the server did not listen within ${SERVER_START_TIMEOUT_MS} ms`), SERVER_START_TIMEOUT_MS);
         });
-        const failure = await Promise.race([listening, exited, timedOut]);
+        const startError = await Promise.race([listening, exited, timedOut]);
         clearTimeout(timer);
         try {
-            if (failure !== undefined) throw new Error(`${failure}. stderr:\n${stderr}`);
+            if (startError !== undefined) throw new Error(`${startError}. stderr:\n${stderr}`);
             await body(`http://127.0.0.1:${port}/mcp`, cwd);
         } finally {
             child.kill('SIGKILL');

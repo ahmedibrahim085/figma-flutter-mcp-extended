@@ -1,0 +1,86 @@
+{
+  "scale": 1,
+  "useAbsoluteBounds": true,
+  "screenshots": [
+    {
+      "nodeId": "1:8",
+      "fixture": "text-frame.json",
+      "file": "1_8.png",
+      "width": 470,
+      "height": 429,
+      "capturedAt": "2026-10-03T17:22:41Z"
+    },
+    {
+      "nodeId": "1:20",
+      "fixture": "paints-frame.json",
+      "file": "1_20.png",
+      "width": 700,
+      "height": 496,
+      "capturedAt": "2026-10-03T17:22:45Z"
+    },
+    {
+      "nodeId": "1:34",
+      "fixture": "layout-frame.json",
+      "file": "1_34.png",
+      "width": 468,
+      "height": 792,
+      "capturedAt": "2026-10-03T17:22:49Z"
+    },
+    {
+      "nodeId": "1:64",
+      "fixture": "component-button-set.json",
+      "file": "1_64.png",
+      "width": 662,
+      "height": 254,
+      "capturedAt": "2026-10-03T17:22:54Z"
+    },
+    {
+      "nodeId": "1:92",
+      "fixture": "component-button-set.json",
+      "file": "1_92.png",
+      "width": 109,
+      "height": 47,
+      "capturedAt": "2026-10-03T17:22:57Z"
+    },
+    {
+      "nodeId": "2:15",
+      "fixture": "alignment-frame.json",
+      "file": "2_15.png",
+      "width": 240,
+      "height": 30,
+      "capturedAt": "2026-10-03T17:23:00Z"
+    },
+    {
+      "nodeId": "2:19",
+      "fixture": "alignment-frame.json",
+      "file": "2_19.png",
+      "width": 240,
+      "height": 30,
+      "capturedAt": "2026-10-03T17:23:04Z"
+    },
+    {
+      "nodeId": "2:23",
+      "fixture": "alignment-frame.json",
+      "file": "2_23.png",
+      "width": 150,
+      "height": 30,
+      "capturedAt": "2026-10-03T17:23:08Z"
+    },
+    {
+      "nodeId": "2:27",
+      "fixture": "alignment-frame.json",
+      "file": "2_27.png",
+      "width": 240,
+      "height": 30,
+      "capturedAt": "2026-10-03T17:23:12Z"
+    },
+    {
+      "nodeId": "2:31",
+      "fixture": "alignment-frame.json",
+      "file": "2_31.png",
+      "width": 130,
+      "height": 30,
+      "capturedAt": "2026-10-03T17:23:15Z"
+    }
+  ]
+}

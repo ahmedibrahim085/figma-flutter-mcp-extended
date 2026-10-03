@@ -7,6 +7,7 @@ import {join} from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {startFakeFigma} from './helpers/fake-figma.ts';
 import {FILE_KEY} from './helpers/offline-tool.ts';
+import {builtCliPath} from './helpers/mcp-stdio.ts';
 
 // The render check compares each render with Figma's own screenshot of the node (decision 26).
 // The screenshots live beside the fixtures with a manifest; tools/render-check/capture-screenshots.mts recaptures them.
@@ -45,7 +46,7 @@ test('the recapture script asks Figma for scale 1 with absolute bounds and recor
         '/render/1_92': {body: PNG},
     }));
     try {
-        const run = spawn(process.execPath, ['--import', 'tsx', 'tools/render-check/capture-screenshots.mts', '--manifest', join(work, 'manifest.json'), '--out', work], {
+        const run = spawn(process.execPath, ['--import', 'tsx', 'tools/render-check/capture-screenshots.mts', '--manifest', join(work, 'manifest.json'), '--out', work, '--cli', builtCliPath()], {
             cwd: ROOT,
             env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', FIGMA_API_BASE_URL: figma.baseUrl, FIGMA_FILE_KEY: FILE_KEY},
             stdio: ['ignore', 'pipe', 'pipe'],

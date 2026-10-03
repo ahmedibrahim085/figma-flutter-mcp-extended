@@ -1,5 +1,4 @@
 {
-  "name": "Type scale (synthetic: 15 TextTheme slot names, Material 3 default sizes)",
   "nodes": {
     "98:1": {
       "document": {
@@ -424,105 +423,90 @@
         "S:0": {
           "name": "Display/Large",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:1": {
           "name": "Display/Medium",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:2": {
           "name": "Display/Small",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:3": {
           "name": "Headline/Large",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:4": {
           "name": "Headline/Medium",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:5": {
           "name": "Headline/Small",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:6": {
           "name": "Title/Large",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:7": {
           "name": "Title/Medium",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:8": {
           "name": "Title/Small",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:9": {
           "name": "Body/Large",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:10": {
           "name": "Body/Medium",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:11": {
           "name": "Body/Small",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:12": {
           "name": "Label/Large",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:13": {
           "name": "Label/Medium",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         },
         "S:14": {
           "name": "Label/Small",
           "styleType": "TEXT",
-          "key": "",
           "remote": false,
           "description": ""
         }

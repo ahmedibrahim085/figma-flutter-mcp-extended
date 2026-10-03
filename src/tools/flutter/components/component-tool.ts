@@ -1,6 +1,5 @@
 // src/tools/flutter/component/component-tool.mts
 
-import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
@@ -24,6 +23,7 @@ import {
 } from "./helpers.js";
 import {
     generateFlutterImplementation,
+    referencedStyles,
     generateComprehensiveDeduplicatedReport,
     generateStyleLibraryReport,
     addVisualContextToDeduplicatedReport
@@ -454,9 +454,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 let output = "🏗️  Flutter Implementation\n";
                 output += `${'='.repeat(50)}\n\n`;
 
-                // Only the styles this class refers to; the library also holds what other nodes cached.
-                const styles = FlutterStyleLibrary.getInstance().getAllStyles()
-                    .filter(style => new RegExp(`\\b${style.id}\\b`).test(implementation));
+                const styles = referencedStyles(implementation);
                 if (includeStyleDefinitions && styles.length > 0) {
                     output += "📋 Style Definitions:\n";
                     output += `${'─'.repeat(30)}\n`;

@@ -79,6 +79,11 @@ function wrapForMainAxisSizing(
   return `Expanded(\n  child: ${indentTail(widgetCode, 2)},\n)`;
 }
 
+/** The cached styles `code` refers to by id; the library also holds what other nodes cached. */
+export function referencedStyles(code: string) {
+  return FlutterStyleLibrary.getInstance().getAllStyles().filter(style => new RegExp(`\\b${style.id}\\b`).test(code));
+}
+
 const NAME_THE_CLASS = 'Pass widgetName to generate_flutter_implementation to name the class.';
 
 /** The widget class for `analysis`, named `className` or from the layer name; with no valid class name, the reason instead of a class. */
@@ -134,8 +139,9 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   const fillAxes = (['width', 'height'] as const).filter(axis => analysis.layout[SIZING_KEY[axis]] === 'FILL');
   root = constrained(boxConstraints(analysis.layout, fillAxes), root);
   if (limits.length > 0) root = box('LimitedBox', [...limits, `child: ${indentTail(root, 2)},`]);
-  // A class named like a widget its body calls would hide that widget (measured with dart analyze: `class Text` breaks `Text('x')`).
-  if (new RegExp(`\\b${widgetName}[(.]`).test(root)) {
+  // A class named like a widget its body or its style definitions call would hide that widget (measured with dart analyze: `class Text` breaks `Text('x')`).
+  const generatedCode = [root, ...referencedStyles(root).map(style => style.flutterCode)].join('\n');
+  if (new RegExp(`\\b${widgetName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[(.]`).test(generatedCode)) {
     return implementation.slice(0, implementation.indexOf(`class ${widgetName}`))
       + `No class generated for "${analysis.metadata.name}": "${widgetName}" is also a widget the generated body uses. ${NAME_THE_CLASS}\n`;
   }

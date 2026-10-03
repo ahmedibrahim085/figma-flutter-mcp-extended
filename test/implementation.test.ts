@@ -130,3 +130,18 @@ test('a variant gets the same class name passed directly as through its componen
     assert.match(direct.text, /class ButtonSizeSmallStateDefault extends StatelessWidget/);
     assert.match(viaSet.text, /class ButtonSizeSmallStateDefault extends StatelessWidget/);
 });
+
+test('a class named like a widget its style definitions use gets no class, and the report says why', async () => {
+    const node = frame('26:1', 'BoxDecoration', {fills: [solid(1, 0, 0)], children: [text('26:2', 'Hello')]});
+    const result = await generate(node);
+
+    assert.doesNotMatch(result.text, /class \w+ extends StatelessWidget/);
+    assert.match(result.text, /"BoxDecoration" is also a widget the generated body uses/);
+});
+
+test('a widgetName with a $ is still a valid class name', async () => {
+    const result = await generate(frame('27:1', 'Price Card'), {widgetName: 'Card$Two'});
+
+    assert.equal(result.isError, false);
+    assert.match(result.text, /class Card\$Two extends StatelessWidget/);
+});

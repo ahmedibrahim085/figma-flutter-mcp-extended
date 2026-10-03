@@ -20,7 +20,7 @@ import {callToolsOffline, nodeRoute, FILE_KEY} from '../../test/helpers/offline-
 import {startFakeFigma} from '../../test/helpers/fake-figma.ts';
 import {FigmaService} from '../../src/services/figma.ts';
 import {DeduplicatedComponentExtractor} from '../../src/extractors/components/deduplicated-extractor.ts';
-import {generateFlutterImplementation, referencedStyles, withNodeKeys} from '../../src/tools/flutter/components/deduplicated-helpers.ts';
+import {generateFlutterImplementation, styleDefinitionsSection, withNodeKeys} from '../../src/tools/flutter/components/deduplicated-helpers.ts';
 
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const FLUTTER = fileURLToPath(new URL('./flutter/', import.meta.url));
@@ -239,7 +239,9 @@ if (missing.size > 0) {
 }
 
 // The widget class and the style constants it refers to both come from generate_flutter_implementation.
-const styleDefinitions = referencedStyles(implementation, extractor.styleLibrary).map((style) => `final ${style.id} = ${style.flutterCode};`).join('\n');
+// The report's own definitions section (comments and top-level finals) without its two heading lines.
+const styleDefinitions = styleDefinitionsSection(implementation, extractor.styleLibrary).split('\n')
+    .filter((line) => !line.startsWith('📋') && !line.startsWith('─')).join('\n');
 const classStart = implementation.indexOf('class ');
 const classEnd = implementation.indexOf('\n}\n', classStart) + 3;
 if (classStart < 0 || classEnd < 3) {

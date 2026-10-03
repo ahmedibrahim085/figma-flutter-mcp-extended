@@ -55,19 +55,13 @@ export class FigmaService {
                         const errorBody = await response.text();
                         if (errorBody) {
                             const parsedError = JSON.parse(errorBody);
-                            errorDetails = parsedError.message || parsedError.error || errorBody;
+                            errorDetails = parsedError.err || parsedError.message || parsedError.error || errorBody;
                         }
                     } catch {
                         // Ignore parse errors for error body
                     }
 
-                    const error = createFigmaError(response, errorDetails);
-
-                    if (response.status === 404) {
-                        throw new FigmaNotFoundError('API endpoint', endpoint);
-                    }
-
-                    throw error;
+                    throw createFigmaError(response, errorDetails);
                 }
 
                 const data = await response.json() as T;
@@ -92,6 +86,15 @@ export class FigmaService {
                 throw new FigmaNetworkError(`Unexpected error: ${error}`, error as Error);
             }
         }, defaults.retry);
+    }
+
+    /**
+     * One Figma REST GET with the shared retry policy; returns Figma's JSON as sent.
+     * The tools that render Figma's response themselves use this; the typed methods below reshape it.
+     */
+    async get<T>(path: string, query: Record<string, string> = {}): Promise<T> {
+        const params = new URLSearchParams(query).toString();
+        return this.makeRequest<T>(params ? `${path}?${params}` : path);
     }
 
     /**

@@ -3,6 +3,7 @@
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
+import {figmaTool} from "../../figma-tool.js";
 import {
     ComponentExtractor,
     VariantAnalyzer,
@@ -62,198 +63,178 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 devicePixelRatios: devicePixelRatiosInput
             }
         },
-        async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true, useDeduplication = true, generateFlutterCode = false, resetCachedStyles = false, devicePixelRatios}) => {
-            const token = figmaApiKey;
-            if (!token) {
+        figmaTool('Error analyzing component', async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true, useDeduplication = true, generateFlutterCode = false, resetCachedStyles = false, devicePixelRatios}) => {
+            // Reset cached styles if requested
+            const styleLibrary = FlutterStyleLibrary.getInstance();
+            
+            if (resetCachedStyles) {
+                styleLibrary.reset();
+            }
+            
+            Logger.info(`🎯 Component Analysis Started:`, {
+                input: input.substring(0, 50) + '...',
+                nodeId,
+                useDeduplication,
+                resetCachedStyles
+            });
+
+            // Parse input to get file ID and node ID
+            const parsedInput = parseComponentInput(input, nodeId);
+
+            if (!parsedInput.isValid) {
                 return {
+                    isError: true,
                     content: [{
                         type: "text",
-                        text: "Error: Figma access token not configured. Please set FIGMA_API_KEY environment variable."
+                        text: `Error parsing input: ${parsedInput.error || 'Invalid input format'}`
                     }]
                 };
             }
 
-            try {
-                // Reset cached styles if requested
-                const styleLibrary = FlutterStyleLibrary.getInstance();
-                
-                if (resetCachedStyles) {
-                    styleLibrary.reset();
-                }
-                
-                Logger.info(`🎯 Component Analysis Started:`, {
-                    input: input.substring(0, 50) + '...',
-                    nodeId,
-                    useDeduplication,
-                    resetCachedStyles
-                });
+            const figmaService = new FigmaService(figmaApiKey);
 
-                // Parse input to get file ID and node ID
-                const parsedInput = parseComponentInput(input, nodeId);
+            // Get the component node
+            const componentNode = await figmaService.getNode(parsedInput.fileId, parsedInput.nodeId);
 
-                if (!parsedInput.isValid) {
+            if (!componentNode) {
+                return {
+                    content: [{
+                        type: "text",
+                        text: `Component with node ID "${parsedInput.nodeId}" not found in file.`
+                    }]
+                };
+            }
+
+            // Validate that this is a component or user-defined component
+            const isActualComponent = componentNode.type === 'COMPONENT' || componentNode.type === 'COMPONENT_SET' || componentNode.type === 'INSTANCE';
+            const isUserDefinedFrame = componentNode.type === 'FRAME' && userDefinedComponent;
+            
+            if (!isActualComponent && !isUserDefinedFrame) {
+                if (componentNode.type === 'FRAME') {
                     return {
                         content: [{
                             type: "text",
-                            text: `Error parsing input: ${parsedInput.error || 'Invalid input format'}`
+                            text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For analyzing top-level frames, use the analyze_frame_as_screen tool instead.`
                         }]
                     };
-                }
-
-                const figmaService = new FigmaService(token);
-
-                // Get the component node
-                const componentNode = await figmaService.getNode(parsedInput.fileId, parsedInput.nodeId);
-
-                if (!componentNode) {
+                } else {
                     return {
                         content: [{
                             type: "text",
-                            text: `Component with node ID "${parsedInput.nodeId}" not found in file.`
+                            text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For analyzing top-level frames, use the analyze_frame_as_screen tool instead.`
                         }]
                     };
                 }
+            }
 
-                // Validate that this is a component or user-defined component
-                const isActualComponent = componentNode.type === 'COMPONENT' || componentNode.type === 'COMPONENT_SET' || componentNode.type === 'INSTANCE';
-                const isUserDefinedFrame = componentNode.type === 'FRAME' && userDefinedComponent;
-                
-                if (!isActualComponent && !isUserDefinedFrame) {
-                    if (componentNode.type === 'FRAME') {
+            // A component set is analysed whole: every variant (or the ones variantSelection names),
+            // taken from the set response, with the axes and defaults Figma defines.
+            let selectedVariants: ComponentVariant[] = [];
+            let variantHeader = '';
+
+            if (componentNode.type === 'COMPONENT_SET' && includeVariants) {
+                const variantAnalyzer = new VariantAnalyzer();
+                const variantAnalysis = await variantAnalyzer.analyzeComponentSet(componentNode);
+                selectedVariants = variantAnalysis;
+
+                if (variantSelection && variantSelection.length > 0) {
+                    if (variantAnalyzer.filterVariantsBySelection(variantAnalysis, {variantNames: variantSelection}).length === 0) {
                         return {
                             content: [{
                                 type: "text",
-                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For analyzing top-level frames, use the analyze_frame_as_screen tool instead.`
-                            }]
-                        };
-                    } else {
-                        return {
-                            content: [{
-                                type: "text",
-                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For analyzing top-level frames, use the analyze_frame_as_screen tool instead.`
+                                text: `No variant matches the selection (${variantSelection.join(', ')}). Variants: ${variantAnalysis.map(variant => variant.name).join('; ')}`
                             }]
                         };
                     }
+                    selectedVariants = variantAnalyzer.filterVariantsBySelection(variantAnalysis, {variantNames: variantSelection, includeDefault: true});
                 }
 
-                // A component set is analysed whole: every variant (or the ones variantSelection names),
-                // taken from the set response, with the axes and defaults Figma defines.
-                let selectedVariants: ComponentVariant[] = [];
-                let variantHeader = '';
+                variantHeader = `Component Set: ${componentNode.name}\n\n`
+                    + `${variantAnalyzer.generateVariantSummary(variantAnalysis, variantAnalyzer.getVariantAxes(componentNode))}\n`
+                    + `Analyzed variants (${selectedVariants.length} of ${variantAnalysis.length}):\n`
+                    + selectedVariants.map(variant => `- ${variant.name}${variant.isDefault ? ' (default)' : ''}\n`).join('')
+                    + `\n`;
+            }
 
-                if (componentNode.type === 'COMPONENT_SET' && includeVariants) {
-                    const variantAnalyzer = new VariantAnalyzer();
-                    const variantAnalysis = await variantAnalyzer.analyzeComponentSet(componentNode);
-                    selectedVariants = variantAnalysis;
+            // Analyse each variant node, or the node itself when there are none.
+            const targets: Array<{variant?: ComponentVariant; node: typeof componentNode}> = selectedVariants.length > 0
+                ? selectedVariants.map(variant => ({variant, node: componentNode.children!.find(child => child.id === variant.nodeId)!}))
+                : [{node: componentNode}];
+            const deduplicatedExtractor = new DeduplicatedComponentExtractor();
+            const componentExtractor = new ComponentExtractor({
+                maxChildNodes,
+                extractTextContent: true
+            });
+            const reports: string[] = [];
+            let firstDeduplicatedAnalysis: DeduplicatedComponentAnalysis | undefined;
 
-                    if (variantSelection && variantSelection.length > 0) {
-                        if (variantAnalyzer.filterVariantsBySelection(variantAnalysis, {variantNames: variantSelection}).length === 0) {
-                            return {
-                                content: [{
-                                    type: "text",
-                                    text: `No variant matches the selection (${variantSelection.join(', ')}). Variants: ${variantAnalysis.map(variant => variant.name).join('; ')}`
-                                }]
-                            };
-                        }
-                        selectedVariants = variantAnalyzer.filterVariantsBySelection(variantAnalysis, {variantNames: variantSelection, includeDefault: true});
+            for (const {variant, node} of targets) {
+                let analysisReport: string;
+
+                if (useDeduplication) {
+                    Logger.info(`🔧 Using enhanced deduplication for component analysis`);
+                    const deduplicatedAnalysis: DeduplicatedComponentAnalysis = await deduplicatedExtractor.analyzeComponent(node, true);
+
+                    Logger.info(`📊 Deduplication analysis complete:`, {
+                        styleRefs: Object.keys(deduplicatedAnalysis.styleRefs).length,
+                        children: deduplicatedAnalysis.children.length,
+                        nestedComponents: deduplicatedAnalysis.nestedComponents.length,
+                        newStyleDefinitions: deduplicatedAnalysis.newStyleDefinitions ? Object.keys(deduplicatedAnalysis.newStyleDefinitions).length : 0
+                    });
+
+                    analysisReport = generateComprehensiveDeduplicatedReport(deduplicatedAnalysis, true);
+
+                    firstDeduplicatedAnalysis ??= deduplicatedAnalysis;
+
+                    if (generateFlutterCode) {
+                        analysisReport += "\n\n" + generateFlutterImplementation(deduplicatedAnalysis);
                     }
-
-                    variantHeader = `Component Set: ${componentNode.name}\n\n`
-                        + `${variantAnalyzer.generateVariantSummary(variantAnalysis, variantAnalyzer.getVariantAxes(componentNode))}\n`
-                        + `Analyzed variants (${selectedVariants.length} of ${variantAnalysis.length}):\n`
-                        + selectedVariants.map(variant => `- ${variant.name}${variant.isDefault ? ' (default)' : ''}\n`).join('')
-                        + `\n`;
+                } else {
+                    const componentAnalysis: ComponentAnalysis = await componentExtractor.analyzeComponent(node, userDefinedComponent);
+                    analysisReport = generateComponentAnalysisReport(componentAnalysis, parsedInput);
                 }
 
-                // Analyse each variant node, or the node itself when there are none.
-                const targets: Array<{variant?: ComponentVariant; node: typeof componentNode}> = selectedVariants.length > 0
-                    ? selectedVariants.map(variant => ({variant, node: componentNode.children!.find(child => child.id === variant.nodeId)!}))
-                    : [{node: componentNode}];
-                const deduplicatedExtractor = new DeduplicatedComponentExtractor();
-                const componentExtractor = new ComponentExtractor({
-                    maxChildNodes,
-                    extractTextContent: true
-                });
-                const reports: string[] = [];
-                let firstDeduplicatedAnalysis: DeduplicatedComponentAnalysis | undefined;
+                reports.push(variant ? `Variant: ${variant.name}${variant.isDefault ? ' (default)' : ''}\n${'─'.repeat(30)}\n${analysisReport}` : analysisReport);
+            }
 
-                for (const {variant, node} of targets) {
-                    let analysisReport: string;
+            let analysisReport = variantHeader + reports.join('\n\n');
 
-                    if (useDeduplication) {
-                        Logger.info(`🔧 Using enhanced deduplication for component analysis`);
-                        const deduplicatedAnalysis: DeduplicatedComponentAnalysis = await deduplicatedExtractor.analyzeComponent(node, true);
+            // The set's visual context (its URL and node id) is printed once, from the first analysed variant.
+            if (firstDeduplicatedAnalysis && parsedInput.source === 'url') {
+                analysisReport += "\n\n" + addVisualContextToDeduplicatedReport(
+                    firstDeduplicatedAnalysis,
+                    generateFigmaUrl(parsedInput.fileId, parsedInput.nodeId),
+                    parsedInput.nodeId
+                );
+            }
 
-                        Logger.info(`📊 Deduplication analysis complete:`, {
-                            styleRefs: Object.keys(deduplicatedAnalysis.styleRefs).length,
-                            children: deduplicatedAnalysis.children.length,
-                            nestedComponents: deduplicatedAnalysis.nestedComponents.length,
-                            newStyleDefinitions: deduplicatedAnalysis.newStyleDefinitions ? Object.keys(deduplicatedAnalysis.newStyleDefinitions).length : 0
+
+            // Detect and export image assets if enabled
+            let assetExportInfo = '';
+            if (exportAssets) {
+                try {
+                    if (!hasPubspec(projectPath)) throw new Error(missingPubspecMessage(projectPath));
+                    // Descendants only: the analysed component itself is never exported.
+                    const imageNodes = selectAssetNodes(Object.values(await figmaService.getNodes(parsedInput.fileId, [parsedInput.nodeId])), false);
+                    if (imageNodes.length > 0) {
+                        const exported = await exportAssetNodes({
+                            figmaService, fileId: parsedInput.fileId, projectPath, nodes: imageNodes,
+                            ratios: devicePixelRatios
                         });
-
-                        analysisReport = generateComprehensiveDeduplicatedReport(deduplicatedAnalysis, true);
-
-                        firstDeduplicatedAnalysis ??= deduplicatedAnalysis;
-
-                        if (generateFlutterCode) {
-                            analysisReport += "\n\n" + generateFlutterImplementation(deduplicatedAnalysis);
-                        }
-                    } else {
-                        const componentAnalysis: ComponentAnalysis = await componentExtractor.analyzeComponent(node, userDefinedComponent);
-                        analysisReport = generateComponentAnalysisReport(componentAnalysis, parsedInput);
+                        assetExportInfo = await analyseAssetSection(exported, projectPath, 'AUTOMATIC ASSET EXPORT');
                     }
-
-                    reports.push(variant ? `Variant: ${variant.name}${variant.isDefault ? ' (default)' : ''}\n${'─'.repeat(30)}\n${analysisReport}` : analysisReport);
+                } catch (assetError) {
+                    assetExportInfo = `\nAsset Export Warning: ${assetError instanceof Error ? assetError.message : String(assetError)}\n`;
                 }
-
-                let analysisReport = variantHeader + reports.join('\n\n');
-
-                // The set's visual context (its URL and node id) is printed once, from the first analysed variant.
-                if (firstDeduplicatedAnalysis && parsedInput.source === 'url') {
-                    analysisReport += "\n\n" + addVisualContextToDeduplicatedReport(
-                        firstDeduplicatedAnalysis,
-                        generateFigmaUrl(parsedInput.fileId, parsedInput.nodeId),
-                        parsedInput.nodeId
-                    );
-                }
-
-
-                // Detect and export image assets if enabled
-                let assetExportInfo = '';
-                if (exportAssets) {
-                    try {
-                        if (!hasPubspec(projectPath)) throw new Error(missingPubspecMessage(projectPath));
-                        // Descendants only: the analysed component itself is never exported.
-                        const imageNodes = selectAssetNodes(Object.values(await figmaService.getNodes(parsedInput.fileId, [parsedInput.nodeId])), false);
-                        if (imageNodes.length > 0) {
-                            const exported = await exportAssetNodes({
-                                figmaService, fileId: parsedInput.fileId, projectPath, nodes: imageNodes,
-                                ratios: devicePixelRatios
-                            });
-                            assetExportInfo = await analyseAssetSection(exported, projectPath, 'AUTOMATIC ASSET EXPORT');
-                        }
-                    } catch (assetError) {
-                        assetExportInfo = `\nAsset Export Warning: ${assetError instanceof Error ? assetError.message : String(assetError)}\n`;
-                    }
-                }
-
-                return {
-                    content: [{
-                        type: "text",
-                        text: analysisReport + assetExportInfo
-                    }]
-                };
-
-            } catch (error) {
-                return {
-                    content: [{
-                        type: "text",
-                        text: `Error analyzing component: ${error instanceof Error ? error.message : String(error)}`
-                    }],
-                    isError: true
-                };
             }
-        }
+
+            return {
+                content: [{
+                    type: "text",
+                    text: analysisReport + assetExportInfo
+                }]
+            };
+        })
     );
 
     // Helper tool to list component variants
@@ -267,69 +248,50 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)")
             }
         },
-        async ({input, nodeId}) => {
-            const token = figmaApiKey;
-            if (!token) {
+        figmaTool('Error listing variants', async ({input, nodeId}) => {
+            const parsedInput = parseComponentInput(input, nodeId);
+
+            if (!parsedInput.isValid) {
                 return {
+                    isError: true,
                     content: [{
                         type: "text",
-                        text: "Error: Figma access token not configured."
+                        text: `Error parsing input: ${parsedInput.error}`
                     }]
                 };
             }
 
-            try {
-                const parsedInput = parseComponentInput(input, nodeId);
+            const figmaService = new FigmaService(figmaApiKey);
+            const componentNode = await figmaService.getNode(parsedInput.fileId, parsedInput.nodeId);
 
-                if (!parsedInput.isValid) {
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Error parsing input: ${parsedInput.error}`
-                        }]
-                    };
-                }
-
-                const figmaService = new FigmaService(token);
-                const componentNode = await figmaService.getNode(parsedInput.fileId, parsedInput.nodeId);
-
-                if (!componentNode) {
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Component set with node ID "${parsedInput.nodeId}" not found.`
-                        }]
-                    };
-                }
-
-                if (componentNode.type !== 'COMPONENT_SET') {
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Node "${componentNode.name}" is not a component set (type: ${componentNode.type}). This tool is only for component sets with variants.`
-                        }]
-                    };
-                }
-
-                const variantAnalyzer = new VariantAnalyzer();
-                const variants = await variantAnalyzer.analyzeComponentSet(componentNode);
-                const summary = variantAnalyzer.generateVariantSummary(variants, variantAnalyzer.getVariantAxes(componentNode));
-
-                const output = `Component Set: ${componentNode.name}\n\n${summary}\n`;
-
-                return {
-                    content: [{type: "text", text: output}]
-                };
-
-            } catch (error) {
+            if (!componentNode) {
                 return {
                     content: [{
                         type: "text",
-                        text: `Error listing variants: ${error instanceof Error ? error.message : String(error)}`
+                        text: `Component set with node ID "${parsedInput.nodeId}" not found.`
                     }]
                 };
             }
-        }
+
+            if (componentNode.type !== 'COMPONENT_SET') {
+                return {
+                    content: [{
+                        type: "text",
+                        text: `Node "${componentNode.name}" is not a component set (type: ${componentNode.type}). This tool is only for component sets with variants.`
+                    }]
+                };
+            }
+
+            const variantAnalyzer = new VariantAnalyzer();
+            const variants = await variantAnalyzer.analyzeComponentSet(componentNode);
+            const summary = variantAnalyzer.generateVariantSummary(variants, variantAnalyzer.getVariantAxes(componentNode));
+
+            const output = `Component Set: ${componentNode.name}\n\n${summary}\n`;
+
+            return {
+                content: [{type: "text", text: output}]
+            };
+        })
     );
 
     // Helper tool to inspect component structure
@@ -345,78 +307,59 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 showAllChildren: z.boolean().optional().describe("Show all children regardless of limits (default: false)")
             }
         },
-        async ({input, nodeId, userDefinedComponent = false, showAllChildren = false}) => {
-            const token = figmaApiKey;
-            if (!token) {
+        figmaTool('Error inspecting structure', async ({input, nodeId, userDefinedComponent = false, showAllChildren = false}) => {
+            const parsedInput = parseComponentInput(input, nodeId);
+
+            if (!parsedInput.isValid) {
                 return {
+                    isError: true,
                     content: [{
                         type: "text",
-                        text: "Error: Figma access token not configured."
+                        text: `Error parsing input: ${parsedInput.error}`
                     }]
                 };
             }
 
-            try {
-                const parsedInput = parseComponentInput(input, nodeId);
+            const figmaService = new FigmaService(figmaApiKey);
+            const componentNode = await figmaService.getNode(parsedInput.fileId, parsedInput.nodeId);
 
-                if (!parsedInput.isValid) {
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Error parsing input: ${parsedInput.error}`
-                        }]
-                    };
-                }
-
-                const figmaService = new FigmaService(token);
-                const componentNode = await figmaService.getNode(parsedInput.fileId, parsedInput.nodeId);
-
-                if (!componentNode) {
-                    return {
-                        content: [{
-                            type: "text",
-                            text: `Component with node ID "${parsedInput.nodeId}" not found.`
-                        }]
-                    };
-                }
-
-                // Validate that this is a component or user-defined component
-                const isActualComponent = componentNode.type === 'COMPONENT' || componentNode.type === 'COMPONENT_SET' || componentNode.type === 'INSTANCE';
-                const isUserDefinedFrame = componentNode.type === 'FRAME' && userDefinedComponent;
-                
-                if (!isActualComponent && !isUserDefinedFrame) {
-                    if (componentNode.type === 'FRAME') {
-                        return {
-                            content: [{
-                                type: "text",
-                                text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For inspecting top-level frames, use the inspect_frame_structure tool instead.`
-                            }]
-                        };
-                    } else {
-                        return {
-                            content: [{
-                                type: "text",
-                                text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For inspecting top-level frames, use the inspect_frame_structure tool instead.`
-                            }]
-                        };
-                    }
-                }
-
-                const output = generateStructureInspectionReport(componentNode, showAllChildren);
-
-                return {
-                    content: [{type: "text", text: output}]
-                };
-
-            } catch (error) {
+            if (!componentNode) {
                 return {
                     content: [{
                         type: "text",
-                        text: `Error inspecting structure: ${error instanceof Error ? error.message : String(error)}`
+                        text: `Component with node ID "${parsedInput.nodeId}" not found.`
                     }]
                 };
             }
-        }
+
+            // Validate that this is a component or user-defined component
+            const isActualComponent = componentNode.type === 'COMPONENT' || componentNode.type === 'COMPONENT_SET' || componentNode.type === 'INSTANCE';
+            const isUserDefinedFrame = componentNode.type === 'FRAME' && userDefinedComponent;
+            
+            if (!isActualComponent && !isUserDefinedFrame) {
+                if (componentNode.type === 'FRAME') {
+                    return {
+                        content: [{
+                            type: "text",
+                            text: `Node "${componentNode.name}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For inspecting top-level frames, use the inspect_frame_structure tool instead.`
+                        }]
+                    };
+                } else {
+                    return {
+                        content: [{
+                            type: "text",
+                            text: `Node "${componentNode.name}" is not a component (type: ${componentNode.type}). For inspecting top-level frames, use the inspect_frame_structure tool instead.`
+                        }]
+                    };
+                }
+            }
+
+            const output = generateStructureInspectionReport(componentNode, showAllChildren);
+
+            return {
+                content: [{type: "text", text: output}]
+            };
+        })
     );
 
     // Dedicated Flutter code generation tool
@@ -432,54 +375,44 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 widgetName: z.string().optional().describe("Custom widget class name")
             }
         },
-        async ({ input, nodeId, includeStyleDefinitions = true, widgetName }) => {
-            try {
-                const parsedInput = parseComponentInput(input, nodeId);
-                if (!parsedInput.isValid) {
-                    return {
-                        content: [{type: "text", text: `Error parsing input: ${parsedInput.error || 'Invalid input format'}`}],
-                        isError: true
-                    };
-                }
-                const {document: node, componentSetName} = await new FigmaService(figmaApiKey).getNodeWithStyles(parsedInput.fileId, parsedInput.nodeId);
-                const extractor = new DeduplicatedComponentExtractor();
-                // A component set gives one class per variant, named from the set name and the variant name.
-                const implementation = node.type === 'COMPONENT_SET'
-                    ? (await Promise.all((node.children ?? []).filter(variant => variant.type === 'COMPONENT').map(async variant =>
-                        generateFlutterImplementation(await extractor.analyzeComponent(variant, true), typeName(`${widgetName ?? node.name} ${variant.name}`))))).join('\n')
-                    : generateFlutterImplementation(await extractor.analyzeComponent(node, true),
-                        // A variant passed on its own is named as it is through its set: set name plus variant name.
-                        componentSetName ? typeName(`${widgetName ?? componentSetName} ${node.name}`) : widgetName);
-
-                let output = "🏗️  Flutter Implementation\n";
-                output += `${'='.repeat(50)}\n\n`;
-
-                const styles = referencedStyles(implementation);
-                if (includeStyleDefinitions && styles.length > 0) {
-                    output += "📋 Style Definitions:\n";
-                    output += `${'─'.repeat(30)}\n`;
-                    styles.forEach(style => {
-                        output += `// ${style.id} (${style.category})\n`;
-                        output += `final ${style.id} = ${style.flutterCode};\n\n`;
-                    });
-                    output += "\n";
-                }
-
-                output += implementation;
-
+        figmaTool('Error generating Flutter implementation', async ({ input, nodeId, includeStyleDefinitions = true, widgetName }) => {
+            const parsedInput = parseComponentInput(input, nodeId);
+            if (!parsedInput.isValid) {
                 return {
-                    content: [{ type: "text", text: output }]
-                };
-                
-            } catch (error) {
-                return {
-                    content: [{
-                        type: "text",
-                        text: `Error generating Flutter implementation: ${error instanceof Error ? error.message : String(error)}`
-                    }]
+                    content: [{type: "text", text: `Error parsing input: ${parsedInput.error || 'Invalid input format'}`}],
+                    isError: true
                 };
             }
-        }
+            const {document: node, componentSetName} = await new FigmaService(figmaApiKey).getNodeWithStyles(parsedInput.fileId, parsedInput.nodeId);
+            const extractor = new DeduplicatedComponentExtractor();
+            // A component set gives one class per variant, named from the set name and the variant name.
+            const implementation = node.type === 'COMPONENT_SET'
+                ? (await Promise.all((node.children ?? []).filter(variant => variant.type === 'COMPONENT').map(async variant =>
+                    generateFlutterImplementation(await extractor.analyzeComponent(variant, true), typeName(`${widgetName ?? node.name} ${variant.name}`))))).join('\n')
+                : generateFlutterImplementation(await extractor.analyzeComponent(node, true),
+                    // A variant passed on its own is named as it is through its set: set name plus variant name.
+                    componentSetName ? typeName(`${widgetName ?? componentSetName} ${node.name}`) : widgetName);
+
+            let output = "🏗️  Flutter Implementation\n";
+            output += `${'='.repeat(50)}\n\n`;
+
+            const styles = referencedStyles(implementation);
+            if (includeStyleDefinitions && styles.length > 0) {
+                output += "📋 Style Definitions:\n";
+                output += `${'─'.repeat(30)}\n`;
+                styles.forEach(style => {
+                    output += `// ${style.id} (${style.category})\n`;
+                    output += `final ${style.id} = ${style.flutterCode};\n\n`;
+                });
+                output += "\n";
+            }
+
+            output += implementation;
+
+            return {
+                content: [{ type: "text", text: output }]
+            };
+        })
     );
 
     // Cached styles status tool
@@ -490,23 +423,13 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
             description: "Get comprehensive status report of the cached styles",
             inputSchema: {}
         },
-        async () => {
-            try {
-                const report = generateStyleLibraryReport();
-                
-                return {
-                    content: [{ type: "text", text: report }]
-                };
-                
-            } catch (error) {
-                return {
-                    content: [{
-                        type: "text",
-                        text: `Error generating cached styles report: ${error instanceof Error ? error.message : String(error)}`
-                    }]
-                };
-            }
-        }
+        figmaTool('Error generating cached styles report', async () => {
+            const report = generateStyleLibraryReport();
+            
+            return {
+                content: [{ type: "text", text: report }]
+            };
+        })
     );
 }
 

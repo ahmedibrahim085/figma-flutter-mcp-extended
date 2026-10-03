@@ -5,7 +5,9 @@
 
 import {z} from 'zod';
 import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
-import {FigmaService, figmaApiBaseUrl} from '../../services/figma.js';
+import {FigmaService} from '../../services/figma.js';
+import {FigmaError, FigmaNotFoundError} from '../../types/errors.js';
+import {figmaTool} from '../figma-tool.js';
 import {Logger} from '../../utils/logger.js';
 import defaults from '../../defaults.json' with { type: 'json' };
 import fetch from 'node-fetch';
@@ -103,11 +105,6 @@ function renderTree(root: any, build: (tree: any, frames: any[]) => any): string
 
 export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     const figma = new FigmaService(figmaApiKey);
-    const baseUrl = figmaApiBaseUrl();
-    const headers = {
-        'X-Figma-Token': figmaApiKey,
-        'Content-Type': 'application/json',
-    };
 
     // ── ff_get_metadata ──────────────────────────────────────
     server.registerTool(
@@ -136,48 +133,31 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     ),
             },
         },
-        async ({fileKey, nodeId, depth}) => {
-            try {
-                const depthParam = depth === undefined ? '' : `depth=${depth}`;
-                let url: string;
-                if (nodeId) {
-                    url = `${baseUrl}/files/${fileKey}/nodes?ids=${encodeURIComponent(nodeId)}${depthParam && `&${depthParam}`}`;
-                } else {
-                    url = `${baseUrl}/files/${fileKey}${depthParam && `?${depthParam}`}`;
-                }
+        figmaTool('ff_get_metadata error', async ({fileKey, nodeId, depth}) => {
+            const depthQuery: Record<string, string> = depth === undefined ? {} : {depth: String(depth)};
+            const data = nodeId
+                ? await figma.get<any>(`/files/${fileKey}/nodes`, {ids: nodeId, ...depthQuery})
+                : await figma.get<any>(`/files/${fileKey}`, depthQuery);
+            let rootNode: any;
 
-                const resp = await fetch(url, {headers});
-                if (!resp.ok) {
-                    const body = await resp.text();
-                    return {content: [{type: 'text' as const, text: `Error ${resp.status}: ${body}`}]};
-                }
-
-                const data = (await resp.json()) as any;
-                let rootNode: any;
-
-                if (nodeId && data.nodes) {
-                    const nodeData = data.nodes[nodeId];
-                    if (!nodeData?.document) {
-                        return {content: [{type: 'text' as const, text: `Node ${nodeId} not found in file ${fileKey}`}]};
-                    }
-                    rootNode = nodeData.document;
-                } else {
-                    rootNode = data.document;
-                }
-
-                const text = renderTree(rootNode, (tree, frames) => ({
-                    fileName: data.name || fileKey,
-                    lastModified: data.lastModified,
-                    nodeTree: tree,
-                    topLevelFrames: frames,
-                    frameCount: frames.length,
-                }));
-
-                return {content: [{type: 'text' as const, text}]};
-            } catch (err: any) {
-                return {content: [{type: 'text' as const, text: `ff_get_metadata error: ${err.message}`}]};
+            if (nodeId && data.nodes) {
+                const nodeData = data.nodes[nodeId];
+                if (!nodeData?.document) throw new FigmaNotFoundError('Node', nodeId);
+                rootNode = nodeData.document;
+            } else {
+                rootNode = data.document;
             }
-        },
+
+            const text = renderTree(rootNode, (tree, frames) => ({
+                fileName: data.name || fileKey,
+                lastModified: data.lastModified,
+                nodeTree: tree,
+                topLevelFrames: frames,
+                frameCount: frames.length,
+            }));
+
+            return {content: [{type: 'text' as const, text}]};
+        }),
     );
 
     // ── ff_get_screenshot ────────────────────────────────────
@@ -202,57 +182,44 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     .describe(`Scale factor 0.01-4 (default: ${defaults.screenshotScale}). Higher = more detail.`),
             },
         },
-        async ({fileKey, nodeId, format = 'png', scale = defaults.screenshotScale}) => {
-            try {
-                const params = new URLSearchParams({
-                    ids: nodeId,
-                    format,
-                    scale: String(Math.min(Math.max(scale, 0.01), 4)),
-                });
-                const resp = await fetch(`${baseUrl}/images/${fileKey}?${params}`, {headers});
-                if (!resp.ok) {
-                    const body = await resp.text();
-                    return {content: [{type: 'text' as const, text: `Error ${resp.status}: ${body}`}]};
-                }
+        figmaTool('ff_get_screenshot error', async ({fileKey, nodeId, format = 'png', scale = defaults.screenshotScale}) => {
+            const data = await figma.get<any>(`/images/${fileKey}`, {
+                ids: nodeId,
+                format,
+                scale: String(Math.min(Math.max(scale, 0.01), 4)),
+            });
+            if (data.err) throw new FigmaError(`Figma image error: ${data.err}`, 'EXPORT_ERROR');
 
-                const data = (await resp.json()) as any;
-                if (data.err) {
-                    return {content: [{type: 'text' as const, text: `Figma image error: ${data.err}`}]};
-                }
+            const imageUrl = data.images?.[nodeId];
+            if (!imageUrl) {
+                return {content: [{type: 'text' as const, text: `No image returned for node ${nodeId}`}]};
+            }
 
-                const imageUrl = data.images?.[nodeId];
-                if (!imageUrl) {
-                    return {content: [{type: 'text' as const, text: `No image returned for node ${nodeId}`}]};
-                }
-
-                // Fetch the actual image and return as base64
-                const imgResp = await fetch(imageUrl);
-                if (!imgResp.ok) {
-                    // Fall back to returning the URL
-                    return {
-                        content: [
-                            {type: 'text' as const, text: `Screenshot URL (fetch failed): ${imageUrl}`},
-                        ],
-                    };
-                }
-
-                const imgBuffer = await imgResp.buffer();
-                const base64 = imgBuffer.toString('base64');
-                const mimeType = format === 'jpg' ? 'image/jpeg' : format === 'svg' ? 'image/svg+xml' : `image/${format}`;
-
+            // The render URL is not a Figma REST call (no token), so it stays a plain fetch.
+            const imgResp = await fetch(imageUrl);
+            if (!imgResp.ok) {
+                // Fall back to returning the URL
                 return {
                     content: [
-                        {
-                            type: 'image' as const,
-                            data: base64,
-                            mimeType,
-                        },
+                        {type: 'text' as const, text: `Screenshot URL (fetch failed): ${imageUrl}`},
                     ],
                 };
-            } catch (err: any) {
-                return {content: [{type: 'text' as const, text: `ff_get_screenshot error: ${err.message}`}]};
             }
-        },
+
+            const imgBuffer = await imgResp.buffer();
+            const base64 = imgBuffer.toString('base64');
+            const mimeType = format === 'jpg' ? 'image/jpeg' : format === 'svg' ? 'image/svg+xml' : `image/${format}`;
+
+            return {
+                content: [
+                    {
+                        type: 'image' as const,
+                        data: base64,
+                        mimeType,
+                    },
+                ],
+            };
+        }),
     );
 
     // ── ff_get_design_context ────────────────────────────────
@@ -280,57 +247,48 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     ),
             },
         },
-        async ({fileKey, nodeId, depth}) => {
-            try {
-                const url = `${baseUrl}/files/${fileKey}/nodes?ids=${encodeURIComponent(nodeId)}&geometry=paths&plugin_data=shared` +
-                    (depth === undefined ? '' : `&depth=${depth}`);
-                const resp = await fetch(url, {headers});
-                if (!resp.ok) {
-                    const body = await resp.text();
-                    return {content: [{type: 'text' as const, text: `Error ${resp.status}: ${body}`}]};
-                }
+        figmaTool('ff_get_design_context error', async ({fileKey, nodeId, depth}) => {
+            const data = await figma.get<any>(`/files/${fileKey}/nodes`, {
+                ids: nodeId,
+                geometry: 'paths',
+                plugin_data: 'shared',
+                ...(depth === undefined ? {} : {depth: String(depth)}),
+            });
+            const nodeData = data.nodes?.[nodeId];
+            if (!nodeData?.document) throw new FigmaNotFoundError('Node', nodeId);
 
-                const data = (await resp.json()) as any;
-                const nodeData = data.nodes?.[nodeId];
-                if (!nodeData?.document) {
-                    return {content: [{type: 'text' as const, text: `Node ${nodeId} not found`}]};
-                }
+            const doc = nodeData.document;
+            const components = nodeData.components || {};
+            const styles = nodeData.styles || {};
 
-                const doc = nodeData.document;
-                const components = nodeData.components || {};
-                const styles = nodeData.styles || {};
-
-                // Build a structured design context
-                const text = renderTree(doc, (tree, frames) => ({
-                    node: {
-                        id: doc.id,
-                        name: doc.name,
-                        type: doc.type,
-                        bounds: doc.absoluteBoundingBox,
-                        layoutMode: doc.layoutMode,
-                        fills: doc.fills,
-                        strokes: doc.strokes,
-                        effects: doc.effects,
-                        padding: {
-                            top: doc.paddingTop,
-                            right: doc.paddingRight,
-                            bottom: doc.paddingBottom,
-                            left: doc.paddingLeft,
-                        },
-                        itemSpacing: doc.itemSpacing,
-                        backgroundColor: doc.backgroundColor,
+            // Build a structured design context
+            const text = renderTree(doc, (tree, frames) => ({
+                node: {
+                    id: doc.id,
+                    name: doc.name,
+                    type: doc.type,
+                    bounds: doc.absoluteBoundingBox,
+                    layoutMode: doc.layoutMode,
+                    fills: doc.fills,
+                    strokes: doc.strokes,
+                    effects: doc.effects,
+                    padding: {
+                        top: doc.paddingTop,
+                        right: doc.paddingRight,
+                        bottom: doc.paddingBottom,
+                        left: doc.paddingLeft,
                     },
-                    tree,
-                    components: Object.keys(components).length > 0 ? components : undefined,
-                    styles: Object.keys(styles).length > 0 ? styles : undefined,
-                    frames,
-                }));
+                    itemSpacing: doc.itemSpacing,
+                    backgroundColor: doc.backgroundColor,
+                },
+                tree,
+                components: Object.keys(components).length > 0 ? components : undefined,
+                styles: Object.keys(styles).length > 0 ? styles : undefined,
+                frames,
+            }));
 
-                return {content: [{type: 'text' as const, text}]};
-            } catch (err: any) {
-                return {content: [{type: 'text' as const, text: `ff_get_design_context error: ${err.message}`}]};
-            }
-        },
+            return {content: [{type: 'text' as const, text}]};
+        }),
     );
 
     // ── ff_get_variable_defs ─────────────────────────────────
@@ -347,79 +305,59 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 fileKey: z.string().describe('Figma file key'),
             },
         },
-        async ({fileKey}) => {
-            try {
-                const resp = await fetch(`${baseUrl}/files/${fileKey}/variables/local`, {headers});
-                if (!resp.ok) {
-                    const body = await resp.text();
-                    // 403 often means the file doesn't have variables or access is restricted
-                    if (resp.status === 403) {
-                        return {
-                            content: [
-                                {
-                                    type: 'text' as const,
-                                    text:
-                                        'Access denied (403). This file may not have published variables, ' +
-                                        'or your access token lacks the required scope. ' +
-                                        'The Variables REST API requires an Enterprise plan (other plans get 403 "Limited by Figma plan").',
-                                },
-                            ],
-                            isError: true,
-                        };
-                    }
-                    // A 429 is only actionable with its wait; name the headers Figma sent.
-                    const retryAfter = resp.headers.get('retry-after');
-                    const rateLimit = resp.status === 429 ? [
-                        retryAfter && `Retry after ${retryAfter} seconds`,
-                        ...['x-figma-plan-tier', 'x-figma-rate-limit-type'].map(name => resp.headers.get(name) && `${name}: ${resp.headers.get(name)}`),
-                    ].filter(Boolean) : [];
-                    const details = rateLimit.length > 0 ? ` (${rateLimit.join(', ')})` : '';
-                    return {content: [{type: 'text' as const, text: `Error ${resp.status}: ${body}${details}`}], isError: true};
+        figmaTool('ff_get_variable_defs error', async ({fileKey}) => {
+            const data = await figma.get<any>(`/files/${fileKey}/variables/local`).catch((error) => {
+                // 403 often means the file doesn't have variables or access is restricted
+                if (error instanceof FigmaError && error.statusCode === 403) {
+                    throw new FigmaError(
+                        'Access denied. This file may not have published variables, ' +
+                        'or your access token lacks the required scope. ' +
+                        'The Variables REST API requires an Enterprise plan (other plans get 403 "Limited by Figma plan").',
+                        'FORBIDDEN',
+                        403,
+                    );
                 }
+                throw error;
+            });
+            const meta = data.meta || {};
+            const variables = meta.variables || {};
+            const collections = meta.variableCollections || {};
 
-                const data = (await resp.json()) as any;
-                const meta = data.meta || {};
-                const variables = meta.variables || {};
-                const collections = meta.variableCollections || {};
+            // Collections are keyed by id (names can repeat); a variable whose collection
+            // Figma did not send is still listed, under its collection id.
+            const entries = Object.entries(variables) as any[];
+            const render = (count: number) => {
+                const byId: any = {};
+                for (const [collId, coll] of Object.entries(collections) as any[]) {
+                    byId[collId] = {
+                        name: coll.name,
+                        modes: coll.modes?.map((m: any) => ({id: m.modeId, name: m.name})),
+                        variables: [] as any[],
+                    };
+                }
+                for (const [varId, v] of entries.slice(0, count)) {
+                    const entry: any = {
+                        id: varId,
+                        name: v.name,
+                        resolvedType: v.resolvedType,
+                        valuesByMode: v.valuesByMode,
+                    };
+                    if (v.description) entry.description = v.description;
+                    if (v.scopes) entry.scopes = v.scopes;
 
-                // Collections are keyed by id (names can repeat); a variable whose collection
-                // Figma did not send is still listed, under its collection id.
-                const entries = Object.entries(variables) as any[];
-                const render = (count: number) => {
-                    const byId: any = {};
-                    for (const [collId, coll] of Object.entries(collections) as any[]) {
-                        byId[collId] = {
-                            name: coll.name,
-                            modes: coll.modes?.map((m: any) => ({id: m.modeId, name: m.name})),
-                            variables: [] as any[],
-                        };
-                    }
-                    for (const [varId, v] of entries.slice(0, count)) {
-                        const entry: any = {
-                            id: varId,
-                            name: v.name,
-                            resolvedType: v.resolvedType,
-                            valuesByMode: v.valuesByMode,
-                        };
-                        if (v.description) entry.description = v.description;
-                        if (v.scopes) entry.scopes = v.scopes;
+                    (byId[v.variableCollectionId] ??= {variables: []}).variables.push(entry);
+                }
+                // variableCount is the variables listed; the file's total is variableCount + omittedVariableIds.length.
+                const structured: any = {collectionCount: Object.keys(byId).length, variableCount: count, collections: byId};
+                if (count < entries.length) {
+                    structured.truncated = true;
+                    structured.omittedVariableIds = entries.slice(count).map(([varId]) => varId);
+                }
+                return JSON.stringify(structured, null, 2);
+            };
 
-                        (byId[v.variableCollectionId] ??= {variables: []}).variables.push(entry);
-                    }
-                    // variableCount is the variables listed; the file's total is variableCount + omittedVariableIds.length.
-                    const structured: any = {collectionCount: Object.keys(byId).length, variableCount: count, collections: byId};
-                    if (count < entries.length) {
-                        structured.truncated = true;
-                        structured.omittedVariableIds = entries.slice(count).map(([varId]) => varId);
-                    }
-                    return JSON.stringify(structured, null, 2);
-                };
-
-                return {content: [{type: 'text' as const, text: renderWithinBudget(entries.length, render)}]};
-            } catch (err: any) {
-                return {content: [{type: 'text' as const, text: `ff_get_variable_defs error: ${err.message}`}], isError: true};
-            }
-        },
+            return {content: [{type: 'text' as const, text: renderWithinBudget(entries.length, render)}]};
+        }),
     );
 
     // ── ff_whoami ──────────────────────────────────────────────
@@ -432,30 +370,21 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 'This tool is exempt from rate limits — always safe to call.',
             inputSchema: {},
         },
-        async () => {
-            try {
-                const resp = await fetch(`${baseUrl}/me`, {headers});
-                if (!resp.ok) {
-                    const body = await resp.text();
-                    return {content: [{type: 'text' as const, text: `Error ${resp.status}: ${body}`}]};
-                }
-                const data = (await resp.json()) as any;
-                return {
-                    content: [
-                        {
-                            type: 'text' as const,
-                            text: JSON.stringify(
-                                {id: data.id, handle: data.handle, email: data.email, img_url: data.img_url},
-                                null,
-                                2,
-                            ),
-                        },
-                    ],
-                };
-            } catch (err: any) {
-                return {content: [{type: 'text' as const, text: `ff_whoami error: ${err.message}`}]};
-            }
-        },
+        figmaTool('ff_whoami error', async () => {
+            const data = await figma.get<any>('/me');
+            return {
+                content: [
+                    {
+                        type: 'text' as const,
+                        text: JSON.stringify(
+                            {id: data.id, handle: data.handle, email: data.email, img_url: data.img_url},
+                            null,
+                            2,
+                        ),
+                    },
+                ],
+            };
+        }),
     );
 
     Logger.diag('📋 Registered core Figma tools: ff_get_metadata, ff_get_screenshot, ff_get_design_context, ff_get_variable_defs, ff_whoami');

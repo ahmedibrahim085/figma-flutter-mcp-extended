@@ -36,15 +36,15 @@ test('429 on variables is a tool error that shows the wait, plan tier and limit 
     const {text, isError} = await variableDefs(rateLimited(354850));
 
     assert.equal(isError, true);
-    assert.equal(text, 'Error 429: {"status":429,"err":"Rate limit exceeded"} ' +
+    assert.equal(text, 'ff_get_variable_defs error: Figma 429: Rate limit exceeded ' +
         '(Retry after 354850 seconds, x-figma-plan-tier: starter, x-figma-rate-limit-type: high)');
 });
 
-test('429 on variables without rate-limit headers shows only the body', async () => {
+test('429 on variables without rate-limit headers shows only Figma\'s message', async () => {
     const {text, isError} = await variableDefs({status: 429, body: {status: 429, err: 'Rate limit exceeded'}});
 
     assert.equal(isError, true);
-    assert.equal(text, 'Error 429: {"status":429,"err":"Rate limit exceeded"}');
+    assert.equal(text, 'ff_get_variable_defs error: Figma 429: Rate limit exceeded');
 });
 
 test('an unreadable variables response is a tool error', async () => {
@@ -66,7 +66,8 @@ test('429 with a short Retry-After on a codegen tool retries a bounded number of
     const {text, isError, requests} = await analyzeComponent(rateLimited(1));
 
     assert.equal(isError, true);
-    assert.equal(text, 'Error analyzing component: Rate limit exceeded. Retry after 1 seconds');
+    assert.equal(text, 'Error analyzing component: Figma 429: Rate limit exceeded ' +
+        '(Retry after 1 seconds, x-figma-plan-tier: starter, x-figma-rate-limit-type: high)');
     assert.deepEqual(sent(requests), Array(3).fill({path: NODES_PATH, query: {ids: '1:1'}}));
 });
 
@@ -74,6 +75,7 @@ test('429 with a Retry-After beyond the retry budget fails at once instead of re
     const {text, isError, requests} = await analyzeComponent(rateLimited(354850));
 
     assert.equal(isError, true);
-    assert.equal(text, 'Error analyzing component: Rate limit exceeded. Retry after 354850 seconds');
+    assert.equal(text, 'Error analyzing component: Figma 429: Rate limit exceeded ' +
+        '(Retry after 354850 seconds, x-figma-plan-tier: starter, x-figma-rate-limit-type: high)');
     assert.deepEqual(sent(requests), [{path: NODES_PATH, query: {ids: '1:1'}}]);
 });

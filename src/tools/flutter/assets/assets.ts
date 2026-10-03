@@ -2,6 +2,7 @@
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
+import {figmaTool} from "../../figma-tool.js";
 import {
     DEVICE_PIXEL_RATIOS,
     devicePixelRatiosInput,
@@ -28,69 +29,50 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                 devicePixelRatios: devicePixelRatiosInput
             }
         },
-        async ({fileId, nodeIds, projectPath = process.cwd(), format = 'png', devicePixelRatios}) => {
-            const token = figmaApiKey;
-            if (!token) {
-                return {
-                    content: [{
-                        type: "text",
-                        text: "Error: Figma access token not configured."
-                    }]
-                };
-            }
-
+        figmaTool('Error exporting assets', async ({fileId, nodeIds, projectPath = process.cwd(), format = 'png', devicePixelRatios}) => {
             if (!hasPubspec(projectPath)) {
                 return {isError: true, content: [{type: "text", text: missingPubspecMessage(projectPath)}]};
             }
 
-            try {
-                const figmaService = new FigmaService(token);
+            const figmaService = new FigmaService(figmaApiKey);
 
-                nodeIds = nodeIds.map(validateAndConvertNodeId);
-                const roots = Object.values(await figmaService.getNodes(fileId, nodeIds));
-                const imageNodes = selectAssetNodes(roots, true);
+            nodeIds = nodeIds.map(validateAndConvertNodeId);
+            const roots = Object.values(await figmaService.getNodes(fileId, nodeIds));
+            const imageNodes = selectAssetNodes(roots, true);
 
-                if (imageNodes.length === 0) {
-                    return {
-                        content: [{
-                            type: "text",
-                            text: "No visible nodes to export in the specified IDs. Hidden nodes (visible: false) and empty icon slots are skipped."
-                        }]
-                    };
-                }
-
-                const {assets: downloadedAssets, notes, constants} = await exportAssetNodes({
-                    figmaService, fileId, projectPath, nodes: imageNodes, ratios: devicePixelRatios, fallbackFormat: format
-                });
-
-                if (downloadedAssets.length === 0) {
-                    return {
-                        content: [{type: "text", text: `No assets were exported.\n${notes.map(note => `- ${note}\n`).join('')}`}]
-                    };
-                }
-
-                let output = `Successfully exported ${new Set(downloadedAssets.map(asset => asset.nodeId)).size} assets to Flutter project!\n\n`;
-                output += `Downloaded Assets:\n`;
-                downloadedAssets.forEach(asset => {
-                    output += `  • ${asset.path} (${asset.size})\n`;
-                });
-                if (notes.length > 0) {
-                    output += `\nExport notes:\n${notes.map(note => `- ${note}\n`).join('')}`;
-                }
-
-                output += `\n${await assetUsageReport(downloadedAssets, constants, projectPath)}`;
-
-                return {
-                    content: [{type: "text", text: output}]
-                };
-            } catch (error) {
+            if (imageNodes.length === 0) {
                 return {
                     content: [{
                         type: "text",
-                        text: `Error exporting assets: ${error instanceof Error ? error.message : String(error)}`
+                        text: "No visible nodes to export in the specified IDs. Hidden nodes (visible: false) and empty icon slots are skipped."
                     }]
                 };
             }
-        }
+
+            const {assets: downloadedAssets, notes, constants} = await exportAssetNodes({
+                figmaService, fileId, projectPath, nodes: imageNodes, ratios: devicePixelRatios, fallbackFormat: format
+            });
+
+            if (downloadedAssets.length === 0) {
+                return {
+                    content: [{type: "text", text: `No assets were exported.\n${notes.map(note => `- ${note}\n`).join('')}`}]
+                };
+            }
+
+            let output = `Successfully exported ${new Set(downloadedAssets.map(asset => asset.nodeId)).size} assets to Flutter project!\n\n`;
+            output += `Downloaded Assets:\n`;
+            downloadedAssets.forEach(asset => {
+                output += `  • ${asset.path} (${asset.size})\n`;
+            });
+            if (notes.length > 0) {
+                output += `\nExport notes:\n${notes.map(note => `- ${note}\n`).join('')}`;
+            }
+
+            output += `\n${await assetUsageReport(downloadedAssets, constants, projectPath)}`;
+
+            return {
+                content: [{type: "text", text: output}]
+            };
+        })
     );
 }

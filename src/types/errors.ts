@@ -9,8 +9,8 @@ export class FigmaError extends Error {
 }
 
 export class FigmaAuthError extends FigmaError {
-    constructor(message: string = 'Invalid Figma access token') {
-        super(message, 'AUTH_ERROR', 401);
+    constructor(message: string = 'Invalid Figma access token', statusCode: number = 401) {
+        super(message, 'AUTH_ERROR', statusCode);
         this.name = 'FigmaAuthError';
     }
 }
@@ -23,13 +23,11 @@ export class FigmaNotFoundError extends FigmaError {
 }
 
 export class FigmaRateLimitError extends FigmaError {
-    constructor(retryAfter?: number) {
-        super(`Rate limit exceeded${retryAfter ? `. Retry after ${retryAfter} seconds` : ''}`, 'RATE_LIMIT', 429);
+    /** `details` are Figma's plan-tier and rate-limit-type headers, as `name: value`. */
+    constructor(message: string, public retryAfter?: number, public details: string[] = []) {
+        super(message, 'RATE_LIMIT', 429);
         this.name = 'FigmaRateLimitError';
-        this.retryAfter = retryAfter;
     }
-
-    public retryAfter?: number;
 }
 
 export class FigmaNetworkError extends FigmaError {
@@ -47,17 +45,19 @@ export class FigmaParseError extends FigmaError {
 }
 
 export function createFigmaError(response: Response, message?: string): FigmaError {
-    const defaultMessage = message || `Figma API error: ${response.status} ${response.statusText}`;
+    const defaultMessage = message || response.statusText;
 
     switch (response.status) {
         case 401:
         case 403:
-            return new FigmaAuthError(defaultMessage);
+            return new FigmaAuthError(defaultMessage, response.status);
         case 404:
-            return new FigmaNotFoundError('Resource', 'unknown');
+            return new FigmaError(defaultMessage, 'NOT_FOUND', 404);
         case 429:
             const retryAfter = response.headers.get('Retry-After');
-            return new FigmaRateLimitError(retryAfter ? parseInt(retryAfter, 10) : undefined);
+            const details = ['x-figma-plan-tier', 'x-figma-rate-limit-type']
+                .flatMap(name => response.headers.get(name) ? [`${name}: ${response.headers.get(name)}`] : []);
+            return new FigmaRateLimitError(defaultMessage, retryAfter ? parseInt(retryAfter, 10) : undefined, details);
         default:
             return new FigmaError(defaultMessage, 'API_ERROR', response.status);
     }

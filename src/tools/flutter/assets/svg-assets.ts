@@ -2,6 +2,7 @@
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
+import {figmaTool} from "../../figma-tool.js";
 import {join} from 'path';
 import {
     createSvgAssetsDirectory,
@@ -31,98 +32,79 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
                 projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)")
             }
         },
-        async ({fileId, nodeIds, projectPath = process.cwd()}) => {
-            const token = figmaApiKey;
-            if (!token) {
-                return {
-                    content: [{
-                        type: "text",
-                        text: "Error: Figma access token not configured."
-                    }]
-                };
-            }
-
+        figmaTool('Error exporting SVG assets', async ({fileId, nodeIds, projectPath = process.cwd()}) => {
             if (!hasPubspec(projectPath)) {
                 return {isError: true, content: [{type: "text", text: missingPubspecMessage(projectPath)}]};
             }
 
-            try {
-                const figmaService = new FigmaService(token);
+            const figmaService = new FigmaService(figmaApiKey);
 
-                nodeIds = nodeIds.map(validateAndConvertNodeId);
-                const svgNodes = await selectSvgNodes(fileId, nodeIds, figmaService);
+            nodeIds = nodeIds.map(validateAndConvertNodeId);
+            const svgNodes = await selectSvgNodes(fileId, nodeIds, figmaService);
 
-                if (svgNodes.length === 0) {
-                    return {
-                        content: [{
-                            type: "text",
-                            text: "No SVG assets to export: none of the specified nodes is visible. " +
-                                  "Hidden nodes (visible: false) and empty slots are skipped."
-                        }]
-                    };
-                }
-
-                // Create SVG assets directory structure
-                const assetsDir = await createSvgAssetsDirectory(projectPath);
-
-                let downloadedAssets: AssetInfo[] = [];
-
-                // Export each SVG node
-                const imageUrls = await figmaService.getImageExportUrls(fileId, svgNodes.map(n => n.id), {
-                    format: 'svg',
-                    scale: 1 // SVGs don't need multiple scales
-                });
-
-                for (const node of svgNodes) {
-                    const imageUrl = imageUrls[node.id];
-                    if (!imageUrl) continue;
-
-                    const filename = generateSvgFilename(node.name);
-                    const filepath = join(assetsDir, filename);
-
-                    // Download the SVG
-                    await downloadImage(imageUrl, filepath);
-
-                    // Get file size for reporting
-                    const stats = await getFileStats(filepath);
-
-                    downloadedAssets.push({
-                        nodeId: node.id,
-                        nodeName: node.name,
-                        filename,
-                        path: `${defaults.output.svgsDir}/${filename}`,
-                        size: stats.size
-                    });
-                }
-
-                // Constants first: updatePubspecAssets throws on pubspec shapes it refuses to edit
-                const constants = await generateSvgAssetConstants(downloadedAssets, projectPath);
-
-                // Update pubspec.yaml with SVG assets
-                const pubspecPath = join(projectPath, 'pubspec.yaml');
-                await updatePubspecAssets(pubspecPath, downloadedAssets);
-
-                let output = `Successfully exported ${svgNodes.length} SVG assets to Flutter project!\n\n`;
-                output += `Downloaded SVG Assets:\n`;
-
-                downloadedAssets.forEach(asset => {
-                    output += `  • ${asset.path} (${asset.size})\n`;
-                });
-
-                output += `\n${await assetUsageReport(downloadedAssets, [constants], projectPath)}`;
-
-                return {
-                    content: [{type: "text", text: output}]
-                };
-            } catch (error) {
+            if (svgNodes.length === 0) {
                 return {
                     content: [{
                         type: "text",
-                        text: `Error exporting SVG assets: ${error instanceof Error ? error.message : String(error)}`
+                        text: "No SVG assets to export: none of the specified nodes is visible. " +
+                              "Hidden nodes (visible: false) and empty slots are skipped."
                     }]
                 };
             }
-        }
+
+            // Create SVG assets directory structure
+            const assetsDir = await createSvgAssetsDirectory(projectPath);
+
+            let downloadedAssets: AssetInfo[] = [];
+
+            // Export each SVG node
+            const imageUrls = await figmaService.getImageExportUrls(fileId, svgNodes.map(n => n.id), {
+                format: 'svg',
+                scale: 1 // SVGs don't need multiple scales
+            });
+
+            for (const node of svgNodes) {
+                const imageUrl = imageUrls[node.id];
+                if (!imageUrl) continue;
+
+                const filename = generateSvgFilename(node.name);
+                const filepath = join(assetsDir, filename);
+
+                // Download the SVG
+                await downloadImage(imageUrl, filepath);
+
+                // Get file size for reporting
+                const stats = await getFileStats(filepath);
+
+                downloadedAssets.push({
+                    nodeId: node.id,
+                    nodeName: node.name,
+                    filename,
+                    path: `${defaults.output.svgsDir}/${filename}`,
+                    size: stats.size
+                });
+            }
+
+            // Constants first: updatePubspecAssets throws on pubspec shapes it refuses to edit
+            const constants = await generateSvgAssetConstants(downloadedAssets, projectPath);
+
+            // Update pubspec.yaml with SVG assets
+            const pubspecPath = join(projectPath, 'pubspec.yaml');
+            await updatePubspecAssets(pubspecPath, downloadedAssets);
+
+            let output = `Successfully exported ${svgNodes.length} SVG assets to Flutter project!\n\n`;
+            output += `Downloaded SVG Assets:\n`;
+
+            downloadedAssets.forEach(asset => {
+                output += `  • ${asset.path} (${asset.size})\n`;
+            });
+
+            output += `\n${await assetUsageReport(downloadedAssets, [constants], projectPath)}`;
+
+            return {
+                content: [{type: "text", text: output}]
+            };
+        })
     );
 }
 

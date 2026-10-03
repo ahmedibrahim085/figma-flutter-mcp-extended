@@ -601,11 +601,9 @@ src/services/figma.ts	number	0	binary(===)	FigmaService	1	K-CONV	R4: 0/1/2 index
 src/services/figma.ts	number	0	binary(===)	getImageExportUrls	1	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
 src/services/figma.ts	number	0	binary(===)	getNodeWithStyles	1	K-CONV	index, count, midpoint or identity element
 src/services/figma.ts	number	0	binary(===)	getNodes	1	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
-src/services/figma.ts	number	404	binary(===)	makeRequest	1	K-API	hand: HTTP 404
 src/services/figma.ts	string		var(errorDetails)	makeRequest	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
 src/services/figma.ts	string	,	arg(nodeIds.join)	getImageExportUrls	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/services/figma.ts	string	,	arg(nodeIds.join)	getNodes	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/services/figma.ts	string	API endpoint	arg(FigmaNotFoundError)	makeRequest	1	K-TEXT	R8: error message text
 src/services/figma.ts	string	At least one node ID is required	arg(FigmaError)	getNodes	1	K-TEXT	R8: error message text
 src/services/figma.ts	string	Content-Type	object-key	makeRequest	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/services/figma.ts	string	ECONNREFUSED	arg(error.message.includes)	makeRequest	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
@@ -637,6 +635,7 @@ src/services/figma.ts	string	svg_include_id	arg(params.append)	getImageExportUrl
 src/services/figma.ts	string	svg_outline_text	arg(params.append)	getImageExportUrls	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/services/figma.ts	string	svg_simplify_stroke	arg(params.append)	getImageExportUrls	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/services/figma.ts	template	${…}${…}	var(url)	makeRequest	1	K-API	R14: Figma REST endpoint path
+src/services/figma.ts	template	${…}?${…}	ternary	get	1	K-API	R14: Figma REST endpoint path
 src/services/figma.ts	template	/files/${…}/images	arg(this.makeRequest)	getImageFillUrls	1	K-API	R14: Figma REST endpoint path
 src/services/figma.ts	template	/files/${…}/nodes?ids=${…}	arg(this.makeRequest)	getNodeWithStyles	1	K-API	Figma REST path or query, or a Claude Code result key
 src/services/figma.ts	template	/files/${…}/nodes?ids=${…}	arg(this.makeRequest)	getNodes	1	K-API	R14: Figma REST endpoint path
@@ -656,7 +655,7 @@ src/services/figma.ts	type-string	png	LiteralType	getImageExportUrls	1	K-API	R2:
 src/services/figma.ts	type-string	svg	LiteralType	getImageExportUrls	1	K-API	R2: TS literal type mirroring a Figma REST enum / export format
 src/tools/figma-core/core-tools.ts	number	0	arg((node.children ?? []).reduce)	countNodes	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	0	arg(entries.slice)	render	1	K-CONV	index, count, midpoint or identity element
-src/tools/figma-core/core-tools.ts	number	0	binary(>)	registerCoreTools	3	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
+src/tools/figma-core/core-tools.ts	number	0	binary(>)	registerCoreTools	2	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
 src/tools/figma-core/core-tools.ts	number	0	binary(>)	render	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	0	prop(included)	render	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	0.01	arg(Math.max)	registerCoreTools	1	K-API	hand: Figma images scale range min 0.01 (file-endpoints page: "A number between 0.01 and 4")
@@ -668,16 +667,16 @@ src/tools/figma-core/core-tools.ts	number	2	arg(JSON.stringify)	registerCoreTool
 src/tools/figma-core/core-tools.ts	number	2	arg(JSON.stringify)	render	2	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	2	binary(/)	renderWithinBudget	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	4	arg(Math.min)	registerCoreTools	1	K-API	hand: Figma images scale range max 4
+src/tools/figma-core/core-tools.ts	number	403	arg(FigmaError)	registerCoreTools	1	K-API	R7: HTTP status
 src/tools/figma-core/core-tools.ts	number	403	binary(===)	registerCoreTools	1	K-API	hand: HTTP 403
-src/tools/figma-core/core-tools.ts	number	429	binary(===)	registerCoreTools	1	K-API	hand: HTTP 429
-src/tools/figma-core/core-tools.ts	string		ternary	registerCoreTools	3	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	string	, 	arg(rateLimit.join)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/tools/figma-core/core-tools.ts	string	Access denied (403). This file may not have published variables, 	binary(+)	registerCoreTools	1	K-TEXT	hand: Figma plan fact, verified: .scratch/codegen-fidelity/research/02-figma-variables-access.md:24 cites developers.figma.com/docs/rest-api/variables/ "Full seat in an Enterprise org"
+src/tools/figma-core/core-tools.ts	string	/me	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
+src/tools/figma-core/core-tools.ts	string	Access denied. This file may not have published variables, 	binary(+)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	COMPONENT	array	summariseNode	1	K-API	Figma REST enum value
 src/tools/figma-core/core-tools.ts	string	COMPONENT_SET	array	summariseNode	1	K-API	Figma REST enum value
 src/tools/figma-core/core-tools.ts	string	Capture a PNG/JPG/SVG screenshot of a specific Figma node. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
-src/tools/figma-core/core-tools.ts	string	Content-Type	object-key	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
+src/tools/figma-core/core-tools.ts	string	EXPORT_ERROR	arg(FigmaError)	registerCoreTools	1	K-SCHEMA	R6: our error code identifier
 src/tools/figma-core/core-tools.ts	string	Extract the design context for a Figma node: layout tree, component structure, 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
+src/tools/figma-core/core-tools.ts	string	FORBIDDEN	arg(FigmaError)	registerCoreTools	1	K-SCHEMA	R6: our error code identifier
 src/tools/figma-core/core-tools.ts	string	FRAME	array	summariseNode	1	K-API	Figma REST enum value
 src/tools/figma-core/core-tools.ts	string	Figma Who Am I	prop(title)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Figma file key	arg(z.string().describe)	registerCoreTools	3	K-SCHEMA	R10: tool/param title or description
@@ -691,6 +690,7 @@ src/tools/figma-core/core-tools.ts	string	Get the node tree structure of a Figma
 src/tools/figma-core/core-tools.ts	string	How deep into the node tree to traverse; omit for all levels. 	binary(+)	registerCoreTools	2	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	Image format: png, jpg, svg, or pdf (default: png)	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Maps to the Figma REST API /v1/files/:key/variables/local endpoint.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	Node	arg(FigmaNotFoundError)	registerCoreTools	2	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	Node ID to extract (e.g. "12:3458")	arg(z.string().describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Node ID to screenshot (e.g. "12:3458")	arg(z.string().describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Optional node ID to scope the tree (e.g. "12:86"). Omit for full file.	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
@@ -703,58 +703,49 @@ src/tools/figma-core/core-tools.ts	string	Target individual top-level frames, no
 src/tools/figma-core/core-tools.ts	string	The Variables REST API requires an Enterprise plan (other plans get 403 "Limited by Figma plan").	binary(+)	registerCoreTools	1	K-TEXT	hand: Figma plan fact, verified: research/02-figma-variables-access.md:7,24-26
 src/tools/figma-core/core-tools.ts	string	This tool is exempt from rate limits — always safe to call.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Use this to discover all top-level frames before extracting individual ones.	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
-src/tools/figma-core/core-tools.ts	string	X-Figma-Token	object-key	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	anthropic/maxResultSizeChars	object-key	registerCoreTools	3	K-API	Figma REST path or query, or a Claude Code result key
-src/tools/figma-core/core-tools.ts	string	application/json	prop('Content-Type')	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	base64	arg(imgBuffer.toString)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	ff_get_design_context	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
+src/tools/figma-core/core-tools.ts	string	ff_get_design_context error	arg(figmaTool)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	ff_get_metadata	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
+src/tools/figma-core/core-tools.ts	string	ff_get_metadata error	arg(figmaTool)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	ff_get_screenshot	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
+src/tools/figma-core/core-tools.ts	string	ff_get_screenshot error	arg(figmaTool)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	ff_get_variable_defs	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
+src/tools/figma-core/core-tools.ts	string	ff_get_variable_defs error	arg(figmaTool)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	ff_whoami	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
+src/tools/figma-core/core-tools.ts	string	ff_whoami error	arg(figmaTool)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	image	AsExpression	registerCoreTools	1	K-API	R12: MCP content block type
 src/tools/figma-core/core-tools.ts	string	image/jpeg	ternary	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	image/svg+xml	ternary	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	jpg	binary(===)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
 src/tools/figma-core/core-tools.ts	string	or your access token lacks the required scope. 	binary(+)	registerCoreTools	1	K-TEXT	hand: error text, no design fact
+src/tools/figma-core/core-tools.ts	string	paths	prop(geometry)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	png	BindingElement	registerCoreTools	1	K-SCHEMA	hand: tool contract default format png, stated in the tool description core-tools.ts:156; png is a documented Figma format; Figma page states no default (UNVERIFIED what API does without format)
 src/tools/figma-core/core-tools.ts	string	radii, and other values defined in the Variables panel. 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
-src/tools/figma-core/core-tools.ts	string	retry-after	arg(resp.headers.get)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
+src/tools/figma-core/core-tools.ts	string	shared	prop(plugin_data)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	styles, text content, and design properties. This is the primary tool for understanding 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	svg	binary(===)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/tools/figma-core/core-tools.ts	string	text	AsExpression	registerCoreTools	20	K-API	R12: MCP content block type
+src/tools/figma-core/core-tools.ts	string	text	AsExpression	registerCoreTools	6	K-API	R12: MCP content block type
 src/tools/figma-core/core-tools.ts	string	what a screen or component looks like and how it is structured. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
-src/tools/figma-core/core-tools.ts	string	x-figma-plan-tier	array	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/tools/figma-core/core-tools.ts	string	x-figma-rate-limit-type	array	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	📋 Registered core Figma tools: ff_get_metadata, ff_get_screenshot, ff_get_design_context, ff_get_variable_defs, ff_whoami	arg(Logger.diag)	registerCoreTools	1	K-TEXT	R5: log/console text
-src/tools/figma-core/core-tools.ts	template	 (${…})	ternary	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	${…}/files/${…}${…}	binary(=)	registerCoreTools	1	K-API	file path or request key composition
-src/tools/figma-core/core-tools.ts	template	${…}/files/${…}/nodes?ids=${…}${…}	binary(=)	registerCoreTools	1	K-API	Figma REST path or query, or a Claude Code result key
-src/tools/figma-core/core-tools.ts	template	${…}/files/${…}/nodes?ids=${…}&geometry=paths&plugin_data=shared	binary(+)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
-src/tools/figma-core/core-tools.ts	template	${…}/files/${…}/variables/local	arg(fetch)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
-src/tools/figma-core/core-tools.ts	template	${…}/images/${…}?${…}	arg(fetch)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
-src/tools/figma-core/core-tools.ts	template	${…}/me	arg(fetch)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
-src/tools/figma-core/core-tools.ts	template	${…}: ${…}	binary(&&)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	&${…}	binary(&&)	registerCoreTools	1	K-API	Figma REST path or query, or a Claude Code result key
-src/tools/figma-core/core-tools.ts	template	&depth=${…}	ternary	registerCoreTools	1	K-API	Figma REST path or query, or a Claude Code result key
-src/tools/figma-core/core-tools.ts	template	?${…}	binary(&&)	registerCoreTools	1	K-API	Figma REST path or query, or a Claude Code result key
-src/tools/figma-core/core-tools.ts	template	Error ${…}: ${…}	prop(text)	registerCoreTools	4	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	Error ${…}: ${…}${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	Figma image error: ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
+src/tools/figma-core/core-tools.ts	template	/files/${…}	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
+src/tools/figma-core/core-tools.ts	template	/files/${…}/nodes	arg(figma.get)	registerCoreTools	2	K-API	R14: Figma REST endpoint path
+src/tools/figma-core/core-tools.ts	template	/files/${…}/variables/local	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
+src/tools/figma-core/core-tools.ts	template	/images/${…}	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
+src/tools/figma-core/core-tools.ts	template	Figma image error: ${…}	arg(FigmaError)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	template	No image returned for node ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	Node ${…} not found	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	Node ${…} not found in file ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	Retry after ${…} seconds	binary(&&)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
 src/tools/figma-core/core-tools.ts	template	Scale factor 0.01-4 (default: ${…}). Higher = more detail.	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/figma-core/core-tools.ts	template	Screenshot URL (fetch failed): ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	depth=${…}	ternary	registerCoreTools	1	K-API	Figma REST path or query, or a Claude Code result key
-src/tools/figma-core/core-tools.ts	template	ff_get_design_context error: ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	ff_get_metadata error: ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	ff_get_screenshot error: ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	ff_get_variable_defs error: ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	ff_whoami error: ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
 src/tools/figma-core/core-tools.ts	template	image/${…}	ternary	registerCoreTools	1	K-API	R15: MIME type
+src/tools/figma-tool.ts	string	, 	arg([...wait, ...error.details].join)	describeFailure	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
+src/tools/figma-tool.ts	string	text	prop(type)	figmaTool	1	K-API	rule: MCP content type
+src/tools/figma-tool.ts	template	 (${…})	binary(&&)	describeFailure	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
+src/tools/figma-tool.ts	template	${…}: ${…}	prop(text)	figmaTool	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
+src/tools/figma-tool.ts	template	Figma ${…}: ${…}	return	describeFailure	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
+src/tools/figma-tool.ts	template	Figma ${…}: ${…}${…}	return	describeFailure	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
+src/tools/figma-tool.ts	template	Retry after ${…} seconds	array	describeFailure	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
 src/tools/flutter/assets/asset-manager.ts	number	-1	arg(inline.slice)	updatePubspecAssets	1	K-CONV	rule: 0/1/-1 index, count, identity
 src/tools/flutter/assets/asset-manager.ts	number	-1	binary(===)	updatePubspecAssets	2	K-CONV	rule: 0/1/-1 index, count, identity
 src/tools/flutter/assets/asset-manager.ts	number	-1	var(assetsIdx)	updatePubspecAssets	1	K-CONV	rule: 0/1/-1 index, count, identity
@@ -958,7 +949,7 @@ src/tools/flutter/assets/assets.ts	string		arg(notes.map(note => `- ${note}\n`).
 src/tools/flutter/assets/assets.ts	string	); a node without them is exported in `format` at each of devicePixelRatios.	binary(+)	registerFlutterAssetTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/assets/assets.ts	string	, 	arg(DEVICE_PIXEL_RATIOS.join)	registerFlutterAssetTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/assets/assets.ts	string	Array of node IDs to export; each is exported, and so are its descendants with exportSettings or a visible IMAGE fill	arg(z.array(z.string()).describe)	registerFlutterAssetTools	1	K-SCHEMA	tool or parameter name, title or description
-src/tools/flutter/assets/assets.ts	string	Error: Figma access token not configured.	prop(text)	registerFlutterAssetTools	1	K-TEXT	rule: tool report / log text
+src/tools/flutter/assets/assets.ts	string	Error exporting assets	arg(figmaTool)	registerFlutterAssetTools	1	K-TEXT	R8: error message text
 src/tools/flutter/assets/assets.ts	string	Export Flutter Assets	prop(title)	registerFlutterAssetTools	1	K-SCHEMA	rule: tool name / zod schema / description
 src/tools/flutter/assets/assets.ts	string	Export format for nodes without exportSettings (default: png)	arg(png', 'jpg', 'svg']).optional().describe)	registerFlutterAssetTools	1	F-DEFAULT	tool-input default for the export format, no owning ticket; B3.88
 src/tools/flutter/assets/assets.ts	string	Export the given Figma nodes, plus descendants that have exportSettings or a visible IMAGE fill, into the Flutter assets folders and pubspec.yaml. A node's expo	binary(+)	registerFlutterAssetTools	1	K-TEXT	report, label, log or error text
@@ -970,11 +961,10 @@ src/tools/flutter/assets/assets.ts	string	jpg	array-arg(z.enum)	registerFlutterA
 src/tools/flutter/assets/assets.ts	string	png	BindingElement	registerFlutterAssetTools	1	F-DEFAULT	tool-input default for the export format, no owning ticket; B3.88
 src/tools/flutter/assets/assets.ts	string	png	array-arg(z.enum)	registerFlutterAssetTools	1	K-SCHEMA	rule: tool name / zod schema / description
 src/tools/flutter/assets/assets.ts	string	svg	array-arg(z.enum)	registerFlutterAssetTools	1	K-SCHEMA	rule: tool name / zod schema / description
-src/tools/flutter/assets/assets.ts	string	text	prop(type)	registerFlutterAssetTools	6	K-API	rule: MCP content type
+src/tools/flutter/assets/assets.ts	string	text	prop(type)	registerFlutterAssetTools	4	K-API	rule: MCP content type
 src/tools/flutter/assets/assets.ts	template	  • ${…} (${…})\n	binary(+=)	registerFlutterAssetTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/assets/assets.ts	template	- ${…}\n	ArrowFunction	registerFlutterAssetTools	2	K-TEXT	report, label, log or error text
 src/tools/flutter/assets/assets.ts	template	Downloaded Assets:\n	binary(+=)	registerFlutterAssetTools	1	K-TEXT	rule: tool report / log text
-src/tools/flutter/assets/assets.ts	template	Error exporting assets: ${…}	prop(text)	registerFlutterAssetTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/assets/assets.ts	template	No assets were exported.\n${…}	prop(text)	registerFlutterAssetTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/assets/assets.ts	template	Successfully exported ${…} assets to Flutter project!\n\n	var(output)	registerFlutterAssetTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/assets/assets.ts	template	\n${…}	binary(+=)	registerFlutterAssetTools	1	K-TEXT	report, label, log or error text
@@ -982,7 +972,7 @@ src/tools/flutter/assets/assets.ts	template	\nExport notes:\n${…}	binary(+=)	r
 src/tools/flutter/assets/svg-assets.ts	number	0	binary(===)	registerSvgAssetTools	1	K-CONV	rule: 0/1/-1 index, count, identity
 src/tools/flutter/assets/svg-assets.ts	number	1	prop(scale)	registerSvgAssetTools	1	K-CONV	rule: 0/1/-1 index, count, identity
 src/tools/flutter/assets/svg-assets.ts	string	Array of node IDs to export as SVG; descendants with an SVG export setting are exported too	arg(z.array(z.string()).describe)	registerSvgAssetTools	1	K-SCHEMA	tool or parameter name, title or description
-src/tools/flutter/assets/svg-assets.ts	string	Error: Figma access token not configured.	prop(text)	registerSvgAssetTools	1	K-TEXT	rule: tool report / log text
+src/tools/flutter/assets/svg-assets.ts	string	Error exporting SVG assets	arg(figmaTool)	registerSvgAssetTools	1	K-TEXT	R8: error message text
 src/tools/flutter/assets/svg-assets.ts	string	Export Figma nodes as SVG: exactly the node IDs given, plus descendants whose exportSettings include SVG. Nothing is guessed from a node's contents; hidden node	prop(description)	registerSvgAssetTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/assets/svg-assets.ts	string	Export SVG Flutter Assets	prop(title)	registerSvgAssetTools	1	K-SCHEMA	rule: tool name / zod schema / description
 src/tools/flutter/assets/svg-assets.ts	string	Figma file ID	arg(z.string().describe)	registerSvgAssetTools	1	K-SCHEMA	rule: tool name / zod schema / description
@@ -994,11 +984,10 @@ src/tools/flutter/assets/svg-assets.ts	string	export_svg_flutter_assets	arg(serv
 src/tools/flutter/assets/svg-assets.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
 src/tools/flutter/assets/svg-assets.ts	string	pubspec.yaml	arg(join)	registerSvgAssetTools	1	K-API	rule: Node encoding / Flutter manifest file name
 src/tools/flutter/assets/svg-assets.ts	string	svg	prop(format)	registerSvgAssetTools	1	K-API	hand: Figma GET image format enum
-src/tools/flutter/assets/svg-assets.ts	string	text	prop(type)	registerSvgAssetTools	5	K-API	rule: MCP content type
+src/tools/flutter/assets/svg-assets.ts	string	text	prop(type)	registerSvgAssetTools	3	K-API	rule: MCP content type
 src/tools/flutter/assets/svg-assets.ts	template	  • ${…} (${…})\n	binary(+=)	registerSvgAssetTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/assets/svg-assets.ts	template	${…}/${…}	prop(path)	registerSvgAssetTools	1	K-API	file path or request key composition
 src/tools/flutter/assets/svg-assets.ts	template	Downloaded SVG Assets:\n	binary(+=)	registerSvgAssetTools	1	K-TEXT	rule: tool report / log text
-src/tools/flutter/assets/svg-assets.ts	template	Error exporting SVG assets: ${…}	prop(text)	registerSvgAssetTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/assets/svg-assets.ts	template	Successfully exported ${…} SVG assets to Flutter project!\n\n	var(output)	registerSvgAssetTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/assets/svg-assets.ts	template	\n${…}	binary(+=)	registerSvgAssetTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	number	0	arg(input.substring)	registerComponentTools	1	K-TEXT	rule: log truncation (Logger.info input preview)
@@ -1026,8 +1015,11 @@ src/tools/flutter/components/component-tool.ts	string	COMPONENT_SET	binary(!==)	
 src/tools/flutter/components/component-tool.ts	string	COMPONENT_SET	binary(===)	registerComponentTools	4	K-API	rule: Figma REST enum value
 src/tools/flutter/components/component-tool.ts	string	Cached Styles Status	prop(title)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/components/component-tool.ts	string	Custom widget class name	arg(z.string().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
-src/tools/flutter/components/component-tool.ts	string	Error: Figma access token not configured.	prop(text)	registerComponentTools	2	K-TEXT	rule: user-facing/log text, no design fact
-src/tools/flutter/components/component-tool.ts	string	Error: Figma access token not configured. Please set FIGMA_API_KEY environment variable.	prop(text)	registerComponentTools	1	K-TEXT	rule: user-facing/log text, no design fact
+src/tools/flutter/components/component-tool.ts	string	Error analyzing component	arg(figmaTool)	registerComponentTools	1	K-TEXT	R8: error message text
+src/tools/flutter/components/component-tool.ts	string	Error generating Flutter implementation	arg(figmaTool)	registerComponentTools	1	K-TEXT	R8: error message text
+src/tools/flutter/components/component-tool.ts	string	Error generating cached styles report	arg(figmaTool)	registerComponentTools	1	K-TEXT	R8: error message text
+src/tools/flutter/components/component-tool.ts	string	Error inspecting structure	arg(figmaTool)	registerComponentTools	1	K-TEXT	R8: error message text
+src/tools/flutter/components/component-tool.ts	string	Error listing variants	arg(figmaTool)	registerComponentTools	1	K-TEXT	R8: error message text
 src/tools/flutter/components/component-tool.ts	string	Export descendants that have exportSettings or a visible IMAGE fill (default: true)	arg(z.boolean().optional().describe)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/components/component-tool.ts	string	FRAME	binary(===)	registerComponentTools	4	K-API	rule: Figma REST enum value
 src/tools/flutter/components/component-tool.ts	string	Figma component URL or file ID	arg(z.string().describe)	registerComponentTools	2	K-SCHEMA	rule: tool name/title/description
@@ -1062,7 +1054,7 @@ src/tools/flutter/components/component-tool.ts	string	cached_styles_status	arg(s
 src/tools/flutter/components/component-tool.ts	string	generate_flutter_implementation	arg(server.registerTool)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	inspect_component_structure	arg(server.registerTool)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	list_component_variants	arg(server.registerTool)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
-src/tools/flutter/components/component-tool.ts	string	text	prop(type)	registerComponentTools	26	K-API	rule: MCP content type
+src/tools/flutter/components/component-tool.ts	string	text	prop(type)	registerComponentTools	18	K-API	rule: MCP content type
 src/tools/flutter/components/component-tool.ts	string	url	binary(===)	registerComponentTools	1	K-SCHEMA	rule: value of our own analysis/style-category schema
 src/tools/flutter/components/component-tool.ts	string	─	PropertyAccessExpression	registerComponentTools	2	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	🏗️  Flutter Implementation\n	var(output)	registerComponentTools	1	K-TEXT	rule: user-facing/log text, no design fact
@@ -1079,11 +1071,6 @@ src/tools/flutter/components/component-tool.ts	template	Component Set: ${…}\n\
 src/tools/flutter/components/component-tool.ts	template	Component set with node ID "${…}" not found.	prop(text)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/component-tool.ts	template	Component with node ID "${…}" not found in file.	prop(text)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/component-tool.ts	template	Component with node ID "${…}" not found.	prop(text)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/component-tool.ts	template	Error analyzing component: ${…}	prop(text)	registerComponentTools	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/component-tool.ts	template	Error generating Flutter implementation: ${…}	prop(text)	registerComponentTools	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/component-tool.ts	template	Error generating cached styles report: ${…}	prop(text)	registerComponentTools	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/component-tool.ts	template	Error inspecting structure: ${…}	prop(text)	registerComponentTools	1	K-TEXT	rule: report/log/error text, no design fact
-src/tools/flutter/components/component-tool.ts	template	Error listing variants: ${…}	prop(text)	registerComponentTools	1	K-TEXT	rule: report/log/error text, no design fact
 src/tools/flutter/components/component-tool.ts	template	Error parsing input: ${…}	prop(text)	registerComponentTools	4	K-TEXT	hand-reviewed ||-fallback: error text only
 src/tools/flutter/components/component-tool.ts	template	No variant matches the selection (${…}). Variants: ${…}	prop(text)	registerComponentTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	template	Node "${…}" is a FRAME. If this should be treated as a component, set userDefinedComponent: true. For analyzing top-level frames, use the analyze_frame_as_scree	prop(text)	registerComponentTools	1	K-TEXT	report, label, log or error text
@@ -1817,8 +1804,8 @@ src/tools/flutter/screens/screen-tool.ts	number	15	BindingElement	registerScreen
 src/tools/flutter/screens/screen-tool.ts	string		var(assetExportInfo)	registerScreenTools	1	K-CONV	bulk: empty-string identity (screen-tool.ts:95)
 src/tools/flutter/screens/screen-tool.ts	string	Analyze Frame as Screen	prop(title)	registerScreenTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/screens/screen-tool.ts	string	Analyze a Figma frame treated as a screen to extract layout, child layers, and structure information for Flutter screen implementation	prop(description)	registerScreenTools	1	K-SCHEMA	tool or parameter name, title or description
-src/tools/flutter/screens/screen-tool.ts	string	Error: Figma access token not configured.	prop(text)	registerScreenTools	1	K-TEXT	bulk: report/log text with no design fact (screen-tool.ts:152)
-src/tools/flutter/screens/screen-tool.ts	string	Error: Figma access token not configured. Please set FIGMA_API_KEY environment variable.	prop(text)	registerScreenTools	1	K-TEXT	bulk: report/log text with no design fact (screen-tool.ts:53)
+src/tools/flutter/screens/screen-tool.ts	string	Error analyzing screen	arg(figmaTool)	registerScreenTools	1	K-TEXT	R8: error message text
+src/tools/flutter/screens/screen-tool.ts	string	Error inspecting screen structure	arg(figmaTool)	registerScreenTools	1	K-TEXT	R8: error message text
 src/tools/flutter/screens/screen-tool.ts	string	Export descendants that have exportSettings or a visible IMAGE fill (default: true)	arg(z.boolean().optional().describe)	registerScreenTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/screens/screen-tool.ts	string	Figma frame URL or file ID	arg(z.string().describe)	registerScreenTools	2	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/screens/screen-tool.ts	string	Get a quick overview of a frame's structure and child layers	prop(description)	registerScreenTools	1	K-SCHEMA	tool or parameter name, title or description
@@ -1831,15 +1818,14 @@ src/tools/flutter/screens/screen-tool.ts	string	SCREEN ASSET EXPORT	arg(analyseA
 src/tools/flutter/screens/screen-tool.ts	string	Show all child layers regardless of limits (default: false)	arg(z.boolean().optional().describe)	registerScreenTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/screens/screen-tool.ts	string	analyze_frame_as_screen	arg(server.registerTool)	registerScreenTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/screens/screen-tool.ts	string	inspect_frame_structure	arg(server.registerTool)	registerScreenTools	1	K-SCHEMA	tool or parameter name, title or description
-src/tools/flutter/screens/screen-tool.ts	string	text	prop(type)	registerScreenTools	10	K-API	bulk: MCP content type "text" (screen-tool.ts:52)
-src/tools/flutter/screens/screen-tool.ts	template	Error analyzing screen: ${…}	prop(text)	registerScreenTools	1	K-TEXT	bulk: report/log text with no design fact (screen-tool.ts:127)
-src/tools/flutter/screens/screen-tool.ts	template	Error inspecting screen structure: ${…}	prop(text)	registerScreenTools	1	K-TEXT	bulk: report/log text with no design fact (screen-tool.ts:191)
+src/tools/flutter/screens/screen-tool.ts	string	text	prop(type)	registerScreenTools	6	K-API	bulk: MCP content type "text" (screen-tool.ts:52)
 src/tools/flutter/screens/screen-tool.ts	template	Error parsing input: ${…}	prop(text)	registerScreenTools	2	K-TEXT	bulk: report/log text with no design fact (screen-tool.ts:66)
 src/tools/flutter/screens/screen-tool.ts	template	Screen with node ID "${…}" not found in file.	prop(text)	registerScreenTools	1	K-TEXT	bulk: report/log text with no design fact (screen-tool.ts:86)
 src/tools/flutter/screens/screen-tool.ts	template	Screen with node ID "${…}" not found.	prop(text)	registerScreenTools	1	K-TEXT	bulk: report/log text with no design fact (screen-tool.ts:176)
 src/tools/flutter/screens/screen-tool.ts	template	\nAsset Export Warning: ${…}\n	binary(=)	registerScreenTools	1	K-TEXT	bulk: report/log text with no design fact (screen-tool.ts:109)
 src/tools/flutter/testing/golden-test-tool.ts	regex	/([a-z0-9])([A-Z])/g	arg(name\n        .replace)	toSnakeCase	1	K-SCHEMA	rule: identifier/filename sanitising regex
 src/tools/flutter/testing/golden-test-tool.ts	string	$1_$2	arg(name\n        .replace)	toSnakeCase	1	K-SCHEMA	hand: snake_case file name formatting
+src/tools/flutter/testing/golden-test-tool.ts	string	Error generating golden file test	arg(figmaTool)	registerGoldenTestTools	1	K-TEXT	R8: error message text
 src/tools/flutter/testing/golden-test-tool.ts	string	Generate Golden File Test	prop(title)	registerGoldenTestTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/testing/golden-test-tool.ts	string	Generate a golden file test for a Flutter widget (testWidgets + 	binary(+)	registerGoldenTestTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/testing/golden-test-tool.ts	string	Import path relative to lib/, e.g. 'widgets/continue_button.dart'	arg(z.string().describe)	registerGoldenTestTools	1	K-SCHEMA	rule: tool name / zod schema / description
@@ -1850,11 +1836,10 @@ src/tools/flutter/testing/golden-test-tool.ts	string	generate_golden_file_test	a
 src/tools/flutter/testing/golden-test-tool.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
 src/tools/flutter/testing/golden-test-tool.ts	string	matchesGoldenFile). Does not render, compare, or run anything itself — 	binary(+)	registerGoldenTestTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/testing/golden-test-tool.ts	string	run `flutter test --update-goldens` once to create the reference image, then 	binary(+)	registerGoldenTestTools	1	K-DART	rule: Dart code template in a generator
-src/tools/flutter/testing/golden-test-tool.ts	string	text	prop(type)	registerGoldenTestTools	4	K-API	rule: MCP content type
+src/tools/flutter/testing/golden-test-tool.ts	string	text	prop(type)	registerGoldenTestTools	3	K-API	rule: MCP content type
 src/tools/flutter/testing/golden-test-tool.ts	template	${…}${…}	arg(join)	registerGoldenTestTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/testing/golden-test-tool.ts	template	${…}, then `flutter test` on later runs to check against it.	binary(+)	registerGoldenTestTools	1	K-DART	rule: Dart code template in a generator
 src/tools/flutter/testing/golden-test-tool.ts	template	${…}/${…}.png	var(goldenFilePath)	registerGoldenTestTools	1	K-API	file path or request key composition
-src/tools/flutter/testing/golden-test-tool.ts	template	Error generating golden file test: ${…}	prop(text)	registerGoldenTestTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/testing/golden-test-tool.ts	template	Golden file test written to ${…}\n\n	binary(+)	registerGoldenTestTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/testing/golden-test-tool.ts	template	Run `flutter test --update-goldens` once to create the reference image at 	binary(+)	registerGoldenTestTools	1	K-DART	rule: Dart code template in a generator
 src/tools/flutter/testing/golden-test-tool.ts	template	This only sets up the test structure — it does not render or compare anything.\n	binary(+)	registerGoldenTestTools	1	K-DART	rule: Dart code template in a generator
@@ -1882,7 +1867,8 @@ src/tools/flutter/theme/colors/theme-tool.ts	number	0	index	registerThemeTools	1
 src/tools/flutter/theme/colors/theme-tool.ts	number	1	binary(+)	registerThemeTools	2	K-CONV	rule: 0/1/-1 index, count, identity
 src/tools/flutter/theme/colors/theme-tool.ts	number	1	binary(-)	registerThemeTools	1	K-CONV	rule: 0/1/-1 index, count, identity
 src/tools/flutter/theme/colors/theme-tool.ts	string	, 	arg(textChildren.map(t => t.name).join)	registerThemeTools	1	K-TEXT	hand: report separator
-src/tools/flutter/theme/colors/theme-tool.ts	string	Error: Figma access token not configured.	prop(text)	registerThemeTools	2	K-TEXT	rule: tool report / log text
+src/tools/flutter/theme/colors/theme-tool.ts	string	Error extracting theme colors	arg(figmaTool)	registerThemeTools	1	K-TEXT	R8: error message text
+src/tools/flutter/theme/colors/theme-tool.ts	string	Error inspecting frame	arg(figmaTool)	registerThemeTools	1	K-TEXT	R8: error message text
 src/tools/flutter/theme/colors/theme-tool.ts	string	Extract Theme Colors from Frame	prop(title)	registerThemeTools	1	K-SCHEMA	rule: tool name / zod schema / description
 src/tools/flutter/theme/colors/theme-tool.ts	string	Extract colors from a Figma frame of color samples with labels	prop(description)	registerThemeTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/theme/colors/theme-tool.ts	string	Figma file ID	arg(z.string().describe)	registerThemeTools	2	K-SCHEMA	rule: tool name / zod schema / description
@@ -1901,7 +1887,7 @@ src/tools/flutter/theme/colors/theme-tool.ts	string	inspect_color_frame	arg(serv
 src/tools/flutter/theme/colors/theme-tool.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
 src/tools/flutter/theme/colors/theme-tool.ts	string	lib	arg(join)	registerThemeTools	1	F-FACT	lib folder written in code; removed by B3.80
 src/tools/flutter/theme/colors/theme-tool.ts	string	primary	arg(constants.includes)	registerThemeTools	1	K-DART	Flutter ColorScheme role name; decision 16
-src/tools/flutter/theme/colors/theme-tool.ts	string	text	prop(type)	registerThemeTools	9	K-API	rule: MCP content type
+src/tools/flutter/theme/colors/theme-tool.ts	string	text	prop(type)	registerThemeTools	5	K-API	rule: MCP content type
 src/tools/flutter/theme/colors/theme-tool.ts	template	   Color: ${…}\n	binary(+=)	registerThemeTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/colors/theme-tool.ts	template	   Text: ${…}\n	binary(+=)	registerThemeTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/colors/theme-tool.ts	template	  // ... your app\n	binary(+=)	registerThemeTools	1	K-TEXT	rule: tool report / log text
@@ -1913,8 +1899,6 @@ src/tools/flutter/theme/colors/theme-tool.ts	template	// Colors:\n	binary(+=)	re
 src/tools/flutter/theme/colors/theme-tool.ts	template	Children: ${…}\n\n	binary(+=)	registerThemeTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/colors/theme-tool.ts	template	Colors found: ${…}\n	binary(+=)	registerThemeTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/colors/theme-tool.ts	template	Container(color: AppColors.${…})\n	binary(+=)	registerThemeTools	1	K-DART	emitted Dart code
-src/tools/flutter/theme/colors/theme-tool.ts	template	Error extracting theme colors: ${…}	prop(text)	registerThemeTools	1	K-TEXT	rule: tool report / log text
-src/tools/flutter/theme/colors/theme-tool.ts	template	Error inspecting frame: ${…}	prop(text)	registerThemeTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/colors/theme-tool.ts	template	Extracted Colors:\n	binary(+=)	registerThemeTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/colors/theme-tool.ts	template	Frame Contents:\n	binary(+=)	registerThemeTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/colors/theme-tool.ts	template	Frame Inspection Report\n\n	var(output)	registerThemeTools	1	K-TEXT	rule: tool report / log text
@@ -1981,7 +1965,8 @@ src/tools/flutter/theme/typography/typography-tool.ts	number	1	binary(+)	registe
 src/tools/flutter/theme/typography/typography-tool.ts	string	 and 	arg(ing.map(style => `"${style.name}"`).join)	registerTypographyTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/theme/typography/typography-tool.ts	string	, 	arg(style.unsupported.join)	registerTypographyTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/theme/typography/typography-tool.ts	string	, 	arg(unfilled.join)	registerTypographyTools	1	K-TEXT	report, label, log or error text
-src/tools/flutter/theme/typography/typography-tool.ts	string	Error: Figma access token not configured.	prop(text)	registerTypographyTools	2	K-TEXT	rule: tool report / log text
+src/tools/flutter/theme/typography/typography-tool.ts	string	Error extracting theme typography	arg(figmaTool)	registerTypographyTools	1	K-TEXT	R8: error message text
+src/tools/flutter/theme/typography/typography-tool.ts	string	Error inspecting frame	arg(figmaTool)	registerTypographyTools	1	K-TEXT	R8: error message text
 src/tools/flutter/theme/typography/typography-tool.ts	string	Extract Theme Typography from Frame	prop(title)	registerTypographyTools	1	K-SCHEMA	rule: tool name / zod schema / description
 src/tools/flutter/theme/typography/typography-tool.ts	string	Extract typography styles from a Figma frame of text samples with different styles	prop(description)	registerTypographyTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/theme/typography/typography-tool.ts	string	Figma file ID	arg(z.string().describe)	registerTypographyTools	2	K-SCHEMA	rule: tool name / zod schema / description
@@ -2001,7 +1986,7 @@ src/tools/flutter/theme/typography/typography-tool.ts	string	json	AssertEntry	(m
 src/tools/flutter/theme/typography/typography-tool.ts	string	lib	arg(join)	registerTypographyTools	1	F-FACT	lib folder written in code; removed by B3.80
 src/tools/flutter/theme/typography/typography-tool.ts	string	not set by Figma	binary(??)	registerTypographyTools	5	K-TEXT	report, label, log or error text
 src/tools/flutter/theme/typography/typography-tool.ts	string	not set by Figma	ternary	registerTypographyTools	2	K-TEXT	report, label, log or error text
-src/tools/flutter/theme/typography/typography-tool.ts	string	text	prop(type)	registerTypographyTools	9	K-API	rule: MCP content type
+src/tools/flutter/theme/typography/typography-tool.ts	string	text	prop(type)	registerTypographyTools	5	K-API	rule: MCP content type
 src/tools/flutter/theme/typography/typography-tool.ts	template	    textTheme: AppTextTheme.textTheme,\n	binary(+=)	registerTypographyTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/typography/typography-tool.ts	template	   Contains ${…} text node(s)\n	binary(+=)	registerTypographyTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/typography/typography-tool.ts	template	   Font: ${…}\n	binary(+=)	registerTypographyTools	2	K-TEXT	rule: tool report / log text
@@ -2021,8 +2006,6 @@ src/tools/flutter/theme/typography/typography-tool.ts	template	${…}px	ternary	
 src/tools/flutter/theme/typography/typography-tool.ts	template	)\n	binary(+=)	registerTypographyTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/typography/typography-tool.ts	template	// Typography:\n	binary(+=)	registerTypographyTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/typography/typography-tool.ts	template	Children: ${…}\n\n	binary(+=)	registerTypographyTools	1	K-TEXT	rule: tool report / log text
-src/tools/flutter/theme/typography/typography-tool.ts	template	Error extracting theme typography: ${…}	prop(text)	registerTypographyTools	1	K-TEXT	rule: tool report / log text
-src/tools/flutter/theme/typography/typography-tool.ts	template	Error inspecting frame: ${…}	prop(text)	registerTypographyTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/typography/typography-tool.ts	template	Extracted Typography Styles:\n	binary(+=)	registerTypographyTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/typography/typography-tool.ts	template	Frame Contents:\n	binary(+=)	registerTypographyTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/typography/typography-tool.ts	template	Frame Name: ${…}\n	binary(+=)	registerTypographyTools	1	K-TEXT	rule: tool report / log text
@@ -2136,14 +2119,14 @@ src/tools/index.ts	string	🛠️ Tools Debug - Starting tool registration...	ar
 src/tools/index.ts	string	🛠️ Tools Debug - Theme tools registered	arg(console.error)	registerAllTools	1	K-TEXT	rule: index.ts registration logs
 src/tools/index.ts	string	🛠️ Tools Debug - Typography tools registered	arg(console.error)	registerAllTools	1	K-TEXT	rule: index.ts registration logs
 src/types/errors.ts	number	10	arg(parseInt)	createFigmaError	1	K-CONV	hand: parseInt radix 10
-src/types/errors.ts	number	401	arg(super)	FigmaAuthError	1	K-API	R7: HTTP status
 src/types/errors.ts	number	401	case	createFigmaError	1	K-API	R7: HTTP status
+src/types/errors.ts	number	401	param-default(statusCode)	FigmaAuthError	1	K-API	R7: HTTP status
 src/types/errors.ts	number	403	case	createFigmaError	1	K-API	R7: HTTP status
+src/types/errors.ts	number	404	arg(FigmaError)	createFigmaError	1	K-API	R7: HTTP status
 src/types/errors.ts	number	404	arg(super)	FigmaNotFoundError	1	K-API	R7: HTTP status
 src/types/errors.ts	number	404	case	createFigmaError	1	K-API	R7: HTTP status
 src/types/errors.ts	number	429	arg(super)	FigmaRateLimitError	1	K-API	R7: HTTP status
 src/types/errors.ts	number	429	case	createFigmaError	1	K-API	R7: HTTP status
-src/types/errors.ts	string		ternary	FigmaRateLimitError	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
 src/types/errors.ts	string	API_ERROR	arg(FigmaError)	createFigmaError	1	K-SCHEMA	R6: our error code identifier
 src/types/errors.ts	string	AUTH_ERROR	arg(super)	FigmaAuthError	1	K-SCHEMA	R6: our error code identifier
 src/types/errors.ts	string	FigmaAuthError	binary(=)	FigmaAuthError	1	K-SCHEMA	R9: error class name
@@ -2154,18 +2137,17 @@ src/types/errors.ts	string	FigmaParseError	binary(=)	FigmaParseError	1	K-SCHEMA	
 src/types/errors.ts	string	FigmaRateLimitError	binary(=)	FigmaRateLimitError	1	K-SCHEMA	R9: error class name
 src/types/errors.ts	string	Invalid Figma access token	param-default(message)	FigmaAuthError	1	K-TEXT	R8: error message text
 src/types/errors.ts	string	NETWORK_ERROR	arg(super)	FigmaNetworkError	1	K-SCHEMA	R6: our error code identifier
+src/types/errors.ts	string	NOT_FOUND	arg(FigmaError)	createFigmaError	1	K-SCHEMA	R6: our error code identifier
 src/types/errors.ts	string	NOT_FOUND	arg(super)	FigmaNotFoundError	1	K-SCHEMA	R6: our error code identifier
 src/types/errors.ts	string	PARSE_ERROR	arg(super)	FigmaParseError	1	K-SCHEMA	R6: our error code identifier
 src/types/errors.ts	string	RATE_LIMIT	arg(super)	FigmaRateLimitError	1	K-SCHEMA	R6: our error code identifier
-src/types/errors.ts	string	Resource	arg(FigmaNotFoundError)	createFigmaError	1	K-TEXT	R8: error message text
 src/types/errors.ts	string	Retry-After	arg(response.headers.get)	createFigmaError	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/types/errors.ts	string	unknown	arg(FigmaNotFoundError)	createFigmaError	1	K-TEXT	R8: error message text
+src/types/errors.ts	string	x-figma-plan-tier	array	createFigmaError	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
+src/types/errors.ts	string	x-figma-rate-limit-type	array	createFigmaError	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/types/errors.ts	template	${…} not found: ${…}	arg(super)	FigmaNotFoundError	1	K-TEXT	R8: error message text
-src/types/errors.ts	template	. Retry after ${…} seconds	ternary	FigmaRateLimitError	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
+src/types/errors.ts	template	${…}: ${…}	array	createFigmaError	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
 src/types/errors.ts	template	Failed to parse Figma response: ${…}	arg(super)	FigmaParseError	1	K-TEXT	R8: error message text
-src/types/errors.ts	template	Figma API error: ${…} ${…}	binary(||)	createFigmaError	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
 src/types/errors.ts	template	Network error: ${…}	arg(super)	FigmaNetworkError	1	K-TEXT	R8: error message text
-src/types/errors.ts	template	Rate limit exceeded${…}	arg(super)	FigmaRateLimitError	1	K-TEXT	R8: error message text
 src/types/figma.ts	type-string	ABSOLUTE	LiteralType	(module)	1	K-API	R2: TS literal type mirroring a Figma REST enum / export format
 src/types/figma.ts	type-string	AUTO	LiteralType	(module)	1	K-API	R2: TS literal type mirroring a Figma REST enum / export format
 src/types/figma.ts	type-string	EFFECT	LiteralType	(module)	1	K-API	R2: TS literal type mirroring a Figma REST enum / export format

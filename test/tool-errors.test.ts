@@ -67,3 +67,34 @@ test('every Figma-calling tool retries a 429 the same way, three requests', asyn
     const wrong = results.flatMap((r, i) => (r.isError && /429/.test(r.text) && r.requests.length === 3 ? [] : [`${calls[i][0]}: isError=${r.isError} requests=${r.requests.length} ${r.text.slice(0, 80)}`]));
     assert.deepEqual(wrong, []);
 });
+
+test('input that is not a Figma URL or file id is a tool error before any request', async () => {
+    const tools = ['analyze_figma_component', 'list_component_variants', 'inspect_component_structure', 'generate_flutter_implementation', 'analyze_frame_as_screen', 'inspect_frame_structure'];
+    const results = await callToolsOffline({}, tools.map((tool): [string, Record<string, unknown>] => [tool, {input: 'not-a-figma-url'}]));
+
+    const wrong = results.flatMap((r, i) => (r.isError && /^Error parsing input: /.test(r.text) && r.requests.length === 0 ? [] : [`${tools[i]}: isError=${r.isError} requests=${r.requests.length} ${r.text.slice(0, 80)}`]));
+    assert.deepEqual(wrong, []);
+});
+
+test('a node Figma answers with null is a tool error on both ff_* node tools', async () => {
+    const answerNull = {body: {nodes: {'1:2': null}}};
+    const [metadata, context] = await callToolsOffline(
+        {[`/files/${FILE_KEY}/nodes`]: answerNull},
+        [['ff_get_metadata', {fileKey: FILE_KEY, nodeId: '1:2'}], ['ff_get_design_context', {fileKey: FILE_KEY, nodeId: '1:2'}]],
+    );
+
+    for (const r of [metadata, context]) {
+        assert.equal(r.isError, true);
+        assert.match(r.text, /1:2/);
+    }
+});
+
+test('a 200 image response that carries err is a tool error', async () => {
+    const {isError, text} = (await callToolsOffline(
+        {[`/images/${FILE_KEY}`]: {body: {err: 'Render timeout'}}},
+        [['ff_get_screenshot', {fileKey: FILE_KEY, nodeId: '1:2'}]],
+    ))[0];
+
+    assert.equal(isError, true);
+    assert.match(text, /Render timeout/);
+});

@@ -2357,7 +2357,7 @@ src/server.ts	number	-32000	prop(code)	methodNotAllowed	1	K-API	JSON-RPC error c
 src/server.ts	string	Method not allowed.	prop(message)	methodNotAllowed	1	K-TEXT	report, label, log or error text
 src/utils/project-conventions.ts	string	projectPath is required over HTTP: the server's working folder is not the client's project. Pass the Flutter project's path on the machine that runs this server	arg(Error)	resolveProjectPath	1	K-TEXT	report, label, log or error text
 src/utils/project-conventions.ts	string	Path to Flutter project (stdio: defaults to the current directory; HTTP: required)	var(PROJECT_PATH_DESCRIPTION)	PROJECT_PATH_DESCRIPTION	1	K-SCHEMA	rule: tool name / zod schema / description
-src/services/figma-cache.ts	string	json	AssertEntry	(module)	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
+src/services/figma-cache.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
 src/services/figma-cache.ts	string	off	binary(===)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
 src/services/figma-cache.ts	string	darwin	binary(===)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
 src/services/figma-cache.ts	string	Library	arg(join)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
@@ -2375,7 +2375,7 @@ src/services/figma-cache.ts	number	0	arg(st([path, JSON.stringify(sorted)]).slic
 src/services/figma-cache.ts	number	32	arg(st([path, JSON.stringify(sorted)]).slice)	entryName	1	K-CONV	hash and entry naming for the cache; not a design fact
 src/services/figma-cache.ts	number	0	arg(digest(marker).slice)	FileCache	1	K-CONV	hash and entry naming for the cache; not a design fact
 src/services/figma-cache.ts	number	32	arg(digest(marker).slice)	FileCache	1	K-CONV	hash and entry naming for the cache; not a design fact
-src/services/figma-cache.ts	template	${…}.${…}.tmp	arg(join)	write	1	K-CONV	temp file name for the atomic write
+src/services/figma-cache.ts	template	${…}.${…}.${…}.tmp	arg(join)	write	1	K-CONV	temp file name for the atomic write
 src/services/figma.ts	template	Failed to download image: ${…}	ternary	ImageDownloadError	1	K-TEXT	report, label, log or error text
 src/services/figma.ts	template	Failed to download image: HTTP ${…}	ternary	ImageDownloadError	1	K-TEXT	report, label, log or error text
 src/services/figma.ts	type-string	png	LiteralType	(module)	1	K-API	Figma REST path, query or image format token

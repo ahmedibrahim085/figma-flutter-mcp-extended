@@ -1,5 +1,5 @@
 // services/figma-cache.ts
-import {createHash} from 'node:crypto';
+import {createHash, randomUUID} from 'node:crypto';
 import {mkdir, readFile, readdir, rename, rm, writeFile} from 'node:fs/promises';
 import {homedir, platform} from 'node:os';
 import {join} from 'node:path';
@@ -51,10 +51,11 @@ export class FileCache {
     }
 
     // SHORTCUT: a failed write (full disk, read-only folder) only means the next call fetches again; it is not reported.
+    // Upgrade path: log once per process on a failed write if cache misses need diagnosing.
     async write(name: string, data: Buffer | string): Promise<void> {
         try {
             await mkdir(this.folder, {recursive: true});
-            const temp = join(this.folder, `${name}.${process.pid}.tmp`);
+            const temp = join(this.folder, `${name}.${process.pid}.${randomUUID()}.tmp`); // unique per write: concurrent writes of one entry must not share it
             await writeFile(temp, data);
             await rename(temp, join(this.folder, name));
             const fileFolder = join(this.dir, this.fileKey);

@@ -2381,3 +2381,20 @@ src/tools/flutter/components/deduplicated-helpers.ts	number	30	arg('─'.repeat)
 src/tools/flutter/components/deduplicated-helpers.ts	template	// ${…} (${…})\nfinal ${…} = ${…};\n\n	ArrowFunction	styleDefinitionsSection	1	K-DART	emitted Dart code
 src/tools/flutter/components/deduplicated-helpers.ts	string		arg(e.id} = ${style.flutterCode};\n\n`).join)	styleDefinitionsSection	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	\n	binary(+)	styleDefinitionsSection	1	K-TEXT	report, label, log or error text
+src/extractors/flutter/style-library.ts	number	0	index	borderLines	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/extractors/flutter/style-library.ts	string		return	borderLines	2	K-TEXT	empty text: nothing to print
+src/extractors/flutter/style-library.ts	string	BorderSide.strokeAlignCenter	prop(CENTER)	borderLines	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	string	BorderSide.strokeAlignOutside	prop(OUTSIDE)	borderLines	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	number	1	binary(>)	borderLines	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/extractors/flutter/style-library.ts	number	0	binary(>)	side	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/extractors/flutter/style-library.ts	template	BorderSide(color: ${…}, width: ${…}${…})	ternary	side	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	template	, strokeAlign: ${…}	ternary	side	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	string		ternary	side	1	K-TEXT	empty text: nothing to print
+src/extractors/flutter/style-library.ts	string	BorderSide.none	ternary	side	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	template	  border: Border(\n    top: ${…},\n    right: ${…},\n    bottom: ${…},\n    left: ${…},\n  ),\n	return	borderLines	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	number	0	binary(===)	borderLines	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/extractors/flutter/style-library.ts	template	  border: Border.all(\n    color: ${…},\n    ${…}\n${…}  ),\n	return	borderLines	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	string	// width: strokeWeight not set by Figma	ternary	borderLines	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	template	width: ${…},	ternary	borderLines	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	template	    strokeAlign: ${…},\n	ternary	borderLines	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	string		ternary	borderLines	1	K-TEXT	empty text: nothing to print

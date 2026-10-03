@@ -129,6 +129,8 @@ export interface StrokeInfo {
     type: string;
     color: FigmaColor;
     hex: string;
+    /** The paint's own opacity, when Figma sent one. */
+    opacity?: number;
     /** Undefined when Figma sent no strokeWeight. */
     weight?: number;
     /** Per-side weights, when Figma sent individualStrokeWeights. */

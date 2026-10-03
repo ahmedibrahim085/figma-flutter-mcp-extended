@@ -305,6 +305,7 @@ export class FlutterCodeGenerator {
       }
     }
     
+    code += FlutterCodeGenerator.borderLines(properties);
     code += FlutterCodeGenerator.radiusLines(properties);
     
     if (properties.effects?.dropShadows?.length > 0) {
@@ -365,6 +366,28 @@ export class FlutterCodeGenerator {
     const named = ['topLeft', 'topRight', 'bottomRight', 'bottomLeft']
       .map((corner, i) => corners[i] > 0 ? `${corner}: Radius.circular(${corners[i]})` : '').filter(Boolean);
     return `BorderRadius.only(${named.join(', ')})`;
+  }
+
+  /**
+   * `border:` for the first visible stroke: Border.all for one weight, Border with a BorderSide per side for
+   * individualStrokeWeights that differ. A zero weight is no border (BorderSide.none: width 0 would draw a hairline),
+   * a missing weight is said to be missing, and strokeAlign is printed unless INSIDE, which is Flutter's default.
+   */
+  private static borderLines(properties: any): string {
+    const stroke = properties.strokes?.[0];
+    const color = stroke && dartColor(stroke);
+    if (!color) return '';
+    const align = {CENTER: 'BorderSide.strokeAlignCenter', OUTSIDE: 'BorderSide.strokeAlignOutside'}[stroke.align as string];
+    const sides = stroke.individualWeights;
+    if (sides && new Set(Object.values(sides)).size > 1) {
+      const side = (width: number) => width > 0
+        ? `BorderSide(color: ${color}, width: ${width}${align ? `, strokeAlign: ${align}` : ''})`
+        : 'BorderSide.none';
+      return `  border: Border(\n    top: ${side(sides.top)},\n    right: ${side(sides.right)},\n    bottom: ${side(sides.bottom)},\n    left: ${side(sides.left)},\n  ),\n`;
+    }
+    const weight = sides ? sides.top : stroke.weight;
+    if (weight === 0) return '';
+    return `  border: Border.all(\n    color: ${color},\n    ${weight === undefined ? '// width: strokeWeight not set by Figma' : `width: ${weight},`}\n${align ? `    strokeAlign: ${align},\n` : ''}  ),\n`;
   }
 
   private static radiusLines(properties: any): string {

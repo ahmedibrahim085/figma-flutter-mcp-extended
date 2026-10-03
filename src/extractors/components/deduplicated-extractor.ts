@@ -72,6 +72,7 @@ export class DeduplicatedComponentExtractor {
       const beforeCount = this.styleLibrary.getAllStyles().length;
       styleRefs.decoration = this.globalStyleManager.addStyle({
         fills: styling.fills,
+        strokes: styling.strokes,
         cornerRadius: styling.cornerRadius,
         effects: styling.effects
       }, 'decoration');
@@ -124,6 +125,7 @@ export class DeduplicatedComponentExtractor {
       if (this.hasDecorationProperties(childStyling)) {
         const decorationRef = this.globalStyleManager.addStyle({
           fills: childStyling.fills,
+          strokes: childStyling.strokes,
           cornerRadius: childStyling.cornerRadius,
           effects: childStyling.effects
         }, 'decoration');
@@ -175,7 +177,7 @@ export class DeduplicatedComponentExtractor {
   }
   
   private hasDecorationProperties(styling: StylingInfo): boolean {
-    return !!(styling.fills?.length || styling.cornerRadius !== undefined || styling.effects?.dropShadows?.length);
+    return !!(styling.fills?.length || styling.strokes?.length || styling.cornerRadius !== undefined || styling.effects?.dropShadows?.length);
   }
   
   private extractNestedComponents(node: FigmaNode): NestedComponentInfo[] {

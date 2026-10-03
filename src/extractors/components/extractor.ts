@@ -349,6 +349,7 @@ export function convertStrokeInfo(stroke: any, node?: FigmaNode): StrokeInfo {
         type: stroke.type,
         color: stroke.color,
         hex: rgbaToHex(stroke.color),
+        ...(stroke.opacity !== undefined ? {opacity: stroke.opacity} : {}),
         weight: node?.strokeWeight ?? stroke.strokeWeight,
         ...(node?.individualStrokeWeights ? {individualWeights: node.individualStrokeWeights} : {}),
         align: node?.strokeAlign ?? stroke.strokeAlign

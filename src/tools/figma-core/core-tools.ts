@@ -10,6 +10,7 @@ import {FigmaError, FigmaNotFoundError} from '../../types/errors.js';
 import {figmaTool} from '../figma-tool.js';
 import {Logger} from '../../utils/logger.js';
 import defaults from '../../defaults.json' with { type: 'json' };
+import {renderWithinBudget} from '../../utils/budget.js';
 
 // ────────────────────────────────────────────────────────────
 // Helpers
@@ -62,23 +63,7 @@ function summariseNode(node: any, cut: Cut): any {
     return summary;
 }
 
-const countNodes = (node: any): number => 1 + (node.children ?? []).reduce((n: number, c: any) => n + countNodes(c), 0);
-
-/**
- * `render(n)` serialises the first n of `total` items in document order. Returns the
- * text for all of them when it fits the budget, else for the most that fit (at least one).
- */
-function renderWithinBudget(total: number, render: (n: number) => string): string {
-    const whole = render(total);
-    if (whole.length <= defaults.maxResultSizeChars) return whole;
-    let [fits, over] = [1, total];
-    while (over - fits > 1) {
-        const mid = Math.floor((fits + over) / 2);
-        if (render(mid).length <= defaults.maxResultSizeChars) fits = mid;
-        else over = mid;
-    }
-    return render(fits);
-}
+const countTree = (node: any): number => 1 + (node.children ?? []).reduce((n: number, c: any) => n + countTree(c), 0);
 
 /**
  * Serialises `build(tree, frames)` for `root`. Over the budget, it keeps the
@@ -95,7 +80,7 @@ function renderTree(root: any, build: (tree: any, frames: any[]) => any): string
         }
         return JSON.stringify(result, null, 2);
     };
-    return renderWithinBudget(countNodes(root), render);
+    return renderWithinBudget(countTree(root), render);
 }
 
 // ────────────────────────────────────────────────────────────

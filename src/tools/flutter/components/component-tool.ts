@@ -1,5 +1,7 @@
 // src/tools/flutter/component/component-tool.mts
 
+import defaults from '../../../defaults.json' with { type: 'json' };
+import {budgetNote, countNodes, cutTree, newCut, renderWithinBudget} from '../../../utils/budget.js';
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
@@ -45,6 +47,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         "analyze_figma_component",
         {
+            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
             title: "Analyze Figma Component",
             description: "Analyze a Figma component or component set to extract layout, styling, and structure information for Flutter widget creation. Use analyze_frame_as_screen for top-level frames.",
             inputSchema: {
@@ -289,6 +292,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         "inspect_component_structure",
         {
+            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
             title: "Inspect Component Structure",
             description: "Get a quick overview of component structure, children, and nested components. Use inspect_frame_structure for top-level frames.",
             inputSchema: {
@@ -357,6 +361,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         "generate_flutter_implementation",
         {
+            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
             title: "Generate Flutter Implementation",
             description: "Generate complete Flutter widget code for one Figma node, with the style definitions it uses",
             inputSchema: {
@@ -377,22 +382,28 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
             const {document: node, componentSetName} = await new FigmaService(figmaApiKey).getNodeWithStyles(parsedInput.fileId, parsedInput.nodeId);
             const extractor = new DeduplicatedComponentExtractor();
             // A component set gives one class per variant, named from the set name and the variant name.
-            const implementation = node.type === 'COMPONENT_SET'
-                ? (await Promise.all((node.children ?? []).filter(variant => variant.type === 'COMPONENT').map(async variant =>
-                    generateFlutterImplementation(await extractor.analyzeComponent(variant, true), extractor.styleLibrary, typeName(`${widgetName ?? node.name} ${variant.name}`))))).join('\n')
-                : generateFlutterImplementation(await extractor.analyzeComponent(node, true), extractor.styleLibrary,
+            const classes: Array<{analysis: DeduplicatedComponentAnalysis; className?: string}> = node.type === 'COMPONENT_SET'
+                ? await Promise.all((node.children ?? []).filter(variant => variant.type === 'COMPONENT').map(async variant =>
+                    ({analysis: await extractor.analyzeComponent(variant, true), className: typeName(`${widgetName ?? node.name} ${variant.name}`)})))
+                : [{analysis: await extractor.analyzeComponent(node, true),
                     // A variant passed on its own is named as it is through its set: set name plus variant name.
-                    componentSetName ? typeName(`${widgetName ?? componentSetName} ${node.name}`) : widgetName);
+                    className: componentSetName ? typeName(`${widgetName ?? componentSetName} ${node.name}`) : widgetName}];
 
-            let output = "🏗️  Flutter Implementation\n";
-            output += `${'='.repeat(50)}\n\n`;
-
-            if (includeStyleDefinitions) output += styleDefinitionsSection(implementation, extractor.styleLibrary);
-
-            output += implementation;
+            // Over the response budget the tree is cut at whole nodes, in document order; each cut node is a placeholder
+            // in the code and its id is listed, so the code still compiles and the caller can ask for that node.
+            const render = (limit: number) => {
+                const cut = newCut(limit);
+                const implementation = classes.map(({analysis, className}) =>
+                    generateFlutterImplementation({...analysis, children: cutTree(analysis.children, cut)}, extractor.styleLibrary, className)).join('\n');
+                let output = "🏗️  Flutter Implementation\n";
+                output += `${'='.repeat(50)}\n\n`;
+                if (includeStyleDefinitions) output += styleDefinitionsSection(implementation, extractor.styleLibrary);
+                return output + implementation + budgetNote(cut.omitted);
+            };
+            const text = renderWithinBudget(classes.reduce((total, {analysis}) => total + countNodes(analysis.children), 0), render, 0);
 
             return {
-                content: [{ type: "text", text: output }]
+                content: [{ type: "text", text }]
             };
         })
     );

@@ -44,6 +44,8 @@ export interface DeduplicatedComponentChild {
   textWidget?: TextWidgetFields;
   /** This child's own visible children, for frames and groups rendered inline. */
   children?: DeduplicatedComponentChild[];
+  /** Left out to fit the response budget: it keeps its layout, so a placeholder can stand where it was. */
+  omitted?: boolean;
 }
 
 /** Types rendered as a placeholder and analysed separately, never inlined. */

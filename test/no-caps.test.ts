@@ -2,6 +2,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {callToolOffline, nodeRoute, FILE_KEY} from './helpers/offline-tool.ts';
+import {withServer} from './helpers/mcp-stdio.ts';
 
 const RED = {type: 'SOLID', color: {r: 1, g: 0, b: 0, a: 1}};
 const box = (width: number, height: number) => ({x: 0, y: 0, width, height});
@@ -74,4 +75,49 @@ test('inspect_component_structure lists 16 children and no "more" line', async (
 
     assert.match(text, /C16/);
     assert.doesNotMatch(text, /more children|showAllChildren: true/);
+});
+
+// ── the response budget bounds the size instead ─────────────────────────────
+
+const BUDGET = 100000;
+const textChild = (id: string, i: number) => ({id, name: `T${i}`, type: 'TEXT', characters: `c${i}`, fills: [RED], absoluteBoundingBox: box(60, 12),
+    style: {fontFamily: 'Inter', fontSize: 12, fontWeight: 400, letterSpacing: 0, lineHeightPx: 14, lineHeightUnit: 'PIXELS'}});
+const bigFrame = (count: number) => ({id: '82:0', name: 'Big', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(300, 5000),
+    children: Array.from({length: count}, (_, i) => textChild(`82:${i + 1}`, i + 1))});
+
+/** The omitted ids a cut report names, and how many of the children it kept. */
+function cutReport(text: string, kept: RegExp) {
+    const omitted = (text.match(/^omittedNodeIds: (.*)$/m)?.[1] ?? '').split(', ').filter(Boolean);
+    return {omitted, keptCount: (text.match(kept) ?? []).length};
+}
+
+test('generate_flutter_implementation over the budget is cut at whole nodes, with a placeholder and an id for each', async () => {
+    const root = bigFrame(700);
+    const {text} = await callToolOffline(nodeRoute(root.id, root), 'generate_flutter_implementation', {input: FILE_KEY, nodeId: root.id});
+
+    const {omitted, keptCount} = cutReport(text, /'c\d+'/g);
+    assert.ok(text.length <= BUDGET, `${text.length} characters`);
+    assert.match(text, /^truncated: true$/m);
+    assert.ok(omitted.length > 0 && keptCount > 0, `kept ${keptCount}, omitted ${omitted.length}`);
+    assert.equal(keptCount + omitted.length, 700);
+    for (const id of omitted) assert.ok(text.includes(`// approximate: ${id} left out to fit the response budget`), `no placeholder for ${id}`);
+});
+
+test('a frame within the budget is not cut', async () => {
+    const root = bigFrame(10);
+    const {text} = await callToolOffline(nodeRoute(root.id, root), 'generate_flutter_implementation', {input: FILE_KEY, nodeId: root.id});
+
+    assert.doesNotMatch(text, /truncated: true|omittedNodeIds/);
+});
+
+test('the analysis tools declare the response budget to the client', async () => {
+    let tools: any[] = [];
+    await withServer(async (server) => {
+        await server.initialize();
+        tools = ((await server.request('tools/list')).result as any).tools;
+    });
+
+    for (const name of ['generate_flutter_implementation', 'analyze_figma_component', 'analyze_frame_as_screen', 'inspect_frame_structure', 'inspect_component_structure']) {
+        assert.equal(tools.find((tool) => tool.name === name)?._meta?.['anthropic/maxResultSizeChars'], BUDGET, name);
+    }
 });

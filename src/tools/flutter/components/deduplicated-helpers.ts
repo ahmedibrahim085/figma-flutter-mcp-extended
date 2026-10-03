@@ -515,6 +515,14 @@ function keyedChildWidget(child: DeduplicatedComponentChild, styleLibrary: Flutt
 /** Dart for one analysed child: text, shape, frame (recursively) or a nested-component placeholder. */
 function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterStyleLibrary, approximations: string[]): string | undefined {
   const styleOf = (category: string) => child.styleRefs.find(id => styleLibrary.getStyle(id)?.category === category);
+  // A placeholder stands in for content that is not rendered, so it keeps the measured size except on a FILL axis.
+  const noBox = child.layout.boundsMissing;
+  const w = child.layout.sizingHorizontal === 'FILL' || noBox ? undefined : Math.round(child.layout.dimensions.width);
+  const h = child.layout.sizingVertical === 'FILL' || noBox ? undefined : Math.round(child.layout.dimensions.height);
+  const placeholderSize = [w === undefined ? '' : `width: ${w},`, h === undefined ? '' : `height: ${h},`].filter(Boolean);
+  const placeholder = sizedBox(placeholderSize);
+  // Terse, and not in the Approximations list: a long list of these would itself overrun the budget. The ids are listed once, in omittedNodeIds.
+  if (child.omitted) return `// approximate: ${child.nodeId} left out to fit the response budget\n${placeholder}`;
   if (child.type === 'TEXT') {
     if (!child.textContent) return undefined;
     const textStyleId = styleOf('text');
@@ -522,12 +530,6 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
     const width = child.layout.sizingHorizontal === 'FIXED' && !child.layout.boundsMissing ? Math.round(child.layout.dimensions.width) : undefined;
     return hugLimits(textWidgetCode(child.textWidget ?? {text: child.textContent}, textStyleId ? styleLibrary.getStyle(textStyleId)!.flutterCode : undefined, width), child.layout);
   }
-  // A placeholder stands in for content that is not rendered, so it keeps the measured size except on a FILL axis.
-  const noBox = child.layout.boundsMissing;
-  const w = child.layout.sizingHorizontal === 'FILL' || noBox ? undefined : Math.round(child.layout.dimensions.width);
-  const h = child.layout.sizingVertical === 'FILL' || noBox ? undefined : Math.round(child.layout.dimensions.height);
-  const placeholderSize = [w === undefined ? '' : `width: ${w},`, h === undefined ? '' : `height: ${h},`].filter(Boolean);
-  const placeholder = sizedBox(placeholderSize);
   if (NESTED_COMPONENT_TYPES.has(child.type)) {
     return approximate(`component "${child.name}" is not inlined; analyze it separately`, placeholder, approximations);
   }

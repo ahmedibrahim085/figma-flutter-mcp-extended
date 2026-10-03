@@ -599,19 +599,14 @@ src/services/figma.ts	template	Node not found: ${…}	arg(FigmaNotFoundError)	ge
 src/services/figma.ts	template	Unexpected error: ${…}	arg(FigmaNetworkError)	makeRequest	1	K-TEXT	R8: error message text
 src/services/figma.ts	template	✅ Successfully fetched: ${…}	arg(Logger.diag)	makeRequest	1	K-TEXT	R5: log/console text
 src/services/figma.ts	template	🔄 Making Figma API request: ${…}	arg(Logger.diag)	makeRequest	1	K-TEXT	R5: log/console text
-src/tools/figma-core/core-tools.ts	number	0	arg((node.children ?? []).reduce)	countNodes	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	0	arg(entries.slice)	render	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	0	binary(>)	registerCoreTools	2	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
 src/tools/figma-core/core-tools.ts	number	0	binary(>)	render	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	0	prop(included)	render	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	0.01	arg(Math.max)	registerCoreTools	1	K-API	hand: Figma images scale range min 0.01 (file-endpoints page: "A number between 0.01 and 4")
 src/tools/figma-core/core-tools.ts	number	1	arg(         .int()\n                    .min)	registerCoreTools	2	K-API	hand: Figma depth must be a positive integer (min 1), developers.figma.com/docs/rest-api/file-endpoints/
-src/tools/figma-core/core-tools.ts	number	1	array([fits, over])	renderWithinBudget	1	K-CONV	index, count, midpoint or identity element
-src/tools/figma-core/core-tools.ts	number	1	binary(+)	countNodes	1	K-CONV	index, count, midpoint or identity element
-src/tools/figma-core/core-tools.ts	number	1	binary(>)	renderWithinBudget	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	2	arg(JSON.stringify)	registerCoreTools	1	K-TEXT	hand: JSON indent 2
 src/tools/figma-core/core-tools.ts	number	2	arg(JSON.stringify)	render	2	K-CONV	index, count, midpoint or identity element
-src/tools/figma-core/core-tools.ts	number	2	binary(/)	renderWithinBudget	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	4	arg(Math.min)	registerCoreTools	1	K-API	hand: Figma images scale range max 4
 src/tools/figma-core/core-tools.ts	number	403	arg(FigmaError)	registerCoreTools	1	K-API	R7: HTTP status
 src/tools/figma-core/core-tools.ts	number	403	binary(===)	registerCoreTools	1	K-API	hand: HTTP 403
@@ -938,7 +933,6 @@ src/tools/flutter/components/component-tool.ts	number	0	binary(>)	registerCompon
 src/tools/flutter/components/component-tool.ts	number	0	ternary	registerComponentTools	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/component-tool.ts	number	10	BindingElement	registerComponentTools	1	F-HEUR	analysis cap; removed by ticket 15
 src/tools/flutter/components/component-tool.ts	number	30	arg('─'.repeat)	registerComponentTools	1	K-TEXT	rule: separator width in report text
-src/tools/flutter/components/component-tool.ts	number	50	arg('='.repeat)	registerComponentTools	1	K-TEXT	rule: separator width in report text
 src/tools/flutter/components/component-tool.ts	number	50	arg(input.substring)	registerComponentTools	1	K-TEXT	rule: log truncation (Logger.info input preview)
 src/tools/flutter/components/component-tool.ts	string		arg(.isDefault ? ' (default)' : ''}\n`).join)	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string		ternary	registerComponentTools	2	K-TEXT	rule: separator/whitespace/padding char
@@ -948,7 +942,6 @@ src/tools/flutter/components/component-tool.ts	string	 (default)	ternary	registe
 src/tools/flutter/components/component-tool.ts	string	, 	arg(variantSelection.join)	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	...	binary(+)	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	; 	arg(alysis.map(variant => variant.name).join)	registerComponentTools	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/component-tool.ts	string	=	PropertyAccessExpression	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	AUTOMATIC ASSET EXPORT	arg(analyseAssetSection)	registerComponentTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	string	Analyze Figma Component	prop(title)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Analyze a Figma component or component set to extract layout, styling, and structure information for Flutter widget creation. Use analyze_frame_as_screen for to	prop(description)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
@@ -982,7 +975,6 @@ src/tools/flutter/components/component-tool.ts	string	Path to Flutter project fo
 src/tools/flutter/components/component-tool.ts	string	Treat a FRAME as a component (when designer hasn't converted to actual component yet) (default: false)	arg(z.boolean().optional().describe)	registerComponentTools	2	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Use style deduplication for token efficiency (default: true)	arg(z.boolean().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Variant names to analyze instead of every variant of a component set	arg(z.array(z.string()).optional().describe)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
-src/tools/flutter/components/component-tool.ts	string	\n	arg(?? node.name} ${variant.name}`))))).join)	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	\n\n	arg(reports.join)	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	\n\n	binary(+)	registerComponentTools	2	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	analyze_figma_component	arg(server.registerTool)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
@@ -992,10 +984,8 @@ src/tools/flutter/components/component-tool.ts	string	list_component_variants	ar
 src/tools/flutter/components/component-tool.ts	string	text	prop(type)	registerComponentTools	17	K-API	rule: MCP content type
 src/tools/flutter/components/component-tool.ts	string	url	binary(===)	registerComponentTools	1	K-SCHEMA	rule: value of our own analysis/style-category schema
 src/tools/flutter/components/component-tool.ts	string	─	PropertyAccessExpression	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/component-tool.ts	string	🏗️  Flutter Implementation\n	var(output)	registerComponentTools	1	K-TEXT	rule: user-facing/log text, no design fact
 src/tools/flutter/components/component-tool.ts	template	${…} ${…}	arg(typeName)	registerComponentTools	2	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	template	${…}\n	binary(+)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/component-tool.ts	template	${…}\n\n	binary(+=)	registerComponentTools	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/component-tool.ts	template	- ${…}${…}\n	ArrowFunction	registerComponentTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	template	Analyzed variants (${…} of ${…}):\n	binary(+)	registerComponentTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	template	Component Set: ${…}\n\n	binary(+)	registerComponentTools	1	K-TEXT	report, label, log or error text
@@ -2380,3 +2370,28 @@ src/server.ts	string	http:	binary(===)	trusted	1	K-API	URL protocol token
 src/server.ts	string	https:	binary(===)	trusted	1	K-API	URL protocol token
 src/tools/flutter/components/component-tool.ts	string	Include hidden child layers (Figma visible: false) and empty slots (default: false)	arg(z.boolean().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name / zod schema / description
 src/tools/flutter/screens/screen-tool.ts	string	Include hidden child layers (Figma visible: false) and empty slots (default: false)	arg(z.boolean().optional().describe)	registerScreenTools	1	K-SCHEMA	rule: tool name / zod schema / description
+src/tools/figma-core/core-tools.ts	number	1	binary(+)	countTree	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/tools/figma-core/core-tools.ts	number	0	arg((node.children ?? []).reduce)	countTree	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/tools/flutter/components/component-tool.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
+src/tools/flutter/components/component-tool.ts	string	anthropic/maxResultSizeChars	object-key	registerComponentTools	3	K-API	Claude Code tool metadata key (S1 code.claude.com MCP output limits)
+src/tools/flutter/components/component-tool.ts	string	\n	arg(extractor.styleLibrary, className)).join)	render	1	K-TEXT	report, label, log or error text
+src/tools/flutter/components/component-tool.ts	string	🏗️  Flutter Implementation\n	var(output)	render	1	K-TEXT	report, label, log or error text
+src/tools/flutter/components/component-tool.ts	template	${…}\n\n	binary(+=)	render	1	K-TEXT	report, label, log or error text
+src/tools/flutter/components/component-tool.ts	string	=	PropertyAccessExpression	render	1	K-TEXT	report, label, log or error text
+src/tools/flutter/components/component-tool.ts	number	50	arg('='.repeat)	render	1	K-TEXT	rule: separator width in report text
+src/tools/flutter/components/component-tool.ts	number	0	arg(classes.reduce)	registerComponentTools	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/tools/flutter/components/component-tool.ts	number	0	arg(renderWithinBudget)	registerComponentTools	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/tools/flutter/components/deduplicated-helpers.ts	template	// approximate: ${…} left out to fit the response budget\n${…}	return	childWidget	1	K-TEXT	report, label, log or error text
+src/tools/flutter/screens/screen-tool.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
+src/tools/flutter/screens/screen-tool.ts	string	anthropic/maxResultSizeChars	object-key	registerScreenTools	2	K-API	Claude Code tool metadata key (S1 code.claude.com MCP output limits)
+src/utils/budget.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
+src/utils/budget.ts	number	0	prop(included)	newCut	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/utils/budget.ts	number	1	binary(+)	countNodes	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/utils/budget.ts	number	0	arg(nodes.reduce)	countNodes	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/utils/budget.ts	number	1	param-default(least)	renderWithinBudget	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/utils/budget.ts	number	1	binary(>)	renderWithinBudget	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/utils/budget.ts	number	2	binary(/)	renderWithinBudget	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/utils/budget.ts	number	0	binary(===)	budgetNote	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/utils/budget.ts	string		ternary	budgetNote	1	K-TEXT	empty text: nothing to print
+src/utils/budget.ts	template	\ntruncated: true\nomittedNodeIds: ${…}\n	ternary	budgetNote	1	K-TEXT	report, label, log or error text
+src/utils/budget.ts	string	, 	arg(omitted.join)	budgetNote	1	K-TEXT	report, label, log or error text

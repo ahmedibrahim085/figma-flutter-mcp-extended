@@ -132,3 +132,42 @@ test('inspect_color_frame skips a hidden fill and shows the alpha of a visible o
     assert.match(text, /Overlay \(RECTANGLE\)\n   Color: #FF0000 \(50% opacity\)/);
     assert.match(text, /Hidden then visible \(RECTANGLE\)\n   Color: #0000FF\n/);
 });
+
+test('a name that is not a Dart identifier falls back to its full path; one that still is not, or that two colours share, is not generated and is reported', async (t) => {
+    const {report, colors} = await extract(t, palette(
+        rect('90:2', 'Grey/500', solid(0.5, 0.5, 0.5)),
+        rect('90:3', 'Brand/default', solid(0, 1, 0)),
+        rect('90:4', '500', solid(0, 0, 1)),
+        rect('90:5', 'Brand/red', solid(1, 0, 0)),
+        rect('90:6', 'Brand/red', solid(0.5, 0, 0)),
+        rect('90:7', 'Plain', solid(0, 0, 0)),
+    ));
+
+    assert.match(colors!, /static const Color grey500 = Color\(0xFF808080\);/);
+    assert.match(colors!, /static const Color brandDefault = Color\(0xFF00FF00\);/);
+    assert.match(colors!, /static const Color plain = Color\(0xFF000000\);/);
+    assert.doesNotMatch(colors!, /Color 500 |Color red |Color brandRed /);
+    assert.equal((colors!.match(/static const Color /g) ?? []).length, 3);
+    assert.match(report, /Note: not generated: "500" \(#0000FF\): not a valid Dart identifier\./);
+    assert.match(report, /Note: not generated: "Brand\/red" \(#FF0000\): another color has the same name\./);
+    assert.match(report, /Note: not generated: "Brand\/red" \(#800000\): another color has the same name\./);
+    assert.match(report, /Container\(color: AppColors\.grey500\)/);
+    assert.doesNotMatch(report, /AppColors\.500/);
+});
+
+test('two swatches with the same name and the same colour give one constant', async (t) => {
+    const {report, colors} = await extract(t, palette(
+        rect('90:2', 'Brand/red', solid(1, 0, 0)),
+        rect('90:3', 'Brand/red', solid(1, 0, 0)),
+    ));
+
+    assert.equal((colors!.match(/static const Color red = /g) ?? []).length, 1);
+    assert.doesNotMatch(report, /not generated/);
+});
+
+test('a lone style named Grey/500 gives grey500, not an invalid identifier', async (t) => {
+    const {report, colors} = await extract(t, palette(rect('90:2', 'Grey/500', solid(0.5, 0.5, 0.5))));
+
+    assert.match(colors!, /static const Color grey500 = Color\(0xFF808080\);/);
+    assert.match(report, /Container\(color: AppColors\.grey500\)/);
+});

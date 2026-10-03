@@ -3,7 +3,7 @@ import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../../services/figma.js";
 import {extractThemeColors} from "../../../../extractors/colors/index.js";
-import {SimpleThemeGenerator, constantNames} from "./theme-generator.js";
+import {SimpleThemeGenerator, themeConstants} from "./theme-generator.js";
 import {describeFill} from "../../../../utils/paint-format.js";
 import {convertFillToColorInfo} from "../../../../extractors/components/extractor.js";
 import {validateAndConvertNodeId} from "../../../../utils/figma-url-parser.js";
@@ -102,7 +102,11 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                 if (variableNamesRefused) {
                     output += `\nNote: the variables endpoint refused or failed, so swatches bound to a variable are named by the variable id.\n`;
                 }
-                const constants = constantNames(themeColors);
+                const {generated, skipped} = themeConstants(themeColors);
+                skipped.forEach(({color, reason}) => {
+                    output += `\nNote: not generated: "${color.name}" (${describeFill(color.fill)}): ${reason}.\n`;
+                });
+                const constants = generated.map(({name}) => name);
                 if (generateThemeData && !constants.includes('primary')) {
                     output += `\nNote: No color named primary: no ColorScheme was generated, only the named colors.\n`;
                 }
@@ -115,8 +119,10 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
 
                 output += `\nUsage Examples:\n`;
                 output += `// Colors:\n`;
-                output += `Container(color: AppColors.${constants[0]})\n`;
-                output += `Text('Hello', style: TextStyle(color: AppColors.${constants[constants.length - 1]}))\n`;
+                if (constants.length > 0) {
+                    output += `Container(color: AppColors.${constants[0]})\n`;
+                    output += `Text('Hello', style: TextStyle(color: AppColors.${constants[constants.length - 1]}))\n`;
+                }
                 
                 if (generateThemeData) {
                     output += `\n// Theme:\n`;

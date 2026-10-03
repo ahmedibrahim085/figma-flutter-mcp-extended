@@ -15,15 +15,49 @@ function lowerCamelCase(name: string): string {
         .join('');
 }
 
+// Dart's reserved words: https://dart.dev/language/keywords (built-in identifiers may be field names).
+const DART_RESERVED_WORDS = new Set([
+    'assert', 'break', 'case', 'catch', 'class', 'const', 'continue', 'default', 'do', 'else', 'enum', 'extends',
+    'false', 'final', 'finally', 'for', 'if', 'in', 'is', 'new', 'null', 'rethrow', 'return', 'super', 'switch',
+    'this', 'throw', 'true', 'try', 'var', 'void', 'while', 'with',
+]);
+const isDartIdentifier = (name: string) => /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) && !DART_RESERVED_WORDS.has(name);
+
+export interface ThemeConstants {
+    /** Colours that get a constant, in frame order, with its name. */
+    generated: Array<{color: ThemeColor; name: string}>;
+    /** Colours that get none, with the reason. */
+    skipped: Array<{color: ThemeColor; reason: string}>;
+}
+
 /**
- * Dart constant names for the colours: the last "/" segment of each name, or the full path
- * for every name whose last segment another name shares.
+ * Dart constants for the colours: the last "/" segment of each name, or the full path when that
+ * segment is not a valid identifier or another name shares it. A colour whose full path is still
+ * not valid, or that another colour of a different value shares, is skipped. The same name and
+ * colour twice gives one constant.
  */
-// SHORTCUT: two swatches with an identical full path still collide; make them unique if designs name two swatches alike.
-export function constantNames(colors: ThemeColor[]): string[] {
-    const leaves = colors.map(color => lowerCamelCase(color.name.split('/').pop() ?? ''));
-    return colors.map((color, index) =>
-        leaves.filter(leaf => leaf === leaves[index]).length > 1 ? lowerCamelCase(color.name) : leaves[index]);
+export function themeConstants(colors: ThemeColor[]): ThemeConstants {
+    const unique = colors.filter((color, index) =>
+        colors.findIndex(other => other.name === color.name && dartColor(other.fill) === dartColor(color.fill)) === index);
+    const leaves = unique.map(color => lowerCamelCase(color.name.split('/').pop() ?? ''));
+    const named = unique.map((color, index) => {
+        const leaf = leaves[index];
+        const name = isDartIdentifier(leaf) && leaves.filter(other => other === leaf).length === 1 ? leaf : lowerCamelCase(color.name);
+        return {color, name};
+    });
+
+    const generated: ThemeConstants['generated'] = [];
+    const skipped: ThemeConstants['skipped'] = [];
+    for (const entry of named) {
+        if (!isDartIdentifier(entry.name)) {
+            skipped.push({color: entry.color, reason: 'not a valid Dart identifier'});
+        } else if (named.some(other => other !== entry && other.name === entry.name)) {
+            skipped.push({color: entry.color, reason: 'another color has the same name'});
+        } else {
+            generated.push(entry);
+        }
+    }
+    return {generated, skipped};
 }
 
 export class SimpleThemeGenerator {
@@ -69,10 +103,9 @@ class AppColors {
 `;
 
         // Generate color constants
-        const names = constantNames(colors);
-        colors.forEach((color, index) => {
+        themeConstants(colors).generated.forEach(({color, name}) => {
             content += `  /// ${color.name}
-  static const Color ${names[index]} = ${dartColor(color.fill)};
+  static const Color ${name} = ${dartColor(color.fill)};
 
 `;
         });
@@ -82,7 +115,7 @@ class AppColors {
     }
 
     private generateThemeDataContent(colors: ThemeColor[], options: ThemeGenerationOptions): string {
-        const names = new Set(constantNames(colors));
+        const names = new Set(themeConstants(colors).generated.map(({name}) => name));
         // Without a colour named primary there is no seed: no ColorScheme, so the theme needs no AppColors.
         const colorScheme = options.includeColorScheme !== false && names.has('primary') ? this.generateColorScheme(names) : '';
 

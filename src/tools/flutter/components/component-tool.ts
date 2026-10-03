@@ -31,11 +31,9 @@ import {
 import {
     devicePixelRatiosInput,
     exportAssetNodes,
-    groupAssetsByBaseName,
-    selectAssetNodes,
-    type AssetInfo
+    selectAssetNodes
 } from "../assets/asset-manager.js";
-import {assetUsageReport} from "../assets/asset-report.js";
+import {analyseAssetSection} from "../assets/asset-report.js";
 import {hasPubspec, missingPubspecMessage} from "../../../utils/project-conventions.js";
 import {join} from 'path';
 
@@ -231,7 +229,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                                 figmaService, fileId: parsedInput.fileId, projectPath, nodes: imageNodes,
                                 ratios: devicePixelRatios
                             });
-                            assetExportInfo = generateAssetExportReport(exported.assets, exported.notes, await assetUsageReport(exported.assets, exported.constants, projectPath));
+                            assetExportInfo = await analyseAssetSection(exported, projectPath, 'AUTOMATIC ASSET EXPORT', 'image asset(s) from the component');
                         }
                     } catch (assetError) {
                         assetExportInfo = `\nAsset Export Warning: ${assetError instanceof Error ? assetError.message : String(assetError)}\n`;
@@ -516,40 +514,6 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
             }
         }
     );
-}
-
-/**
- * Generate asset export report
- */
-function generateAssetExportReport(exportedAssets: AssetInfo[], notes: string[], usage: string): string {
-    if (exportedAssets.length === 0) {
-        return notes.length > 0 ? `\nExport notes:\n${notes.map(note => `   • ${note}\n`).join('')}` : '';
-    }
-
-    let report = `\n${'='.repeat(50)}\n`;
-    report += `🖼️  AUTOMATIC ASSET EXPORT\n`;
-    report += `${'='.repeat(50)}\n\n`;
-    
-    report += `Found and exported ${exportedAssets.length} image asset(s) from the component:\n\n`;
-
-    // Group by base name for cleaner output
-    const groupedAssets = groupAssetsByBaseName(exportedAssets);
-    Object.entries(groupedAssets).forEach(([baseName, assets]) => {
-        report += `📁 ${baseName}:\n`;
-        assets.forEach(asset => {
-            report += `   • ${asset.filename} (${asset.size})\n`;
-        });
-    });
-
-    if (notes.length > 0) {
-        report += `\nExport notes:\n${notes.map(note => `   • ${note}\n`).join('')}`;
-    }
-
-    report += `\n${usage}`;
-
-    report += `\n${'='.repeat(50)}\n`;
-
-    return report;
 }
 
 

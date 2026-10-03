@@ -261,20 +261,6 @@ export async function generateSvgAssetConstants(assets: Array<{filename: string,
         projectPath, defaults.output.svgConstantsFile, 'SvgAssets', 'Generated SVG asset constants');
 }
 
-export function groupAssetsByBaseName(assets: Array<{filename: string, nodeName: string, size: string}>): Record<string, Array<{filename: string, size: string}>> {
-    return assets.reduce((acc, asset) => {
-        const baseName = toMainAssetPath(asset.filename).replace(/\.[^.]+$/, '');
-        if (!acc[baseName]) {
-            acc[baseName] = [];
-        }
-        acc[baseName].push({
-            filename: asset.filename,
-            size: asset.size
-        });
-        return acc;
-    }, {} as Record<string, Array<{filename: string, size: string}>>);
-}
-
 // ── Which nodes to export, and how ──────────────────────────────────────────
 
 /** Flutter's documented device pixel ratios (docs.flutter.dev, resolution-aware image assets). */

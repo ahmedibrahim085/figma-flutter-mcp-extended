@@ -87,6 +87,15 @@ for (const tool of TOOLS) {
         assert.equal((await readdir(join(dir, 'assets/images/2.0x'))).sort().join(), '404_illustration.png,my_logo.png');
     });
 
+    test(`${tool[0]}: every exported file is listed by its project path, never a bare name`, async (t) => {
+        const dir = await tempProject(t, PUBSPEC);
+        const {text} = await run(tool, dir);
+
+        assert.match(text, /^\s*• assets\/images\/2\.0x\/my_logo\.png \(/m);
+        assert.match(text, /^\s*• assets\/svgs\/mark\.svg \(/m);
+        assert.doesNotMatch(text, /^\s*• (?:2\.0x\/my_logo\.png|mark\.svg) \(/m);
+    });
+
     test(`${tool[0]}: a PDF is listed with its path and gets no usage line`, async (t) => {
         const dir = await tempProject(t, PUBSPEC);
         const {text} = await run(tool, dir);

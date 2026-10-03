@@ -1,6 +1,6 @@
 import {dirname, join, relative, sep} from 'path';
 import {detectProjectName} from '../../../utils/project-conventions.js';
-import {toMainAssetPath, type AssetInfo, type WrittenConstants} from './asset-manager.js';
+import {toMainAssetPath, type AssetInfo, type ExportedAssets, type WrittenConstants} from './asset-manager.js';
 
 /**
  * The part of an asset report that tells the reader how to use the files: built only from what the constants
@@ -34,4 +34,21 @@ export async function assetUsageReport(assets: AssetInfo[], constants: WrittenCo
     const pdfs = assets.filter(asset => asset.filename.endsWith('.pdf'));
     if (pdfs.length > 0) report += `PDF (path only, no constant): ${pdfs.map(asset => asset.path).join(', ')}\n`;
     return report;
+}
+
+/**
+ * The asset section the analyse tools append to their report: what was exported (each file by its project path),
+ * the export notes, and the usage report. `title` heads the box and `noun` follows the count ("2 <noun>:").
+ */
+export async function analyseAssetSection(exported: ExportedAssets, projectPath: string, title: string, noun: string): Promise<string> {
+    const notes = exported.notes.map(note => `   • ${note}\n`).join('');
+    if (exported.assets.length === 0) return notes ? `\nExport notes:\n${notes}` : '';
+
+    const rule = '='.repeat(50);
+    let report = `\n${rule}\n🖼️  ${title}\n${rule}\n\n`;
+    report += `Found and exported ${exported.assets.length} ${noun}:\n\n`;
+    report += exported.assets.map(asset => `   • ${asset.path} (${asset.size})\n`).join('');
+    if (notes) report += `\nExport notes:\n${notes}`;
+    report += `\n${await assetUsageReport(exported.assets, exported.constants, projectPath)}`;
+    return `${report}\n${rule}\n`;
 }

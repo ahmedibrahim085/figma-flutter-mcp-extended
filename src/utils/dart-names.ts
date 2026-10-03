@@ -16,6 +16,15 @@ const DART_RESERVED_WORDS = new Set([
 ]);
 export const isDartIdentifier = (name: string) => /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) && !DART_RESERVED_WORDS.has(name);
 
+/** `Button / Primary` → `ButtonPrimary`: `lowerCamelCase` with the first letter capitalised, as Dart names types. */
+export function typeName(name: string): string {
+    const camel = lowerCamelCase(name);
+    return camel.charAt(0).toUpperCase() + camel.slice(1);
+}
+
+// Of Dart's words that cannot name a type (https://dart.dev/language/keywords), `Function` is the only one UpperCamelCase can spell.
+export const isDartTypeName = (name: string) => isDartIdentifier(name) && name !== 'Function';
+
 export interface DartConstants<T> {
     /** Items that get a constant, in frame order, with its name. */
     generated: Array<{item: T; name: string}>;

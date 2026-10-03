@@ -16,6 +16,7 @@ import {
 import {generateFigmaUrl} from "../../../utils/figma-url-parser.js";
 import {FlutterStyleLibrary, OptimizationReport} from "../../../extractors/flutter/style-library.js";
 import {Logger} from "../../../utils/logger.js";
+import {typeName} from "../../../utils/dart-names.js";
 
 import {
     generateComponentAnalysisReport,
@@ -441,8 +442,12 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                     };
                 }
                 const node = await new FigmaService(figmaApiKey).getNode(parsedInput.fileId, parsedInput.nodeId);
-                const analysis = await new DeduplicatedComponentExtractor().analyzeComponent(node, true);
-                const implementation = generateFlutterImplementation(analysis);
+                const extractor = new DeduplicatedComponentExtractor();
+                // A component set gives one class per variant, named from the set name and the variant name.
+                const implementation = node.type === 'COMPONENT_SET'
+                    ? (await Promise.all((node.children ?? []).filter(variant => variant.type === 'COMPONENT').map(async variant =>
+                        generateFlutterImplementation(await extractor.analyzeComponent(variant, true), typeName(`${widgetName ?? node.name} ${variant.name}`))))).join('\n')
+                    : generateFlutterImplementation(await extractor.analyzeComponent(node, true), widgetName);
 
                 let output = "🏗️  Flutter Implementation\n";
                 output += `${'='.repeat(50)}\n\n`;

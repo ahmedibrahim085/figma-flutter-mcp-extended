@@ -9,6 +9,7 @@ import type { ComponentAnalysis, LayoutInfo } from '../../../extractors/componen
 import { formatComponentProperties } from '../../../utils/component-properties.js';
 import { formatInteractions, formatNestedInteractions } from '../../../utils/interactions.js';
 import { formatSizingAlignment } from '../../../utils/style-format.js';
+import { isDartTypeName, typeName } from '../../../utils/dart-names.js';
 
 export function generateDeduplicatedReport(analysis: DeduplicatedComponentAnalysis): string {
   let output = `Component Analysis (Deduplicated)\n\n`;
@@ -78,7 +79,8 @@ function wrapForMainAxisSizing(
   return `Expanded(\n  child: ${indentTail(widgetCode, 2)},\n)`;
 }
 
-export function generateFlutterImplementation(analysis: DeduplicatedComponentAnalysis): string {
+/** The widget class for `analysis`, named `className` or from the layer name; with no valid class name, the reason instead of a class. */
+export function generateFlutterImplementation(analysis: DeduplicatedComponentAnalysis, className?: string): string {
   const styleLibrary = FlutterStyleLibrary.getInstance();
   let implementation = `Flutter Implementation:\n\n`;
   
@@ -88,7 +90,10 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   implementation += `\n`;
   
   // Widget structure
-  const widgetName = toPascalCase(analysis.metadata.name);
+  const widgetName = className ?? typeName(analysis.metadata.name);
+  if (!isDartTypeName(widgetName)) {
+    return implementation + `No class generated for "${analysis.metadata.name}": "${widgetName}" is not a valid Dart type name.\n`;
+  }
   implementation += `class ${widgetName} extends StatelessWidget {\n`;
   implementation += `  const ${widgetName}({Key? key}) : super(key: key);\n\n`;
   implementation += `  @override\n`;
@@ -127,6 +132,11 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   const fillAxes = (['width', 'height'] as const).filter(axis => analysis.layout[SIZING_KEY[axis]] === 'FILL');
   root = constrained(boxConstraints(analysis.layout, fillAxes), root);
   if (limits.length > 0) root = box('LimitedBox', [...limits, `child: ${indentTail(root, 2)},`]);
+  // A class named like a widget its body calls would hide that widget (measured with dart analyze: `class Text` breaks `Text('x')`).
+  if (new RegExp(`\\b${widgetName}[(.]`).test(root)) {
+    return implementation.slice(0, implementation.indexOf(`class ${widgetName}`))
+      + `No class generated for "${analysis.metadata.name}": "${widgetName}" is also a widget the generated body uses.\n`;
+  }
   implementation += `    return ${indentTail(root, 4)};\n`;
   implementation += `  }\n`;
   implementation += `}\n`;
@@ -784,11 +794,4 @@ export function generateStyleLibraryReport(): string {
   });
 
   return output;
-}
-
-function toPascalCase(str: string): string {
-  return str
-    .replace(/[^a-zA-Z0-9]/g, ' ')
-    .replace(/\w+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .replace(/\s/g, '');
 }

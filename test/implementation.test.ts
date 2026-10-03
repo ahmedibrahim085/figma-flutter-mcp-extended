@@ -56,3 +56,54 @@ test('no template text or class name', async () => {
 
     assert.doesNotMatch(result.text, /Sample Text|Widget Placeholder|Component Content|CustomWidget|TODO/);
 });
+
+const generate = (node: {id: string}, extra: object = {}) =>
+    callToolOffline(nodeRoute(node.id, node), 'generate_flutter_implementation', {input: FILE_KEY, nodeId: node.id, ...extra});
+
+test('the class is named from the layer name in UpperCamelCase, or from widgetName', async () => {
+    const node = frame('21:1', 'Button / Primary', {children: [text('21:2', 'Go')]});
+
+    assert.match((await generate(node)).text, /class ButtonPrimary extends StatelessWidget/);
+    assert.match((await generate(node, {widgetName: 'PromoButton'})).text, /class PromoButton extends StatelessWidget/);
+});
+
+test('a layer name that is not a valid Dart type name gets no class, and the report says why', async () => {
+    const node = frame('22:1', '404 Card', {children: [text('22:2', 'Not found')]});
+    const result = await generate(node);
+
+    assert.equal(result.isError, false);
+    assert.doesNotMatch(result.text, /class \w+ extends StatelessWidget/);
+    assert.match(result.text, /"404Card" is not a valid Dart type name/);
+});
+
+test('a widgetName that is not a valid Dart type name gets no class', async () => {
+    const result = await generate(frame('22:3', 'Price Card'), {widgetName: 'Function'});
+
+    assert.doesNotMatch(result.text, /class \w+ extends StatelessWidget/);
+    assert.match(result.text, /"Function" is not a valid Dart type name/);
+});
+
+test('a class named like a widget its own body uses gets no class, and the report says why', async () => {
+    const node = frame('23:1', 'Text', {children: [text('23:2', 'Hello')]});
+    const result = await generate(node);
+
+    assert.doesNotMatch(result.text, /class \w+ extends StatelessWidget/);
+    assert.match(result.text, /"Text" is also a widget the generated body uses/);
+});
+
+test('a component set gives one class per variant, named from the set name and the variant name', async () => {
+    const variant = (id: string, name: string, label: string) => ({
+        id, name, type: 'COMPONENT', layoutMode: 'VERTICAL', absoluteBoundingBox: box(100, 40), fills: [], children: [text(`${id}0`, label)],
+    });
+    const set = frame('24:1', 'Button', {type: 'COMPONENT_SET', children: [
+        variant('24:2', 'Size=Small, State=Default', 'Continue'),
+        variant('24:3', 'Size=Large, State=Disabled', 'Cancel'),
+    ]});
+    const result = await generate(set);
+
+    assert.match(result.text, /class ButtonSizeSmallStateDefault extends StatelessWidget/);
+    assert.match(result.text, /class ButtonSizeLargeStateDisabled extends StatelessWidget/);
+    assert.match(result.text, /'Continue'/);
+    assert.match(result.text, /'Cancel'/);
+    assert.equal(result.text.match(/^class /gm)?.length, 2);
+});

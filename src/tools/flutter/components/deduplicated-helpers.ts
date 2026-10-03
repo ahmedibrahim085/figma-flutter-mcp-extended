@@ -232,22 +232,13 @@ function paddingInsideStack(frame: LayoutInfo, children: DeduplicatedComponentCh
 function clipStack(items: string[], args: string[], frame: LayoutInfo): string {
   const clip = frame.clipsContent ? [] : ['clipBehavior: Clip.none,'];
   const stack = multiChild('Stack', [...args, ...clip], items.map(item => `${indentAll(item, 4)},\n`).join(''));
-  const radius = frame.clipsContent ? borderRadius(frame.cornerRadius) : '';
+  const radius = frame.clipsContent ? FlutterCodeGenerator.borderRadius(frame.cornerRadius) : '';
   return radius ? box('ClipRRect', [`borderRadius: ${radius},`, `child: ${indentTail(stack, 2)},`]) : stack;
 }
 
 /** A widget with arguments and a `children:` list whose items are already indented and comma-terminated. */
 function multiChild(name: string, args: string[], items: string): string {
   return `${name}(\n${args.map(arg => `  ${arg}\n`).join('')}  children: [\n${items}  ],\n)`;
-}
-
-/** Dart BorderRadius for a Figma radius (one number, or [topLeft, topRight, bottomRight, bottomLeft]); '' when none. */
-function borderRadius(radius: number | number[] | undefined): string {
-  if (typeof radius === 'number') return radius > 0 ? `BorderRadius.circular(${dartNumber(radius)})` : '';
-  if (!radius?.some(corner => corner > 0)) return '';
-  const corners = ['topLeft', 'topRight', 'bottomRight', 'bottomLeft']
-    .map((corner, i) => radius[i] > 0 ? `${corner}: Radius.circular(${dartNumber(radius[i])})` : '').filter(Boolean);
-  return `BorderRadius.only(${corners.join(', ')})`;
 }
 
 /** A number for generated Dart: the shortest string that reads back as the same number. */

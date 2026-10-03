@@ -302,7 +302,6 @@ src/extractors/flutter/style-library.ts	number	2	arg(indentContinuation)	nestFil
 src/extractors/flutter/style-library.ts	number	20	arg(hash.substring)	addStyle	1	K-TEXT	rule R3: log formatting
 src/extractors/flutter/style-library.ts	number	20	arg(semanticHash.substring)	addStyle	1	K-TEXT	rule R3: log formatting
 src/extractors/flutter/style-library.ts	string		binary(??)	nestFillLayers	1	K-TEXT	report, label, log or error text
-src/extractors/flutter/style-library.ts	string		return	radiusLines	1	K-TEXT	report, label, log or error text
 src/extractors/flutter/style-library.ts	string		ternary	blendNote	1	K-TEXT	report, label, log or error text
 src/extractors/flutter/style-library.ts	string		ternary	nestFillLayers	1	K-TEXT	report, label, log or error text
 src/extractors/flutter/style-library.ts	string	 	PropertyAccessExpression	indentContinuation	1	K-TEXT	report, label, log or error text
@@ -326,7 +325,6 @@ src/extractors/flutter/style-library.ts	string	effects	binary(===)	createSemanti
 src/extractors/flutter/style-library.ts	string	fills	array	createSemanticKey	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/flutter/style-library.ts	string	layout	case	generateFlutterCode	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/flutter/style-library.ts	string	number	binary(===)	createSemanticKey	1	K-API	rule R8: JS typeof result
-src/extractors/flutter/style-library.ts	string	number	binary(===)	radiusLines	1	K-TEXT	report, label, log or error text
 src/extractors/flutter/style-library.ts	string	object	binary(===)	normalizeProperties	1	K-API	rule R8: JS typeof result
 src/extractors/flutter/style-library.ts	string	object	binary(===)	stableStringify	1	K-API	rule R8: JS typeof result
 src/extractors/flutter/style-library.ts	string	padding	array	createSemanticKey	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
@@ -340,15 +338,8 @@ src/extractors/flutter/style-library.ts	template	      offset: Offset(${…}, ${
 src/extractors/flutter/style-library.ts	template	      spreadRadius: ${…},\n	binary(+=)	generateDecoration	1	K-DART	rule R10: Dart syntax / punctuation / indentation / hex formatting in emitted code
 src/extractors/flutter/style-library.ts	template	    ),\n	binary(+=)	generateDecoration	1	K-DART	rule R10: Dart syntax / punctuation / indentation / hex formatting in emitted code
 src/extractors/flutter/style-library.ts	template	    BoxShadow(\n	binary(+=)	generateDecoration	1	K-DART	rule R10: Dart syntax / punctuation / indentation / hex formatting in emitted code
-src/extractors/flutter/style-library.ts	template	    bottomLeft: Radius.circular(${…}),\n	binary(+)	radiusLines	1	K-DART	emitted Dart code
-src/extractors/flutter/style-library.ts	template	    bottomRight: Radius.circular(${…}),\n	binary(+)	radiusLines	1	K-DART	emitted Dart code
-src/extractors/flutter/style-library.ts	template	    topLeft: Radius.circular(${…}),\n	binary(+)	radiusLines	1	K-DART	emitted Dart code
-src/extractors/flutter/style-library.ts	template	    topRight: Radius.circular(${…}),\n	binary(+)	radiusLines	1	K-DART	emitted Dart code
-src/extractors/flutter/style-library.ts	template	  ),\n	binary(+)	radiusLines	1	K-DART	emitted Dart code
 src/extractors/flutter/style-library.ts	template	  // approximate: blend ${…} not applied\n	ternary	blendNote	1	K-TEXT	report, label, log or error text
 src/extractors/flutter/style-library.ts	template	  ],\n	binary(+=)	generateDecoration	1	K-DART	rule R10: Dart syntax / punctuation / indentation / hex formatting in emitted code
-src/extractors/flutter/style-library.ts	template	  borderRadius: BorderRadius.circular(${…}),\n	return	radiusLines	1	K-DART	emitted Dart code
-src/extractors/flutter/style-library.ts	template	  borderRadius: BorderRadius.only(\n	binary(+)	radiusLines	1	K-DART	emitted Dart code
 src/extractors/flutter/style-library.ts	template	  boxShadow: [\n	binary(+=)	generateDecoration	1	K-DART	rule R10: Dart syntax / punctuation / indentation / hex formatting in emitted code
 src/extractors/flutter/style-library.ts	template	  child: ${…},\n	ternary	nestFillLayers	1	K-DART	emitted Dart code
 src/extractors/flutter/style-library.ts	template	${…}  color: ${…},\n	binary(+=)	generateDecoration	1	K-DART	emitted Dart code
@@ -1054,7 +1045,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(<)	flexWidg
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(=)	positioned	3	K-CONV	hand-reviewed: Alignment 0 = centre
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(===)	childWidget	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(>)	axisSize	1	K-CONV	hand-reviewed: size > 0 = measured size present
-src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(>)	borderRadius	3	K-CONV	hand-reviewed: radius > 0 = rounded
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(>)	fillLayerChild	1	K-CONV	index, count, midpoint or identity element
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(>)	generateComprehensiveDeduplicatedReport	6	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(>)	generateDeduplicatedReport	4	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
@@ -1102,9 +1092,7 @@ src/tools/flutter/components/deduplicated-helpers.ts	string		arg(item => `${inde
 src/tools/flutter/components/deduplicated-helpers.ts	string		arg(prop.replace)	sizedBox	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string		arg(props.map(prop => `  ${prop}\n`).join)	box	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string		arg(roximate(note, '', approximations)).join)	flexWidget	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/deduplicated-helpers.ts	string		return	borderRadius	1	K-TEXT	hand-reviewed: radius > 0 = rounded
 src/tools/flutter/components/deduplicated-helpers.ts	string		ternary	axisSize	1	K-TEXT	hand-reviewed: size > 0 = measured size present
-src/tools/flutter/components/deduplicated-helpers.ts	string		ternary	borderRadius	2	K-TEXT	hand-reviewed: radius > 0 = rounded
 src/tools/flutter/components/deduplicated-helpers.ts	string		ternary	boxConstraints	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string		ternary	childWidget	2	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string		ternary	clipStack	1	K-TEXT	rule: separator/whitespace/padding char
@@ -1119,7 +1107,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	string	, 	arg(Object.keys(d
 src/tools/flutter/components/deduplicated-helpers.ts	string	, 	arg(align.map(dartNumber).join)	positioned	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string	, 	arg(child.styleRefs.join)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string	, 	arg(child.styleRefs.join)	generateDeduplicatedReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/deduplicated-helpers.ts	string	, 	arg(corners.join)	borderRadius	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string	, 	arg(map(prop => prop.replace(/,$/, '')).join)	sizedBox	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string	, 	arg(parts.join)	boxConstraints	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string	=	PropertyAccessExpression	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: separator/whitespace/padding char
@@ -1196,8 +1183,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	string	alignment: Alignment
 src/tools/flutter/components/deduplicated-helpers.ts	string	baseline	prop(BASELINE)	CROSS_AXIS_ALIGNMENT	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	bottom	array	positioned	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	bottom	prop(end)	positioned	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/deduplicated-helpers.ts	string	bottomLeft	array	borderRadius	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/deduplicated-helpers.ts	string	bottomRight	array	borderRadius	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	center	prop(CENTER)	MAIN_AXIS_ALIGNMENT	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	clipBehavior: Clip.hardEdge,	array-arg(box)	overflowLayout	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	clipBehavior: Clip.none,	array	clipStack	1	K-DART	rule: Flutter identifier in emitted code
@@ -1229,7 +1214,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	string	maxWidth	array	gener
 src/tools/flutter/components/deduplicated-helpers.ts	string	maxWidth	prop(width)	MAX_KEY	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	minHeight	prop(height)	MIN_KEY	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	minWidth	prop(width)	MIN_KEY	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/deduplicated-helpers.ts	string	number	binary(===)	borderRadius	1	K-API	hand-reviewed: radius > 0 = rounded
 src/tools/flutter/components/deduplicated-helpers.ts	string	padding	arg(styleOf)	childWidget	2	K-SCHEMA	rule: value of our own analysis/style-category schema
 src/tools/flutter/components/deduplicated-helpers.ts	string	right	array	positioned	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	right	prop(end)	positioned	1	K-DART	rule: Flutter identifier in emitted code
@@ -1243,8 +1227,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	string	text	arg(styleOf)	ch
 src/tools/flutter/components/deduplicated-helpers.ts	string	textBaseline: TextBaseline.alphabetic,	arg(args.push)	flexWidget	1	F-DEFAULT	baseline alignment default; removed by ticket 16
 src/tools/flutter/components/deduplicated-helpers.ts	string	top	array	positioned	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	top	prop(start)	positioned	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/deduplicated-helpers.ts	string	topLeft	array	borderRadius	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/deduplicated-helpers.ts	string	topRight	array	borderRadius	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	vertical	ternary	flexWidget	1	K-SCHEMA	rule: value of our own analysis/style-category schema
 src/tools/flutter/components/deduplicated-helpers.ts	string	width	arg(axisSize)	fixedSizeProps	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	width	array	generateFlutterImplementation	2	K-DART	rule: Flutter identifier in emitted code
@@ -1315,7 +1297,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	template	${…}: ${…},	Ar
 src/tools/flutter/components/deduplicated-helpers.ts	template	${…}: ${…},	arg(boxSizes.push)	positioned	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	${…}: ${…},	arg(limits.push)	generateFlutterImplementation	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	${…}: ${…},	ternary	axisSize	1	K-DART	hand-reviewed: size > 0 = measured size present
-src/tools/flutter/components/deduplicated-helpers.ts	template	${…}: Radius.circular(${…})	ternary	borderRadius	1	K-DART	hand-reviewed: radius > 0 = rounded
 src/tools/flutter/components/deduplicated-helpers.ts	template	${…}: double.infinity,	arg(boxSizes.push)	positioned	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	${…}: double.infinity,	arg(rootProps.push)	generateFlutterImplementation	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	${…}: double.infinity,	array-arg(box)	fillCrossAxis	1	K-TEXT	rule: report/log/approximation text, no design fact
@@ -1326,8 +1307,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	template	- ${…}: ${…}\n
 src/tools/flutter/components/deduplicated-helpers.ts	template	- ${…}\n	ArrowFunction	generateFlutterImplementation	1	K-TEXT	rule: report/log/error text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	- ${…}\n	binary(+=)	generateFlutterImplementation	1	K-TEXT	rule: report/log/error text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	// approximate: ${…}\n${…}	return	approximate	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/deduplicated-helpers.ts	template	BorderRadius.circular(${…})	ternary	borderRadius	1	K-DART	hand-reviewed: radius > 0 = rounded
-src/tools/flutter/components/deduplicated-helpers.ts	template	BorderRadius.only(${…})	return	borderRadius	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	BoxConstraints(${…})	ternary	boxConstraints	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	Children (${…}):\n	binary(+=)	generateDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	Component Analysis (Deduplicated)\n\n	var(output)	generateDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
@@ -1483,7 +1462,6 @@ src/tools/flutter/components/helpers.ts	string	main	arg(mapFigmaToFlutterAlignme
 src/tools/flutter/components/helpers.ts	string	main	binary(===)	mapFigmaToFlutterAlignment	2	K-SCHEMA	rule: value of our own analysis/style-category schema
 src/tools/flutter/components/helpers.ts	string	mixed	binary(!==)	generateComponentAnalysisReport	1	K-SCHEMA	rule: value of our own analysis/style-category schema
 src/tools/flutter/components/helpers.ts	string	number	binary(===)	generateComponentAnalysisReport	2	K-API	rule: JS typeof result
-src/tools/flutter/components/helpers.ts	string	number	binary(===)	generateFlutterGuidance	1	K-API	rule: JS typeof result
 src/tools/flutter/components/helpers.ts	string	url	binary(===)	generateComponentAnalysisReport	2	K-SCHEMA	rule: value of our own analysis/style-category schema
 src/tools/flutter/components/helpers.ts	string	width	ternary	generateFlutterGuidance	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/helpers.ts	template	        // offset: not set by Figma\n	ternary	generateFlutterGuidance	1	K-TEXT	report, label, log or error text
@@ -1493,17 +1471,10 @@ src/tools/flutter/components/helpers.ts	template	        offset: Offset(${…}, 
 src/tools/flutter/components/helpers.ts	template	        spreadRadius: ${…},\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/helpers.ts	template	      ),\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/helpers.ts	template	      BoxShadow(\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	      bottomLeft: Radius.circular(${…}),\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	      bottomRight: Radius.circular(${…}),\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	      topLeft: Radius.circular(${…}),\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	      topRight: Radius.circular(${…}),\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	    ),\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/helpers.ts	template	    ],\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/helpers.ts	template	    border: Border(\n      top: ${…},\n      right: ${…},\n      bottom: ${…},\n      left: ${…},\n    ),\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
 src/tools/flutter/components/helpers.ts	template	    border: Border.all(\n      color: ${…},\n      // width: strokeWeight not set by Figma\n    ),\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
 src/tools/flutter/components/helpers.ts	template	    border: Border.all(\n      color: ${…},\n      width: ${…},\n    ),\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
-src/tools/flutter/components/helpers.ts	template	    borderRadius: BorderRadius.circular(${…}),\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/helpers.ts	template	    borderRadius: BorderRadius.only(\n	binary(+=)	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/helpers.ts	template	    boxShadow: [\n	binary(+=)	generateFlutterGuidance	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/helpers.ts	template	    color: ${…},\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
 src/tools/flutter/components/helpers.ts	template	   ${…}	ArrowFunction	generateFlutterGuidance	1	K-DART	rule: Dart syntax template carrying no design value
@@ -2391,4 +2362,19 @@ src/services/figma.ts	template	/files/${…}/nodes?ids=${…}	arg(this.cachedReq
 src/services/figma.ts	number	0	binary(===)	getImageBytes	2	K-CONV	hash and entry naming for the cache; not a design fact
 src/services/figma.ts	string	image	arg(entryName)	entry	1	K-CONV	hash and entry naming for the cache; not a design fact
 src/tools/figma-core/core-tools.ts	type-string	format	LiteralType	registerCoreTools	1	K-API	Figma image format or base64 encoding token
+src/extractors/flutter/style-library.ts	string	number	binary(===)	borderRadius	1	K-API	JS typeof result
+src/extractors/flutter/style-library.ts	number	0	binary(>)	borderRadius	3	K-CONV	radius > 0 = rounded
+src/extractors/flutter/style-library.ts	template	BorderRadius.circular(${…})	ternary	borderRadius	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	string		ternary	borderRadius	2	K-TEXT	separator or empty text
+src/extractors/flutter/style-library.ts	string		return	borderRadius	1	K-TEXT	separator or empty text
+src/extractors/flutter/style-library.ts	string	topLeft	array	borderRadius	1	K-DART	Flutter identifier in emitted code
+src/extractors/flutter/style-library.ts	string	topRight	array	borderRadius	1	K-DART	Flutter identifier in emitted code
+src/extractors/flutter/style-library.ts	string	bottomRight	array	borderRadius	1	K-DART	Flutter identifier in emitted code
+src/extractors/flutter/style-library.ts	string	bottomLeft	array	borderRadius	1	K-DART	Flutter identifier in emitted code
+src/extractors/flutter/style-library.ts	template	${…}: Radius.circular(${…})	ternary	borderRadius	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	template	BorderRadius.only(${…})	return	borderRadius	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	string	, 	arg(named.join)	borderRadius	1	K-TEXT	separator or empty text
+src/extractors/flutter/style-library.ts	template	  borderRadius: ${…},\n	ternary	radiusLines	1	K-DART	emitted Dart code
+src/extractors/flutter/style-library.ts	string		ternary	radiusLines	1	K-TEXT	separator or empty text
+src/tools/flutter/components/helpers.ts	template	    borderRadius: ${…},\n	binary(+=)	generateFlutterGuidance	1	K-DART	emitted Dart code
 src/tools/figma-core/core-tools.ts	string	base64	arg(image.toString)	registerCoreTools	1	K-API	Figma image format or base64 encoding token

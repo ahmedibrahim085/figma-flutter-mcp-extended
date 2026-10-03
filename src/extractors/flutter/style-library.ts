@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {argbHex, dartColor} from '../../utils/dart-color.js';
 import { Logger } from '../../utils/logger.js';
 import { textStyleCode, type TextStyleFields } from './text-style.js';
+import type { CornerRadii } from '../components/types.js';
 
 export interface FlutterStyleDefinition {
   id: string;
@@ -351,18 +352,23 @@ export class FlutterCodeGenerator {
     return fill.blendMode ? `  // approximate: blend ${fill.blendMode} not applied\n` : '';
   }
 
+  /**
+   * The one BorderRadius emitter. Takes one radius, Figma's rectangleCornerRadii ([topLeft, topRight, bottomRight,
+   * bottomLeft], clockwise from the top left) or the extractor's corner object, and leaves zero corners out (Flutter's
+   * default is Radius.zero); '' when no corner is rounded.
+   */
+  static borderRadius(radius: number | number[] | CornerRadii | undefined): string {
+    if (typeof radius === 'number') return radius > 0 ? `BorderRadius.circular(${radius})` : '';
+    const corners = Array.isArray(radius) ? radius : radius && [radius.topLeft, radius.topRight, radius.bottomRight, radius.bottomLeft];
+    if (!corners?.some(corner => corner > 0)) return '';
+    const named = ['topLeft', 'topRight', 'bottomRight', 'bottomLeft']
+      .map((corner, i) => corners[i] > 0 ? `${corner}: Radius.circular(${corners[i]})` : '').filter(Boolean);
+    return `BorderRadius.only(${named.join(', ')})`;
+  }
+
   private static radiusLines(properties: any): string {
-    if (properties.cornerRadius === undefined) return '';
-    if (typeof properties.cornerRadius === 'number') {
-      return `  borderRadius: BorderRadius.circular(${properties.cornerRadius}),\n`;
-    }
-    const r = properties.cornerRadius;
-    return `  borderRadius: BorderRadius.only(\n`
-      + `    topLeft: Radius.circular(${r.topLeft}),\n`
-      + `    topRight: Radius.circular(${r.topRight}),\n`
-      + `    bottomLeft: Radius.circular(${r.bottomLeft}),\n`
-      + `    bottomRight: Radius.circular(${r.bottomRight}),\n`
-      + `  ),\n`;
+    const radius = FlutterCodeGenerator.borderRadius(properties.cornerRadius);
+    return radius ? `  borderRadius: ${radius},\n` : '';
   }
   
   static generatePadding(properties: any): string {

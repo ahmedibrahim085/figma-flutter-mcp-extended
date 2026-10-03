@@ -242,19 +242,8 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
             }
         }
 
-        if (analysis.styling.cornerRadius !== undefined) {
-            if (typeof analysis.styling.cornerRadius === 'number') {
-                guidance += `    borderRadius: BorderRadius.circular(${analysis.styling.cornerRadius}),\n`;
-            } else {
-                const r = analysis.styling.cornerRadius;
-                guidance += `    borderRadius: BorderRadius.only(\n`;
-                guidance += `      topLeft: Radius.circular(${r.topLeft}),\n`;
-                guidance += `      topRight: Radius.circular(${r.topRight}),\n`;
-                guidance += `      bottomLeft: Radius.circular(${r.bottomLeft}),\n`;
-                guidance += `      bottomRight: Radius.circular(${r.bottomRight}),\n`;
-                guidance += `    ),\n`;
-            }
-        }
+        const radius = FlutterCodeGenerator.borderRadius(analysis.styling.cornerRadius);
+        if (radius) guidance += `    borderRadius: ${radius},\n`;
 
         if (analysis.styling.effects?.dropShadows.length) {
             guidance += `    boxShadow: [\n`;

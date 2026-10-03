@@ -14,7 +14,7 @@ import fetch from 'node-fetch';
 // ────────────────────────────────────────────────────────────
 
 /** Recursively summarise a node tree (id, name, type, children count, bounding box). */
-function summariseNode(node: any, depth: number, maxDepth: number): any {
+function summariseNode(node: any): any {
     const summary: any = {
         id: node.id,
         name: node.name,
@@ -29,12 +29,9 @@ function summariseNode(node: any, depth: number, maxDepth: number): any {
     if (node.visible === false) {
         summary.visible = false;
     }
-    if (node.children && depth < maxDepth) {
+    if (node.children) {
         summary.childCount = node.children.length;
-        summary.children = node.children.map((c: any) => summariseNode(c, depth + 1, maxDepth));
-    } else if (node.children) {
-        summary.childCount = node.children.length;
-        summary.children = `[${node.children.length} children — increase depth to see]`;
+        summary.children = node.children.map(summariseNode);
     }
     return summary;
 }
@@ -88,17 +85,20 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 depth: z
                     .number()
                     .optional()
-                    .describe('Max tree depth to return (default 4, max 10). Higher = more detail but larger response.'),
+                    .describe(
+                        'How deep into the node tree to traverse; omit for all levels. ' +
+                        'Figma sends `children: []` for nodes at the requested depth, whatever they hold.',
+                    ),
             },
         },
-        async ({fileKey, nodeId, depth = 4}) => {
+        async ({fileKey, nodeId, depth}) => {
             try {
-                const clampedDepth = Math.min(Math.max(depth, 1), 10);
+                const depthParam = depth === undefined ? '' : `depth=${depth}`;
                 let url: string;
                 if (nodeId) {
-                    url = `${baseUrl}/files/${fileKey}/nodes?ids=${encodeURIComponent(nodeId)}&depth=${clampedDepth}`;
+                    url = `${baseUrl}/files/${fileKey}/nodes?ids=${encodeURIComponent(nodeId)}${depthParam && `&${depthParam}`}`;
                 } else {
-                    url = `${baseUrl}/files/${fileKey}?depth=${clampedDepth}`;
+                    url = `${baseUrl}/files/${fileKey}${depthParam && `?${depthParam}`}`;
                 }
 
                 const resp = await fetch(url, {headers});
@@ -120,7 +120,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     rootNode = data.document;
                 }
 
-                const tree = summariseNode(rootNode, 0, clampedDepth);
+                const tree = summariseNode(rootNode);
                 const frames = collectFrames(rootNode);
 
                 const result = {
@@ -229,13 +229,16 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 depth: z
                     .number()
                     .optional()
-                    .describe('Max depth of child tree to include (default 8, max 15)'),
+                    .describe(
+                        'How deep into the node tree to traverse; omit for all levels. ' +
+                        'Figma sends `children: []` for nodes at the requested depth, whatever they hold.',
+                    ),
             },
         },
-        async ({fileKey, nodeId, depth = 8}) => {
+        async ({fileKey, nodeId, depth}) => {
             try {
-                const clampedDepth = Math.min(Math.max(depth, 1), 15);
-                const url = `${baseUrl}/files/${fileKey}/nodes?ids=${encodeURIComponent(nodeId)}&geometry=paths&plugin_data=shared`;
+                const url = `${baseUrl}/files/${fileKey}/nodes?ids=${encodeURIComponent(nodeId)}&geometry=paths&plugin_data=shared` +
+                    (depth === undefined ? '' : `&depth=${depth}`);
                 const resp = await fetch(url, {headers});
                 if (!resp.ok) {
                     const body = await resp.text();
@@ -272,7 +275,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                         itemSpacing: doc.itemSpacing,
                         backgroundColor: doc.backgroundColor,
                     },
-                    tree: summariseNode(doc, 0, clampedDepth),
+                    tree: summariseNode(doc),
                     components: Object.keys(components).length > 0 ? components : undefined,
                     styles: Object.keys(styles).length > 0 ? styles : undefined,
                     frames: collectFrames(doc),

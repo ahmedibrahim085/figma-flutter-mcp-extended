@@ -4,10 +4,7 @@
 export { ColorExtractor, extractThemeColors } from './core.js';
 
 // Extractor functions
-export {
-    extractColorsFromThemeFrame,
-    isTypographyNode
-} from './extractor.js';
+export {extractColorsFromThemeFrame} from './extractor.js';
 
 // Types
 export type {

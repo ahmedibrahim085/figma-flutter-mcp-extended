@@ -13,8 +13,8 @@ export class ColorExtractor {
     /**
      * Extract theme colors from a specific frame
      */
-    extractThemeFromFrame(frameNode: FigmaNode): ThemeColor[] {
-        return extractColorsFromThemeFrame(frameNode);
+    extractThemeFromFrame(frameNode: FigmaNode, styleNames?: Record<string, {name: string}>): ThemeColor[] {
+        return extractColorsFromThemeFrame(frameNode, styleNames);
     }
 
 }
@@ -22,7 +22,7 @@ export class ColorExtractor {
 /**
  * Convenience function to extract theme colors from a frame
  */
-export function extractThemeColors(frameNode: FigmaNode): ThemeColor[] {
+export function extractThemeColors(frameNode: FigmaNode, styleNames?: Record<string, {name: string}>): ThemeColor[] {
     const extractor = new ColorExtractor();
-    return extractor.extractThemeFromFrame(frameNode);
+    return extractor.extractThemeFromFrame(frameNode, styleNames);
 }

@@ -53,9 +53,16 @@ export async function callToolsOffline(
     return results;
 }
 
-/** Route for FigmaService.getNode / getNodes: `/files/KEY/nodes?ids=<id>` answering one node. */
-export function nodeRoute(nodeId: string, document: object): Record<string, FakeResponse> {
-    return {[`/files/${FILE_KEY}/nodes?ids=${nodeId}`]: {body: {nodes: {[nodeId]: {document}}}}};
+/**
+ * Route for FigmaService.getNode / getNodes: `/files/KEY/nodes?ids=<id>` answering one node.
+ * `styles` is the response's top-level style map: style id to `{name, styleType}`.
+ */
+export function nodeRoute(
+    nodeId: string,
+    document: object,
+    styles?: Record<string, {name: string; styleType: string}>,
+): Record<string, FakeResponse> {
+    return {[`/files/${FILE_KEY}/nodes?ids=${nodeId}`]: {body: {nodes: {[nodeId]: {document, ...(styles ? {styles} : {})}}}}};
 }
 
 /**

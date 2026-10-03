@@ -3,6 +3,28 @@ import {writeFile, mkdir} from 'fs/promises';
 import {join} from 'path';
 import type {ThemeColor, ThemeGenerationOptions} from '../../../../extractors/colors/index.js';
 import defaults from '../../../../defaults.json' with { type: 'json' };
+import {dartColor} from '../../../../utils/dart-color.js';
+
+/** `Brand/Primary` → `brandPrimary`: split on anything but letters and digits; a word keeps its inner capitals unless it is all capitals. */
+function lowerCamelCase(name: string): string {
+    return name
+        .split(/[^A-Za-z0-9]+/)
+        .filter(word => word.length > 0)
+        .map(word => word === word.toUpperCase() ? word.toLowerCase() : word)
+        .map((word, index) => index === 0 ? word.charAt(0).toLowerCase() + word.slice(1) : word.charAt(0).toUpperCase() + word.slice(1))
+        .join('');
+}
+
+/**
+ * Dart constant names for the colours: the last "/" segment of each name, or the full path
+ * for every name whose last segment another name shares.
+ */
+// SHORTCUT: two swatches with an identical full path still collide; make them unique if designs name two swatches alike.
+export function constantNames(colors: ThemeColor[]): string[] {
+    const leaves = colors.map(color => lowerCamelCase(color.name.split('/').pop() ?? ''));
+    return colors.map((color, index) =>
+        leaves.filter(leaf => leaf === leaves[index]).length > 1 ? lowerCamelCase(color.name) : leaves[index]);
+}
 
 export class SimpleThemeGenerator {
     /**
@@ -47,10 +69,10 @@ class AppColors {
 `;
 
         // Generate color constants
-        colors.forEach(color => {
-            const constantName = this.toDartConstantName(color.name);
+        const names = constantNames(colors);
+        colors.forEach((color, index) => {
             content += `  /// ${color.name}
-  static const Color ${constantName} = Color(0xFF${color.hex.substring(1)});
+  static const Color ${names[index]} = ${dartColor(color.fill)};
 
 `;
         });
@@ -60,77 +82,35 @@ class AppColors {
     }
 
     private generateThemeDataContent(colors: ThemeColor[], options: ThemeGenerationOptions): string {
-        const timestamp = new Date().toISOString().split('T')[0];
-        const colorMap = this.createColorMap(colors);
+        const names = new Set(constantNames(colors));
+        // Without a colour named primary there is no seed: no ColorScheme, so the theme needs no AppColors.
+        const colorScheme = options.includeColorScheme !== false && names.has('primary') ? this.generateColorScheme(names) : '';
 
-        let content = `// Generated Flutter ThemeData from a Figma frame of color samples
+        return `// Generated Flutter ThemeData from a Figma frame of color samples
 
 import 'package:flutter/material.dart';
-import '${defaults.output.colorsFile}';
-
+${colorScheme ? `import '${defaults.output.colorsFile}';\n` : ''}
 class AppTheme {
   // Light Theme
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
-`;
-
-        // Add ColorScheme if requested
-        if (options.includeColorScheme !== false) {
-            content += this.generateColorScheme(colorMap);
-        }
-
-        content += `    );
+${colorScheme}    );
   }
 }
 `;
-
-        return content;
     }
 
-    private createColorMap(colors: ThemeColor[]): Map<string, string> {
-        const colorMap = new Map<string, string>();
-
-        colors.forEach(color => {
-            const key = color.name.toLowerCase().replace(/\s+/g, '');
-            colorMap.set(key, `AppColors.${this.toDartConstantName(color.name)}`);
-        });
-
-        return colorMap;
-    }
-
-    private generateColorScheme(colorMap: Map<string, string>): string {
-        const primary = colorMap.get('primary') || 'AppColors.primary';
-        const secondary = colorMap.get('secondary') || colorMap.get('accent') || 'Colors.blue.shade300';
-        const background = colorMap.get('background') || colorMap.get('backgroundlight') || 'Colors.white';
-        const surface = colorMap.get('surface') || background;
-        const error = colorMap.get('error') || colorMap.get('danger') || 'Colors.red';
-
+    /** fromSeed generates every role; only the roles named exactly like a ColorScheme field are set. */
+    private generateColorScheme(names: Set<string>): string {
+        const roles = defaults.colorSchemeRoles.filter(role => names.has(role));
+        // brightness goes on the ColorScheme only: ThemeData asserts the two agree.
+        const brightness = names.has('surface')
+            ? `        brightness: ThemeData.estimateBrightnessForColor(AppColors.surface),\n`
+            : '';
         return `      colorScheme: ColorScheme.fromSeed(
-        seedColor: ${primary},
-        brightness: Brightness.light,
-        primary: ${primary},
-        secondary: ${secondary},
-        background: ${background},
-        surface: ${surface},
-        error: ${error},
-      ),
+        seedColor: AppColors.primary,
+${brightness}${roles.map(role => `        ${role}: AppColors.${role},\n`).join('')}      ),
 `;
-    }
-
-    private toDartConstantName(name: string): string {
-        // Convert to camelCase for Dart constants
-        return name
-            .replace(/[^a-zA-Z0-9]/g, ' ')
-            .split(' ')
-            .filter(word => word.length > 0)
-            .map((word, index) => {
-                if (index === 0) {
-                    return word.toLowerCase();
-                }
-                return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
-            })
-            .join('');
     }
 }

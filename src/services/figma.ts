@@ -125,6 +125,13 @@ export class FigmaService {
      * Get a single node by ID
      */
     async getNode(fileId: string, nodeId: string): Promise<FigmaNode> {
+        return (await this.getNodeWithStyles(fileId, nodeId)).document;
+    }
+
+    /**
+     * Get a single node by ID with the response's style map: style id to `{name, styleType}`.
+     */
+    async getNodeWithStyles(fileId: string, nodeId: string): Promise<{document: FigmaNode; styles: Record<string, {name: string; styleType: string}>}> {
         if (!nodeId || nodeId.trim().length === 0) {
             throw new FigmaError('Node ID is required', 'INVALID_INPUT');
         }
@@ -141,13 +148,22 @@ export class FigmaService {
                 throw new FigmaParseError('Invalid node structure received from Figma API', nodeData);
             }
 
-            return nodeData.document;
+            return {document: nodeData.document, styles: nodeData.styles ?? {}};
         } catch (error) {
             if (error instanceof FigmaError) {
                 throw error;
             }
             throw new FigmaError(`Failed to fetch node ${nodeId}: ${error}`, 'FETCH_ERROR');
         }
+    }
+
+    /**
+     * Names of the file's local variables by id (Figma REST GET /v1/files/:key/variables/local).
+     * Throws when Figma refuses, e.g. 403 outside an Enterprise plan.
+     */
+    async getLocalVariableNames(fileId: string): Promise<Record<string, string>> {
+        const data = await this.makeRequest<{meta?: {variables?: Record<string, {name: string}>}}>(`/files/${fileId}/variables/local`);
+        return Object.fromEntries(Object.entries(data.meta?.variables ?? {}).map(([id, variable]) => [id, variable.name]));
     }
 
     /**

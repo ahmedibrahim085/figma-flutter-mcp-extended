@@ -31,6 +31,8 @@ export interface FigmaNode {
     type: string;
     visible?: boolean;
     children?: FigmaNode[];
+    /** Style ids the node uses, by style type (Figma REST `styles`); names are in the response's top-level `styles` map. */
+    styles?: {[key: string]: string};
     fills?: FigmaFill[];
     strokes?: FigmaStroke[];
     effects?: FigmaEffect[];
@@ -164,6 +166,8 @@ export interface FigmaFill {
     blendMode?: string;
     /** Paint opacity, 0-1 (Figma REST Paint.opacity; absent means 1). */
     opacity?: number;
+    /** Variable the paint colour is bound to (Figma REST Paint.boundVariables). */
+    boundVariables?: {color?: {type: string; id: string}};
 }
 
 export interface FigmaStroke {
@@ -288,7 +292,8 @@ export interface NodeResponse {
         [nodeId: string]: {
             document: FigmaNode;
             components?: {[key: string]: FigmaComponent};
-            styles?: {[key: string]: FigmaStyle};
+            /** Style id to the style's name and type (FILL, TEXT, EFFECT or GRID). */
+            styles?: {[key: string]: {name: string; styleType: string}};
         };
     };
 }

@@ -3,7 +3,9 @@ import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../../services/figma.js";
 import {extractThemeColors} from "../../../../extractors/colors/index.js";
-import {SimpleThemeGenerator} from "./theme-generator.js";
+import {SimpleThemeGenerator, constantNames} from "./theme-generator.js";
+import {describeFill} from "../../../../utils/paint-format.js";
+import {convertFillToColorInfo} from "../../../../extractors/components/extractor.js";
 import {validateAndConvertNodeId} from "../../../../utils/figma-url-parser.js";
 import {join} from 'path';
 import defaults from '../../../../defaults.json' with { type: 'json' };
@@ -39,7 +41,7 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
 
                 // Get the specific frame node
                 nodeId = validateAndConvertNodeId(nodeId);
-                const themeFrame = await figmaService.getNode(fileId, nodeId);
+                const {document: themeFrame, styles} = await figmaService.getNodeWithStyles(fileId, nodeId);
 
                 if (!themeFrame) {
                     return {
@@ -51,7 +53,19 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                 }
 
                 // Extract colors from the frame
-                const themeColors = extractThemeColors(themeFrame);
+                const themeColors = extractThemeColors(themeFrame, styles);
+
+                // A swatch bound to a variable takes the variable's name; Figma only names variables on some plans.
+                let variableNamesRefused = false;
+                if (themeColors.some(color => color.variableId)) {
+                    const variableNames = await figmaService.getLocalVariableNames(fileId).catch(() => {
+                        variableNamesRefused = true;
+                        return {} as Record<string, string>;
+                    });
+                    themeColors.forEach(color => {
+                        if (color.variableId) color.name = variableNames[color.variableId] ?? color.variableId;
+                    });
+                }
 
                 if (themeColors.length === 0) {
                     return {
@@ -83,8 +97,15 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
 
                 output += `Extracted Colors:\n`;
                 themeColors.forEach((color, index) => {
-                    output += `${index + 1}. ${color.name}: ${color.hex}\n`;
+                    output += `${index + 1}. ${color.name}: ${describeFill(color.fill)}\n`;
                 });
+                if (variableNamesRefused) {
+                    output += `\nNote: the variables endpoint refused or failed, so swatches bound to a variable are named by the variable id.\n`;
+                }
+                const constants = constantNames(themeColors);
+                if (generateThemeData && !constants.includes('primary')) {
+                    output += `\nNote: No color named primary: no ColorScheme was generated, only the named colors.\n`;
+                }
 
                 output += `\nGenerated Files:\n`;
                 output += `• ${defaults.output.colorsFile} - Color constants\n`;
@@ -94,8 +115,8 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
 
                 output += `\nUsage Examples:\n`;
                 output += `// Colors:\n`;
-                output += `Container(color: AppColors.primary)\n`;
-                output += `Text('Hello', style: TextStyle(color: AppColors.backgroundDark))\n`;
+                output += `Container(color: AppColors.${constants[0]})\n`;
+                output += `Text('Hello', style: TextStyle(color: AppColors.${constants[constants.length - 1]}))\n`;
                 
                 if (generateThemeData) {
                     output += `\n// Theme:\n`;
@@ -168,12 +189,9 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                         output += `${index + 1}. ${child.name} (${child.type})\n`;
 
                         // Show color if it has one
-                        if (child.fills && Array.isArray(child.fills)) {
-                            const solidFill = child.fills.find(fill => fill.type === 'SOLID' && fill.color);
-                            if (solidFill && solidFill.color) {
-                                const hex = rgbaToHex(solidFill.color);
-                                output += `   Color: ${hex}\n`;
-                            }
+                        const solidFill = child.fills?.find(fill => fill.type === 'SOLID' && fill.color && fill.visible !== false);
+                        if (solidFill) {
+                            output += `   Color: ${describeFill(convertFillToColorInfo(solidFill))}\n`;
                         }
 
                         // Show text children
@@ -204,12 +222,4 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
             }
         }
     );
-}
-
-function rgbaToHex(color: {r: number; g: number; b: number; a?: number}): string {
-    const r = Math.round(color.r * 255);
-    const g = Math.round(color.g * 255);
-    const b = Math.round(color.b * 255);
-
-    return `#${r.toString(16).padStart(2, '0')}${g.toString(16).padStart(2, '0')}${b.toString(16).padStart(2, '0')}`.toUpperCase();
 }

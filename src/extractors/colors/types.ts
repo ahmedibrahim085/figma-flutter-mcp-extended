@@ -1,14 +1,18 @@
 // src/extractors/colors/types.mts
 
 import type {FigmaNode} from '../../types/figma.js';
+import type {ColorInfo} from '../components/types.js';
 
 /**
  * Color definition from theme extraction
  */
 export interface ThemeColor {
+    /** Fill style name, else bound variable name (or id), else layer name. */
     name: string;
-    hex: string;
+    fill: ColorInfo;
     nodeId: string;
+    /** Set while the swatch is named by a bound variable the variables endpoint has not named yet. */
+    variableId?: string;
 }
 
 /**

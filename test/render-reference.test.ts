@@ -48,7 +48,7 @@ test('the recapture script asks Figma for scale 1 with absolute bounds and recor
     try {
         const run = spawn(process.execPath, ['--import', 'tsx', 'tools/render-check/capture-screenshots.mts', '--manifest', join(work, 'manifest.json'), '--out', work, '--cli', builtCliPath()], {
             cwd: ROOT,
-            env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', FIGMA_API_BASE_URL: figma.baseUrl, FIGMA_FILE_KEY: FILE_KEY},
+            env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', FIGMA_CACHE: 'off', FIGMA_API_BASE_URL: figma.baseUrl, FIGMA_FILE_KEY: FILE_KEY},
             stdio: ['ignore', 'pipe', 'pipe'],
         });
         let output = '';

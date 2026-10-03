@@ -66,10 +66,17 @@ export function generateSvgFilename(nodeName: string): string {
     return `${cleanName}.svg`;
 }
 
+/** A download that answered with a non-2xx status; carries the status so callers need not parse the message. */
+export class DownloadError extends Error {
+    constructor(readonly status: number) {
+        super(`Failed to download image: HTTP ${status}`);
+    }
+}
+
 export async function downloadImage(url: string, filepath: string): Promise<void> {
     const response = await fetch(url);
     if (!response.ok) {
-        throw new Error(`Failed to download image: HTTP ${response.status}`);
+        throw new DownloadError(response.status);
     }
 
     const buffer = await response.arrayBuffer();
@@ -405,12 +412,12 @@ export function selectAssetNodes(roots: any[], includeRoots: boolean): AssetNode
     return [...found.values()];
 }
 
-/** A download error as a few words: the network error code (ENOTFOUND) or the HTTP status; never the URL. */
-function shortReason(error: unknown): string {
+/** A download error as a few words: the network error code (ENOTFOUND), else the HTTP status; never the URL. */
+function downloadFailureReason(error: unknown): string {
     const code = (error as {cause?: {code?: string}})?.cause?.code;
     if (code) return code;
-    const message = error instanceof Error ? error.message : String(error);
-    return message.replace(/^Failed to download image: /, '');
+    if (error instanceof DownloadError) return `HTTP ${error.status}`;
+    return error instanceof Error ? error.message : String(error);
 }
 
 const vectorFormat = (format: AssetFormat): boolean => format === 'svg' || format === 'pdf';
@@ -513,7 +520,7 @@ export async function exportAssetNodes(options: {
                     await downloadImage(url, filepath);
                 } catch (error) {
                     // The agent sees only the tool's text, so the failure goes there; the URL carries a signed token and stays out.
-                    notes.push(`${node.name} (${node.id}): download failed for ${format}${vector ? '' : ` at ${scale}x`} (${shortReason(error)}); not exported`);
+                    notes.push(`${node.name} (${node.id}): download failed for ${format}${vector ? '' : ` at ${scale}x`} (${downloadFailureReason(error)}); not exported`);
                     continue;
                 }
                 assets.push({

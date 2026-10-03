@@ -2,7 +2,7 @@
   "positionPx": 0.5,
   "positionReason": "Figma boxes of auto-width text are whole numbers while the same text measures fractionally in Flutter (Inter 4.1 measures 'Cancel' at 53.109 against Figma's 53); half a logical pixel is the largest rounding Figma's integer boxes can hide.",
   "channelDelta": 32,
-  "channelDeltaReason": "Out of 255 per RGBA channel. Corner antialiasing and a 1 px glyph offset differ between Figma's renderer and Flutter's even with the same font; on node 1:92 pixels over 32 are 3.71% with Inter and 22.08% with Flutter's test font, so 32 separates a real difference from renderer noise. Measured 2026-10-03 on the ten fixture nodes (CONTRIBUTING.md, Render check).",
+  "channelDeltaReason": "PROVISIONAL (decision 27). Out of 255 per RGBA channel. Corner antialiasing and a 1 px glyph offset differ between Figma's renderer and Flutter's even with the same font; on node 1:92 pixels over 32 are 3.71% with Inter and 22.08% with Flutter's test font, so 32 separates a real difference from renderer noise. Measured 2026-10-03 on the ten fixture nodes (CONTRIBUTING.md, Render check).",
   "maxDifferingRatio": 0.05,
-  "maxDifferingRatioReason": "Share of pixels over channelDelta that fails the image check. Measured 2026-10-03 on the ten fixture nodes: renders that match the design differ by 0.00% (probes 2:15, 2:19, 2:23, 2:27) and 3.71% (text of 1:92, outside Flutter's overflow stripe); renders with a layout defect differ by 6.22% to 19.71%. 5% is the smallest round value above the largest correct render."
+  "maxDifferingRatioReason": "PROVISIONAL (decision 27). Share of pixels over channelDelta that fails the image check. Measured 2026-10-03 on the ten fixture nodes: renders that match the design differ by 0.00% (probes 2:15, 2:19, 2:23, 2:27) and 3.71% (text of 1:92, outside Flutter's overflow stripe); renders with a layout defect differ by 6.22% to 19.71%. 5% is the smallest round value above the largest correct render."
 }

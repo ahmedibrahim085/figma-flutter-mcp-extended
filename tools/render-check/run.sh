@@ -1,6 +1,7 @@
 #!/bin/bash
 # Render check: generate Dart for one Figma node offline, analyse it, and render it in four hosts.
 # Usage: npm run render-check -- [--theme | --typography] <fixture name in test/fixtures, or a path> <nodeId>
+#        npm run render-check -- --assets
 # --theme checks extract_theme_colors: its generated lib/theme (analysed with --fatal-infos) and the theme in four hosts.
 # --typography checks extract_theme_typography: its generated lib/theme (analysed with --fatal-infos) and a Text in the first style, under its TextTheme, in four hosts.
 # --assets checks the asset tools' report: in a temp copy of the harness with flutter_svg added (from the local pub cache), it exports a PNG and an SVG, then analyses and pumps the report's own import and usage lines in four hosts.

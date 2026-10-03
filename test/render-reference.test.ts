@@ -78,3 +78,27 @@ test('the render check\'s expected-result list covers every reference image; a k
         else assert.equal(entry.register, undefined, `${entry.node} passes, so it has no register id`);
     }
 });
+
+test('the recapture script fails with the server\'s stderr when the server exits before replying, instead of exiting silently', async () => {
+    const dir = mkdtempSync(join(tmpdir(), 'ff-capture-dead-'));
+    writeFileSync(join(dir, 'cli.js'), "console.error('boom from the server'); process.exit(3);\n");
+    const run = spawn(process.execPath, ['--import', 'tsx', 'tools/render-check/capture-screenshots.mts', '--cli', join(dir, 'cli.js'), '--out', dir], {
+        cwd: ROOT, env: {PATH: process.env.PATH, FIGMA_FILE_KEY: FILE_KEY}, stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    let output = '';
+    run.stdout.on('data', (chunk) => { output += chunk; });
+    run.stderr.on('data', (chunk) => { output += chunk; });
+    const code = await new Promise((resolve) => run.once('exit', resolve));
+    assert.equal(code, 1, output);
+    assert.match(output, /the server exited \(code 3, signal null\) before replying; its stderr ended:\nboom from the server/);
+});
+
+test('render-check:all refuses a node id that is not in the list, instead of running nothing and passing', async () => {
+    const run = spawn(process.execPath, ['--import', 'tsx', 'tools/render-check/run-all.mts', 'not-a-node'], {cwd: ROOT, stdio: ['ignore', 'pipe', 'pipe']});
+    let output = '';
+    run.stdout.on('data', (chunk) => { output += chunk; });
+    run.stderr.on('data', (chunk) => { output += chunk; });
+    const code = await new Promise((resolve) => run.once('exit', resolve));
+    assert.equal(code, 2, output);
+    assert.match(output, /NOT IN LIST not-a-node/);
+});

@@ -204,9 +204,15 @@ void main() {
 // The generator is called the way generate_flutter_implementation calls it, with one addition: withNodeKeys, so each
 // child carries the id of its Figma node. The node arrives through FigmaService from a fake Figma, as in the tool.
 const fakeFigma = await startFakeFigma(nodeRoute(node.id, node));
+const previousBaseUrl = process.env.FIGMA_API_BASE_URL;
 process.env.FIGMA_API_BASE_URL = fakeFigma.baseUrl;
-const {document} = await new FigmaService('test-key').getNodeWithStyles(FILE_KEY, node.id);
-await fakeFigma.close();
+let document;
+try {
+    ({document} = await new FigmaService('test-key').getNodeWithStyles(FILE_KEY, node.id));
+} finally {
+    if (previousBaseUrl === undefined) delete process.env.FIGMA_API_BASE_URL; else process.env.FIGMA_API_BASE_URL = previousBaseUrl;
+    await fakeFigma.close();
+}
 if (document.type === 'COMPONENT_SET') {
     console.error(`${node.id} is a component set; the render check renders one component at a time`);
     process.exit(2);
@@ -251,7 +257,9 @@ const dartBox = (id: string, b: {x: number; y: number; width: number; height: nu
 const byId = (n: any, id: string): any => n.id === id ? n : (n.children ?? []).map((c: any) => byId(c, id)).find(Boolean);
 const childBoxes = keyed.flatMap((id) => {
     const child = byId(node, id);
-    return child?.absoluteBoundingBox ? [`    ${dartBox(id, child.absoluteBoundingBox)},`] : [];
+    if (child?.absoluteBoundingBox) return [`    ${dartBox(id, child.absoluteBoundingBox)},`];
+    console.log(`not compared: ${id} is keyed in the generated widget but has no absoluteBoundingBox in the fixture`);
+    return [];
 });
 
 // Figma's screenshot of this node, when the manifest has one.

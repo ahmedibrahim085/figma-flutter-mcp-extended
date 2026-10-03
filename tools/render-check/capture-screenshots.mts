@@ -24,7 +24,19 @@ if (!fileKey) {
 }
 
 const manifest = JSON.parse(readFileSync(manifestPath, 'utf-8'));
-const server = spawn(process.execPath, [cli, '--stdio', ...(envFile ? ['--env', envFile] : [])], {cwd: ROOT, stdio: ['pipe', 'pipe', 'inherit']});
+const server = spawn(process.execPath, [cli, '--stdio', ...(envFile ? ['--env', envFile] : [])], {cwd: ROOT, stdio: ['pipe', 'pipe', 'pipe']});
+// The server logs every request URL, which holds the file key: show its stderr without it, and keep the tail for a failure.
+let stderrTail = '';
+server.stderr.on('data', (chunk) => {
+    const text = String(chunk).replaceAll(fileKey, '<file key>');
+    process.stderr.write(text);
+    stderrTail = (stderrTail + text).slice(-2000);
+});
+let finished = false;
+const exited = new Promise<never>((_, reject) => server.once('exit', (code, signal) => {
+    if (!finished) reject(new Error(`the server exited (code ${code}, signal ${signal}) before replying; its stderr ended:\n${stderrTail}`));
+}));
+exited.catch(() => {}); // each request races it; this only marks it handled between requests
 let buffer = '';
 let nextId = 1;
 const pending = new Map<number, (message: any) => void>();
@@ -39,11 +51,11 @@ server.stdout.on('data', (chunk) => {
     }
 });
 const send = (message: object) => server.stdin.write(`${JSON.stringify(message)}\n`);
-const request = (method: string, params: object) => new Promise<any>((resolveReply) => {
+const request = (method: string, params: object) => Promise.race([exited, new Promise<any>((resolveReply) => {
     const id = nextId++;
     pending.set(id, resolveReply);
     send({jsonrpc: '2.0', id, method, params});
-});
+})]);
 
 try {
     await request('initialize', {protocolVersion: '2025-03-26', capabilities: {}, clientInfo: {name: 'render-check-capture', version: '1.0.0'}});
@@ -65,5 +77,6 @@ try {
     }
     writeFileSync(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
 } finally {
+    finished = true;
     server.stdin.end();
 }

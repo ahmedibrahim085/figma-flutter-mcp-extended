@@ -495,14 +495,15 @@ let nodeKeys = false;
  * Runs `generate` with every child widget keyed by its Figma node id, so a test can find each node's widget
  * and compare its box with Figma's. Normal output carries no keys.
  * SHORTCUT: a module flag instead of a parameter threaded through layoutWidget, flexWidget, positioned and
- * childWidget; generation is synchronous, so the flag cannot leak across calls. Thread it through if that changes.
+ * childWidget; generation is synchronous (the callback type refuses a promise), so the flag cannot leak across calls. Thread it through if that changes.
  */
-export function withNodeKeys<T>(generate: () => T): T {
+export function withNodeKeys<T>(generate: () => T extends PromiseLike<unknown> ? never : T): T {
+  const previous = nodeKeys;
   nodeKeys = true;
   try {
     return generate();
   } finally {
-    nodeKeys = false;
+    nodeKeys = previous;
   }
 }
 

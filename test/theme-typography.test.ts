@@ -189,3 +189,12 @@ test('inspect_text_style_frame gives no advice block', async () => {
     assert.match(inspect.text, /can be used for typography extraction/);
     assert.doesNotMatch(inspect.text, /Recommendations|meaningful names/);
 });
+
+test('inspect_text_style_frame prints Figma float32 numbers at their shortest', async () => {
+    const root = frame(text('95:2', 'Caption Note', {...inter(13.100000381469727), lineHeightPx: 16.94318199157715, letterSpacing: 0.4000000059604645}));
+    const inspect = await callToolOffline(nodeRoute(root.id, root), 'inspect_text_style_frame', {fileId: FILE_KEY, nodeId: root.id});
+
+    assert.match(inspect.text, /Size: 13\.1px\n/);
+    assert.match(inspect.text, /Line Height: 16\.943182px\n/);
+    assert.match(inspect.text, /Letter Spacing: 0\.4px\n/);
+});

@@ -7,6 +7,7 @@ import {extractThemeTypography} from "../../../../extractors/typography/index.js
 import {TypographyGenerator, typographyConstants} from "./typography-generator.js";
 import {join} from 'path';
 import {validateAndConvertNodeId} from "../../../../utils/figma-url-parser.js";
+import {shortestFloat32} from "../../../../utils/float32.js";
 import defaults from '../../../../defaults.json' with { type: 'json' };
 
 export function registerTypographyTools(server: McpServer, figmaApiKey: string) {
@@ -200,13 +201,13 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                         if (child.type === 'TEXT' && child.style) {
                             textNodesFound++;
                             output += `   Font: ${child.style.fontFamily ?? 'not set by Figma'}\n`;
-                            output += `   Size: ${child.style.fontSize === undefined ? 'not set by Figma' : `${child.style.fontSize}px`}\n`;
+                            output += `   Size: ${child.style.fontSize === undefined ? 'not set by Figma' : `${shortestFloat32(child.style.fontSize)}px`}\n`;
                             output += `   Weight: ${child.style.fontWeight ?? 'not set by Figma'}\n`;
                             if (child.style.lineHeightPx !== undefined) {
-                                output += `   Line Height: ${child.style.lineHeightPx}px\n`;
+                                output += `   Line Height: ${shortestFloat32(child.style.lineHeightPx)}px\n`;
                             }
                             if (child.style.letterSpacing !== undefined) {
-                                output += `   Letter Spacing: ${child.style.letterSpacing}px\n`;
+                                output += `   Letter Spacing: ${shortestFloat32(child.style.letterSpacing)}px\n`;
                             }
                         }
 

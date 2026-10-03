@@ -1,7 +1,6 @@
 // src/tools/flutter/screens/screen-tool.mts
 
-import defaults from '../../../defaults.json' with { type: 'json' };
-import {budgetNote, renderWithinBudget} from '../../../utils/budget.js';
+import {BUDGET_META, budgetNote, renderWithinBudget} from '../../../utils/budget.js';
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
@@ -33,7 +32,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         "analyze_frame_as_screen",
         {
-            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
+            _meta: BUDGET_META,
             title: "Analyze Frame as Screen",
             description: "Analyze a Figma frame treated as a screen to extract layout, child layers, and structure information for Flutter screen implementation",
             inputSchema: {
@@ -116,7 +115,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         "inspect_frame_structure",
         {
-            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
+            _meta: BUDGET_META,
             title: "Inspect Frame Structure",
             description: "Get a quick overview of a frame's structure and child layers",
             inputSchema: {

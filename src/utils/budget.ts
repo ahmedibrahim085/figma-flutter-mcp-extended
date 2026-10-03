@@ -7,6 +7,9 @@ export interface Cut {
     omitted: string[];
 }
 
+/** What a tool declares to the client so it raises its output limit to the budget (Claude Code reads this key). */
+export const BUDGET_META = {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars};
+
 export const newCut = (limit: number): Cut => ({limit, included: 0, omitted: []});
 
 /** How many nodes `nodes` and their descendants hold. */
@@ -15,7 +18,8 @@ export const countNodes = <T extends {children?: T[]}>(nodes: T[]): number =>
 
 /**
  * `render(n)` serialises the first n of `total` items in document order. Returns the text for all of them when it fits
- * the response budget (defaults.maxResultSizeChars), else for the most that fit; `least` is the fewest it may keep.
+ * the response budget (defaults.maxResultSizeChars), else for the most that fit; `least` is the fewest it may keep: the
+ * `ff_*` tools always keep the root (1), the analysis tools may keep none because their report has fixed sections (0).
  */
 export function renderWithinBudget(total: number, render: (n: number) => string, least = 1): string {
     const whole = render(total);

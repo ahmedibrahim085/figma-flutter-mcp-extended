@@ -1,7 +1,6 @@
 // src/tools/flutter/component/component-tool.mts
 
-import defaults from '../../../defaults.json' with { type: 'json' };
-import {budgetNote, countNodes, cutTree, newCut, renderWithinBudget, type Cut} from '../../../utils/budget.js';
+import {BUDGET_META, budgetNote, countNodes, cutTree, newCut, renderWithinBudget, type Cut} from '../../../utils/budget.js';
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
@@ -48,7 +47,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         "analyze_figma_component",
         {
-            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
+            _meta: BUDGET_META,
             title: "Analyze Figma Component",
             description: "Analyze a Figma component or component set to extract layout, styling, and structure information for Flutter widget creation. Use analyze_frame_as_screen for top-level frames.",
             inputSchema: {
@@ -160,6 +159,8 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 extractTextContent: true
             });
             // Each report is built for a cut (see render below), so one that is too long can drop nodes in document order.
+            const variantSection = (variant: ComponentVariant | undefined, report: string) =>
+                variant ? `Variant: ${variant.name}${variant.isDefault ? ' (default)' : ''}\n${'─'.repeat(30)}\n${report}` : report;
             const reports: Array<(cut: Cut) => string> = [];
             let analysedNodes = 0;
             let firstDeduplicatedAnalysis: DeduplicatedComponentAnalysis | undefined;
@@ -186,12 +187,12 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                             const implementation = generateFlutterImplementation(analysed, styleLibrary);
                             analysisReport += "\n\n" + styleDefinitionsSection(implementation, styleLibrary) + implementation;
                         }
-                        return variant ? `Variant: ${variant.name}${variant.isDefault ? ' (default)' : ''}\n${'─'.repeat(30)}\n${analysisReport}` : analysisReport;
+                        return variantSection(variant, analysisReport);
                     });
                 } else {
                     const componentAnalysis: ComponentAnalysis = await componentExtractor.analyzeComponent(node, userDefinedComponent);
                     const analysisReport = generateComponentAnalysisReport(componentAnalysis, parsedInput);
-                    reports.push(() => variant ? `Variant: ${variant.name}${variant.isDefault ? ' (default)' : ''}\n${'─'.repeat(30)}\n${analysisReport}` : analysisReport);
+                    reports.push(() => variantSection(variant, analysisReport));
                 }
             }
 
@@ -300,7 +301,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         "inspect_component_structure",
         {
-            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
+            _meta: BUDGET_META,
             title: "Inspect Component Structure",
             description: "Get a quick overview of component structure, children, and nested components. Use inspect_frame_structure for top-level frames.",
             inputSchema: {
@@ -370,7 +371,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         "generate_flutter_implementation",
         {
-            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
+            _meta: BUDGET_META,
             title: "Generate Flutter Implementation",
             description: "Generate complete Flutter widget code for one Figma node, with the style definitions it uses",
             inputSchema: {

@@ -10,7 +10,7 @@ import {FigmaError, FigmaNotFoundError} from '../../types/errors.js';
 import {figmaTool} from '../figma-tool.js';
 import {Logger} from '../../utils/logger.js';
 import defaults from '../../defaults.json' with { type: 'json' };
-import {renderWithinBudget} from '../../utils/budget.js';
+import {BUDGET_META, countNodes, renderWithinBudget} from '../../utils/budget.js';
 
 // ────────────────────────────────────────────────────────────
 // Helpers
@@ -63,8 +63,6 @@ function summariseNode(node: any, cut: Cut): any {
     return summary;
 }
 
-const countTree = (node: any): number => 1 + (node.children ?? []).reduce((n: number, c: any) => n + countTree(c), 0);
-
 /**
  * Serialises `build(tree, frames)` for `root`. Over the budget, it keeps the
  * most nodes (in document order) that fit and adds `truncated` and
@@ -80,7 +78,7 @@ function renderTree(root: any, build: (tree: any, frames: any[]) => any): string
         }
         return JSON.stringify(result, null, 2);
     };
-    return renderWithinBudget(countTree(root), render);
+    return renderWithinBudget(countNodes([root]), render);
 }
 
 // ────────────────────────────────────────────────────────────
@@ -94,7 +92,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         'ff_get_metadata',
         {
-            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
+            _meta: BUDGET_META,
             title: 'Get Figma File Metadata',
             description:
                 'Get the node tree structure of a Figma file or a specific node. ' +
@@ -213,7 +211,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         'ff_get_design_context',
         {
-            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
+            _meta: BUDGET_META,
             title: 'Get Figma Design Context',
             description:
                 'Extract the design context for a Figma node: layout tree, component structure, ' +
@@ -282,7 +280,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     server.registerTool(
         'ff_get_variable_defs',
         {
-            _meta: {'anthropic/maxResultSizeChars': defaults.maxResultSizeChars},
+            _meta: BUDGET_META,
             title: 'Get Figma Variable Definitions',
             description:
                 'Read the variables of a Figma file: colors, spacing, typography, ' +

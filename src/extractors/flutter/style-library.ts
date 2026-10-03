@@ -1,5 +1,6 @@
 // src/extractors/flutter/style-library.mts
 
+import {createHash} from 'node:crypto';
 import {argbHex, dartColor} from '../../utils/dart-color.js';
 import { Logger } from '../../utils/logger.js';
 import { textStyleCode, type TextStyleFields } from './text-style.js';
@@ -40,17 +41,9 @@ export function stableStringify(value: any): string {
 }
 
 export class FlutterStyleLibrary {
-  private static instance: FlutterStyleLibrary;
   private styles = new Map<string, FlutterStyleDefinition>();
   private hashToId = new Map<string, string>();
   private semanticHashToId = new Map<string, string>();
-  
-  static getInstance(): FlutterStyleLibrary {
-    if (!this.instance) {
-      this.instance = new FlutterStyleLibrary();
-    }
-    return this.instance;
-  }
   
   addStyle(category: string, properties: any, context?: string): string {
     const hash = this.generateHash(properties);
@@ -77,13 +70,14 @@ export class FlutterStyleLibrary {
       return existingId;
     }
     
-    const generatedId = this.generateId();
+    const flutterCode = this.generateFlutterCode(category, properties);
+    const generatedId = this.generateId(flutterCode, semanticHash);
     const styleId = `${category}${generatedId.charAt(0).toUpperCase()}${generatedId.slice(1)}`;
     const definition: FlutterStyleDefinition = {
       id: styleId,
       category: category as any,
       properties,
-      flutterCode: this.generateFlutterCode(category, properties),
+      flutterCode,
       hash,
       semanticHash,
       usageCount: 1
@@ -151,12 +145,6 @@ export class FlutterStyleLibrary {
       duplicatesRemoved,
       memoryReduction
     };
-  }
-  
-  reset(): void {
-    this.styles.clear();
-    this.hashToId.clear();
-    this.semanticHashToId.clear();
   }
   
   private generateHash(properties: any): string {
@@ -272,8 +260,14 @@ export class FlutterStyleLibrary {
     return stableStringify(obj);
   }
   
-  private generateId(): string {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2, 4);
+  /**
+   * 12 base36 characters from a hash of the style's Dart code and its semantic key, so the same style has the same id in
+   * every call and session. The key is in the hash because the Dart code alone leaves out what other readers use (extra
+   * fill layers), and two such styles must not share an id.
+   */
+  private generateId(flutterCode: string, semanticHash: string): string {
+    const digest = createHash('sha256').update(`${flutterCode}\0${semanticHash}`).digest('hex');
+    return BigInt(`0x${digest.slice(0, 15)}`).toString(36).padStart(12, '0');
   }
   
   private generateFlutterCode(category: string, properties: any): string {

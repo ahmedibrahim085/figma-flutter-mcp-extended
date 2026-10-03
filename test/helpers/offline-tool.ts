@@ -24,9 +24,8 @@ export async function callToolOffline(
 }
 
 /**
- * Like callToolOffline, but makes several calls in one server process, so
- * in-memory state (the style library) carries from one call to the next as it
- * does for a consumer. Each result lists only the requests its own call made.
+ * Like callToolOffline, but makes several calls in one server process.
+ * Each result lists only the requests its own call made.
  */
 export async function callToolsOffline(
     routes: FakeRoutes,

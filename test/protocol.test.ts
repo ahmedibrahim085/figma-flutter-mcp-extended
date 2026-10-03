@@ -13,7 +13,6 @@ import {callToolOffline} from './helpers/offline-tool.ts';
 const EXPECTED_TOOLS = [
     'analyze_figma_component',
     'analyze_frame_as_screen',
-    'cached_styles_status',
     'export_flutter_assets',
     'export_svg_flutter_assets',
     'extract_theme_colors',

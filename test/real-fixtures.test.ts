@@ -5,7 +5,7 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {callToolOffline, callToolsOffline, nodeRoute, FILE_KEY} from './helpers/offline-tool.ts';
+import {callToolOffline, nodeRoute, FILE_KEY} from './helpers/offline-tool.ts';
 
 /** A fixture file's node entry, served under its own id. */
 function fixture(file: string, nodeId: string) {
@@ -28,10 +28,9 @@ async function widgetCode(routes: object, nodeId: string): Promise<string> {
 
 /** For each child of the analysed node, its decoration style id and that decoration's Dart. */
 async function childDecorations(routes: object, nodeId: string): Promise<Map<string, {id: string; code: string}>> {
-    const [analysis, generated] = await callToolsOffline(routes, [
-        ['analyze_figma_component', {input: FILE_KEY, nodeId, ...ANALYZE_ARGS}],
-        ['generate_flutter_implementation', {input: FILE_KEY, nodeId: nodeId}],
-    ]);
+    // Two server runs: a style id is the same for the same style in every call, so the join needs no shared state.
+    const analysis = await callToolOffline(routes, 'analyze_figma_component', {input: FILE_KEY, nodeId, ...ANALYZE_ARGS});
+    const generated = await callToolOffline(routes, 'generate_flutter_implementation', {input: FILE_KEY, nodeId: nodeId});
     const definitions = new Map([...generated.text.matchAll(/^final (decoration\w+) = (BoxDecoration\([^]*?\n\));$/gm)]
         .map(([, id, code]) => [id, code]));
     const decorations = new Map<string, {id: string; code: string}>();

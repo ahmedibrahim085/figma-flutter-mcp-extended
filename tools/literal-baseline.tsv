@@ -298,13 +298,9 @@ src/extractors/flutter/style-library.ts	number	1	var(i)	optimizeLibrary	1	K-CONV
 src/extractors/flutter/style-library.ts	number	100	binary(*)	optimizeLibrary	1	K-CONV	ratio to percent
 src/extractors/flutter/style-library.ts	number	2	arg(JSON.stringify)	addStyle	1	K-TEXT	rule R3: log formatting
 src/extractors/flutter/style-library.ts	number	2	arg(JSON.stringify)	generateSemanticHash	2	K-TEXT	rule R3: log formatting
-src/extractors/flutter/style-library.ts	number	2	arg(Math.random().toString(36).substr)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing)
 src/extractors/flutter/style-library.ts	number	2	arg(indentContinuation)	nestFillLayers	2	K-DART	indent width of emitted Dart
 src/extractors/flutter/style-library.ts	number	20	arg(hash.substring)	addStyle	1	K-TEXT	rule R3: log formatting
 src/extractors/flutter/style-library.ts	number	20	arg(semanticHash.substring)	addStyle	1	K-TEXT	rule R3: log formatting
-src/extractors/flutter/style-library.ts	number	36	arg(Date.now().toString)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing)
-src/extractors/flutter/style-library.ts	number	36	arg(Math.random().toString)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing)
-src/extractors/flutter/style-library.ts	number	4	arg(Math.random().toString(36).substr)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing)
 src/extractors/flutter/style-library.ts	string		binary(??)	nestFillLayers	1	K-TEXT	report, label, log or error text
 src/extractors/flutter/style-library.ts	string		return	radiusLines	1	K-TEXT	report, label, log or error text
 src/extractors/flutter/style-library.ts	string		ternary	blendNote	1	K-TEXT	report, label, log or error text
@@ -1013,11 +1009,9 @@ src/tools/flutter/components/component-tool.ts	string	Analyze a Figma component 
 src/tools/flutter/components/component-tool.ts	string	COMPONENT	binary(===)	registerComponentTools	3	K-API	rule: Figma REST enum value
 src/tools/flutter/components/component-tool.ts	string	COMPONENT_SET	binary(!==)	registerComponentTools	1	K-API	rule: Figma REST enum value
 src/tools/flutter/components/component-tool.ts	string	COMPONENT_SET	binary(===)	registerComponentTools	4	K-API	rule: Figma REST enum value
-src/tools/flutter/components/component-tool.ts	string	Cached Styles Status	prop(title)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/components/component-tool.ts	string	Custom widget class name	arg(z.string().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Error analyzing component	arg(figmaTool)	registerComponentTools	1	K-TEXT	R8: error message text
 src/tools/flutter/components/component-tool.ts	string	Error generating Flutter implementation	arg(figmaTool)	registerComponentTools	1	K-TEXT	R8: error message text
-src/tools/flutter/components/component-tool.ts	string	Error generating cached styles report	arg(figmaTool)	registerComponentTools	1	K-TEXT	R8: error message text
 src/tools/flutter/components/component-tool.ts	string	Error inspecting structure	arg(figmaTool)	registerComponentTools	1	K-TEXT	R8: error message text
 src/tools/flutter/components/component-tool.ts	string	Error listing variants	arg(figmaTool)	registerComponentTools	1	K-TEXT	R8: error message text
 src/tools/flutter/components/component-tool.ts	string	Export descendants that have exportSettings or a visible IMAGE fill (default: true)	arg(z.boolean().optional().describe)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
@@ -1029,7 +1023,6 @@ src/tools/flutter/components/component-tool.ts	string	Generate Flutter Implement
 src/tools/flutter/components/component-tool.ts	string	Generate complete Flutter widget code for one Figma node, with the style definitions it uses	prop(description)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/components/component-tool.ts	string	Generate full Flutter implementation code (default: false)	arg(z.boolean().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Get a quick overview of component structure, children, and nested components. Use inspect_frame_structure for top-level frames.	prop(description)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
-src/tools/flutter/components/component-tool.ts	string	Get comprehensive status report of the cached styles	prop(description)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/components/component-tool.ts	string	INSTANCE	binary(===)	registerComponentTools	2	K-API	rule: Figma REST enum value
 src/tools/flutter/components/component-tool.ts	string	Include style definitions in output (default: true)	arg(z.boolean().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Include variant analysis for component sets (default: true)	arg(z.boolean().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
@@ -1040,7 +1033,6 @@ src/tools/flutter/components/component-tool.ts	string	List the variants of a Fig
 src/tools/flutter/components/component-tool.ts	string	Maximum child nodes to analyze (default: 10)	arg(z.number().optional().describe)	registerComponentTools	1	F-HEUR	analysis cap; removed by ticket 15
 src/tools/flutter/components/component-tool.ts	string	Node ID (if providing file ID separately)	arg(z.string().optional().describe)	registerComponentTools	4	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Path to Flutter project for asset export (defaults to current directory)	arg(z.string().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
-src/tools/flutter/components/component-tool.ts	string	Reset cached styles before analysis (default: false)	arg(z.boolean().optional().describe)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/components/component-tool.ts	string	Show all children regardless of limits (default: false)	arg(z.boolean().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Treat a FRAME as a component (when designer hasn't converted to actual component yet) (default: false)	arg(z.boolean().optional().describe)	registerComponentTools	2	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	Use style deduplication for token efficiency (default: true)	arg(z.boolean().optional().describe)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
@@ -1050,11 +1042,10 @@ src/tools/flutter/components/component-tool.ts	string	\n	binary(+=)	registerComp
 src/tools/flutter/components/component-tool.ts	string	\n\n	arg(reports.join)	registerComponentTools	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	\n\n	binary(+)	registerComponentTools	2	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	analyze_figma_component	arg(server.registerTool)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
-src/tools/flutter/components/component-tool.ts	string	cached_styles_status	arg(server.registerTool)	registerComponentTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/components/component-tool.ts	string	generate_flutter_implementation	arg(server.registerTool)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	inspect_component_structure	arg(server.registerTool)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
 src/tools/flutter/components/component-tool.ts	string	list_component_variants	arg(server.registerTool)	registerComponentTools	1	K-SCHEMA	rule: tool name/title/description
-src/tools/flutter/components/component-tool.ts	string	text	prop(type)	registerComponentTools	18	K-API	rule: MCP content type
+src/tools/flutter/components/component-tool.ts	string	text	prop(type)	registerComponentTools	17	K-API	rule: MCP content type
 src/tools/flutter/components/component-tool.ts	string	url	binary(===)	registerComponentTools	1	K-SCHEMA	rule: value of our own analysis/style-category schema
 src/tools/flutter/components/component-tool.ts	string	─	PropertyAccessExpression	registerComponentTools	2	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/component-tool.ts	string	🏗️  Flutter Implementation\n	var(output)	registerComponentTools	1	K-TEXT	rule: user-facing/log text, no design fact
@@ -1089,40 +1080,32 @@ src/tools/flutter/components/deduplicated-helpers.ts	number	-1	ternary	positione
 src/tools/flutter/components/deduplicated-helpers.ts	number	-1	var(alignment)	positioned	1	K-CONV	hand-reviewed: Alignment -1 = start
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	arg(Math.max)	overflowsMax	1	K-CONV	hand-reviewed ??-fallback: no itemSpacing = 0 gap; no padding = 0
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	arg(allStyles.reduce)	generateComprehensiveDeduplicatedReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/deduplicated-helpers.ts	number	0	arg(allStyles.reduce)	generateStyleLibraryReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	arg(children.reduce)	overflowsMax	1	K-CONV	hand-reviewed ??-fallback: no itemSpacing = 0 gap; no padding = 0
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	arg(implementation.slice)	generateFlutterImplementation	1	K-CONV	hand-reviewed: size > 0 = measured size present
-src/tools/flutter/components/deduplicated-helpers.ts	number	0	arg(sortedByUsage.slice)	generateStyleLibraryReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(<)	flexWidget	1	K-CONV	hand-reviewed: negative gap test
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(=)	positioned	3	K-CONV	hand-reviewed: Alignment 0 = centre
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(===)	childWidget	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(===)	generateStyleLibraryReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(>)	axisSize	1	K-CONV	hand-reviewed: size > 0 = measured size present
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(>)	borderRadius	3	K-CONV	hand-reviewed: radius > 0 = rounded
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(>)	fillLayerChild	1	K-CONV	index, count, midpoint or identity element
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(>)	generateComprehensiveDeduplicatedReport	6	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(>)	generateDeduplicatedReport	4	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(>)	generateFlutterImplementation	4	K-CONV	hand-reviewed: size > 0 = measured size present
-src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(>)	generateStyleLibraryReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(??)	flexWidget	1	K-CONV	hand-reviewed ??-fallback: no itemSpacing = 0 gap
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(??)	overflowsMax	1	K-CONV	hand-reviewed ??-fallback: no itemSpacing = 0 gap; no padding = 0
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(||)	dartNumber	1	K-CONV	hand-reviewed: || 0 turns -0/NaN into 0
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(||)	generateComprehensiveDeduplicatedReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(||)	generateStyleLibraryReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	prop(x)	positioned	2	K-CONV	positioned child: a missing origin reads as zero; ticket 11 left it in place
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	prop(y)	positioned	2	K-CONV	positioned child: a missing origin reads as zero; ticket 11 left it in place
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	ternary	overflowsMax	1	K-CONV	hand-reviewed: no padding = 0
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	var(gap)	flexWidget	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	1	arg(yles.length) / totalUsage * 100).toFixed)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: display precision of a report percentage
-src/tools/flutter/components/deduplicated-helpers.ts	number	1	arg(yles.length) / totalUsage * 100).toFixed)	generateStyleLibraryReport	1	K-TEXT	rule: display precision of a report percentage
 src/tools/flutter/components/deduplicated-helpers.ts	number	1	binary(+)	generateComprehensiveDeduplicatedReport	3	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	1	binary(+)	generateDeduplicatedReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/deduplicated-helpers.ts	number	1	binary(+)	generateStyleLibraryReport	2	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	1	binary(-)	overflowsMax	1	K-CONV	hand-reviewed ??-fallback: no itemSpacing = 0 gap; no padding = 0
 src/tools/flutter/components/deduplicated-helpers.ts	number	1	binary(-)	positioned	1	K-CONV	hand-reviewed: Alignment x = 2*offset/(frame-size) - 1 (Flutter Alignment -1..1)
 src/tools/flutter/components/deduplicated-helpers.ts	number	1	binary(>)	flexWidget	1	K-CONV	hand-reviewed: more than one FILL sibling (count)
 src/tools/flutter/components/deduplicated-helpers.ts	number	100	binary(*)	generateComprehensiveDeduplicatedReport	1	K-CONV	rule: percent
-src/tools/flutter/components/deduplicated-helpers.ts	number	100	binary(*)	generateStyleLibraryReport	1	K-CONV	rule: percent
 src/tools/flutter/components/deduplicated-helpers.ts	number	2	arg(indentTail)	childWidget	1	K-DART	rule: indentation of emitted Dart
 src/tools/flutter/components/deduplicated-helpers.ts	number	2	arg(indentTail)	clipStack	1	K-DART	rule: indentation of emitted Dart
 src/tools/flutter/components/deduplicated-helpers.ts	number	2	arg(indentTail)	constrained	1	K-DART	rule: indentation of emitted Dart
@@ -1139,8 +1122,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	number	2	binary(/)	position
 src/tools/flutter/components/deduplicated-helpers.ts	number	4	arg(indentAll)	clipStack	1	K-DART	rule: indentation of emitted Dart
 src/tools/flutter/components/deduplicated-helpers.ts	number	4	arg(indentAll)	flexWidget	1	K-DART	rule: indentation of emitted Dart
 src/tools/flutter/components/deduplicated-helpers.ts	number	4	arg(indentTail)	generateFlutterImplementation	1	K-DART	rule: indentation of emitted Dart
-src/tools/flutter/components/deduplicated-helpers.ts	number	40	arg('='.repeat)	generateStyleLibraryReport	1	K-TEXT	rule: separator width in report text
-src/tools/flutter/components/deduplicated-helpers.ts	number	5	arg(sortedByUsage.slice)	generateStyleLibraryReport	1	F-HEUR	analysis cap; removed by ticket 15
 src/tools/flutter/components/deduplicated-helpers.ts	number	60	arg('='.repeat)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: separator width in report text
 src/tools/flutter/components/deduplicated-helpers.ts	regex	/,$/	arg(prop.replace)	sizedBox	1	K-DART	rule: Dart identifier / emitted-code text munging
 src/tools/flutter/components/deduplicated-helpers.ts	regex	/[.*+?^${}()|[\]\\]/g	arg(widgetName.replace)	generateFlutterImplementation	1	K-SCHEMA	sanitising or parsing regex
@@ -1174,7 +1155,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	string	, 	arg(corners.join)
 src/tools/flutter/components/deduplicated-helpers.ts	string	, 	arg(map(prop => prop.replace(/,$/, '')).join)	sizedBox	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string	, 	arg(parts.join)	boxConstraints	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string	=	PropertyAccessExpression	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/deduplicated-helpers.ts	string	=	PropertyAccessExpression	generateStyleLibraryReport	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string	ABSOLUTE	binary(===)	layoutWidget	1	K-API	rule: Figma REST enum value
 src/tools/flutter/components/deduplicated-helpers.ts	string	ABSOLUTE	binary(===)	paddingInsideStack	1	K-API	rule: Figma REST enum value
 src/tools/flutter/components/deduplicated-helpers.ts	string	Align	arg(box)	positioned	1	K-DART	rule: Flutter identifier in emitted code
@@ -1244,7 +1224,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	string	Yes	ternary	generate
 src/tools/flutter/components/deduplicated-helpers.ts	string	\$&	arg(widgetName.replace)	generateFlutterImplementation	1	K-SCHEMA	regex replacement token
 src/tools/flutter/components/deduplicated-helpers.ts	string	\n	arg(code.split)	indentAll	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/deduplicated-helpers.ts	string	\n	arg(split('\n').map(line => pad + line).join)	indentAll	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/deduplicated-helpers.ts	string	\n	arg(t).map(style => style.flutterCode)].join)	generateFlutterImplementation	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	string	alignment: AlignmentDirectional.topStart,	array-arg(box)	overflowLayout	1	K-DART	emitted Dart code
 src/tools/flutter/components/deduplicated-helpers.ts	string	baseline	prop(BASELINE)	CROSS_AXIS_ALIGNMENT	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	bottom	array	positioned	1	K-DART	rule: Flutter identifier in emitted code
@@ -1316,40 +1295,29 @@ src/tools/flutter/components/deduplicated-helpers.ts	template	      📐 Size: n
 src/tools/flutter/components/deduplicated-helpers.ts	template	      📝 Text: "${…}"\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	      🔑 Component Key: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	      🔧 Needs separate analysis: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	     - ${…}: ${…} style(s)\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	     Properties: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	     Usage count: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	    SizedBox(${…}: ${…}),\n	ternary	flexWidget	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	    return ${…};\n	binary(+=)	generateFlutterImplementation	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/deduplicated-helpers.ts	template	   ${…}. ${…} (${…}) - used ${…} times\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   ${…}. ${…} (${…})\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	   ${…}. ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   Styles: ${…}\n	binary(+=)	generateDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   Text: "${…}"\n	binary(+=)	generateDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • ${…} (${…})\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	   • ${…} (used ${…} times)\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • ${…}: ${…} (style not found)\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • ${…}: ${…} (used ${…} times)\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • ${…}: ${…} style(s)\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/deduplicated-helpers.ts	template	   • Analyze components with 'useDeduplication: true' to populate\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Component Key: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Deduplication efficiency: ${…}% reduction\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	   • Deduplication efficiency: ${…}% reduction\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Name: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Node ID: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Size: ${…}×${…}px\n	ternary	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Size: not set by Figma\n	ternary	generateComprehensiveDeduplicatedReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/deduplicated-helpers.ts	template	   • Style categories:\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Total style usage: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	   • Total style usage: ${…}\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Total unique styles: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	   • Total unique styles: ${…}\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Type: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	   • Use 'analyze_figma_component' tool to start building your cached styles\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/deduplicated-helpers.ts	template	   • Use 'analyze_figma_component' with different components to build cached styles\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Use 'generate_flutter_implementation' tool for complete Flutter code\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	   • Use 'resetCachedStyles: true' to start fresh analysis\n\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	  ${…}\n	ArrowFunction	box	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	  ${…}\n	ArrowFunction	multiChild	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	  @override\n	binary(+=)	generateFlutterImplementation	1	K-DART	rule: Dart syntax template carrying no design value
@@ -1386,7 +1354,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	template	${…}: double.inf
 src/tools/flutter/components/deduplicated-helpers.ts	template	${…}: double.infinity,	array-arg(box)	flexWidget	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	${…}Factor: ${…},	arg(factors.push)	positioned	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	${…}\n\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	${…}\n\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	- ${…}: ${…}\n	binary(+=)	generateDeduplicatedReport	1	K-TEXT	rule: report/log/error text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	- ${…}\n	ArrowFunction	generateFlutterImplementation	1	K-TEXT	rule: report/log/error text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	- ${…}\n	binary(+=)	generateFlutterImplementation	1	K-TEXT	rule: report/log/error text, no design fact
@@ -1408,14 +1375,11 @@ src/tools/flutter/components/deduplicated-helpers.ts	template	Style References:\
 src/tools/flutter/components/deduplicated-helpers.ts	template	Type: ${…}\n	binary(+=)	generateDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	\b${…}[(.]	arg(RegExp)	generateFlutterImplementation	1	K-SCHEMA	regex built from a widget or class name
 src/tools/flutter/components/deduplicated-helpers.ts	template	\b${…}\b	arg(RegExp)	referencedStyles	1	K-SCHEMA	regex built from a widget or class name
-src/tools/flutter/components/deduplicated-helpers.ts	template	\n	binary(+=)	generateComprehensiveDeduplicatedReport	6	K-TEXT	rule: report/log/approximation text, no design fact
+src/tools/flutter/components/deduplicated-helpers.ts	template	\n	binary(+=)	generateComprehensiveDeduplicatedReport	7	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	\n	binary(+=)	generateDeduplicatedReport	2	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	\n	binary(+=)	generateFlutterImplementation	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/deduplicated-helpers.ts	template	\n   ${…} (${…}):\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	\nUse generate_flutter_implementation tool for complete Flutter code.\n	binary(+=)	generateDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	\n⚠️ Approximations:\n${…}	binary(+=)	generateFlutterImplementation	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	\n📋 All Styles:\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	\n🔥 Most Used Styles:\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	alignment: Alignment(${…}),	array-arg(box)	positioned	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	borderRadius: ${…},	array-arg(box)	clipStack	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	child: ${…},	arg(props.push)	childWidget	1	K-DART	rule: Dart syntax template carrying no design value
@@ -1447,7 +1411,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	template	padding: ${…},	a
 src/tools/flutter/components/deduplicated-helpers.ts	template	padding: ${…},	array-arg(box)	layoutWidget	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	width: ${…},	ternary	childWidget	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	}\n	binary(+=)	generateFlutterImplementation	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/deduplicated-helpers.ts	template	⚠️  Cached styles are empty.\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	✨ New Style Definitions Created:\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	🎨 Style References (Deduplicated):\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	🎨 Style References: None detected\n\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
@@ -1457,9 +1420,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	template	🏷️  Component
 src/tools/flutter/components/deduplicated-helpers.ts	template	👶 Children Analysis (${…} children):\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	👶 Children: No children detected\n\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	📊 Comprehensive Component Analysis (Deduplicated)\n	var(output)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	📊 Library Statistics:\n	binary(+=)	generateStyleLibraryReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	📚 Cached styles status report\n	var(output)	generateStyleLibraryReport	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/deduplicated-helpers.ts	template	📚 Cached styles summary:\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	🔗 Nested Components (${…}):\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	🚀 Quick Actions:\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	type-string	height	LiteralType	axisSize	1	K-SCHEMA	rule: TypeScript literal type of our own API
@@ -2412,3 +2372,14 @@ src/utils/visibility.ts	string	SOLID	binary(===)	hasOwnVisualContent	1	K-API	R13
 src/utils/visibility.ts	string	TEXT	binary(===)	hasOwnVisualContent	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/utils/visibility.ts	string	string	binary(===)	hasOwnVisualContent	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/utils/visibility.ts	type-string	visible	LiteralType	isNodeExplicitlyHidden	1	K-API	R2: TS literal type mirroring a Figma REST enum / export format
+src/extractors/flutter/style-library.ts	string	sha256	arg(createHash)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
+src/extractors/flutter/style-library.ts	template	${…} ${…}	arg(createHash('sha256').update)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
+src/extractors/flutter/style-library.ts	string	hex	arg(${flutterCode}\0${semanticHash}`).digest)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
+src/extractors/flutter/style-library.ts	template	0x${…}	arg(BigInt)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
+src/extractors/flutter/style-library.ts	number	0	arg(digest.slice)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
+src/extractors/flutter/style-library.ts	number	15	arg(digest.slice)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
+src/extractors/flutter/style-library.ts	number	36	arg(Int(`0x${digest.slice(0, 15)}`).toString)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
+src/extractors/flutter/style-library.ts	number	12	arg(st.slice(0, 15)}`).toString(36).padStart)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
+src/extractors/flutter/style-library.ts	string	0	arg(st.slice(0, 15)}`).toString(36).padStart)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
+src/tools/flutter/components/deduplicated-helpers.ts	string	\n	arg(y).map(style => style.flutterCode)].join)	generateFlutterImplementation	1	K-TEXT	report, label, log or error text
+src/tools/flutter/components/deduplicated-helpers.ts	template	📚 Styles in this analysis:\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	report, label, log or error text

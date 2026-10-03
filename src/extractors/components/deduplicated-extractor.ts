@@ -55,8 +55,9 @@ export const MAX_CHILD_DEPTH = 8;
 export const NESTED_COMPONENT_TYPES = new Set(['INSTANCE', 'COMPONENT', 'COMPONENT_SET']);
 
 export class DeduplicatedComponentExtractor {
-  private styleLibrary = FlutterStyleLibrary.getInstance();
-  private globalStyleManager = new GlobalStyleManager();
+  /** This extractor's styles: one extractor per tool call, so nothing carries over from another call. */
+  readonly styleLibrary = new FlutterStyleLibrary();
+  private globalStyleManager = new GlobalStyleManager(this.styleLibrary);
   
   async analyzeComponent(node: FigmaNode, trackNewStyles = false): Promise<DeduplicatedComponentAnalysis> {
     const styling = extractStylingInfo(node);

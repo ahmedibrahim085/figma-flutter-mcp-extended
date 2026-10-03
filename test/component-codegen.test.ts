@@ -218,7 +218,7 @@ test('style dedup merges identical non-uniform padding across calls and splits a
     });
     const reports: string[] = [];
     try {
-        // One server process: the style library persists across calls, as it does for a consumer.
+        // One server process; a style id comes from the style, so equal padding has one id in every call.
         await withServer(async (server) => {
             await server.initialize();
             for (const nodeId of ['7:1', '7:2', '7:3']) {

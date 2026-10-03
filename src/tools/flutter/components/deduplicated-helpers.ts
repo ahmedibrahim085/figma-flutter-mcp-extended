@@ -2,7 +2,8 @@
 
 import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
 import { MAX_CHILD_DEPTH, NESTED_COMPONENT_TYPES, type DeduplicatedComponentAnalysis, type DeduplicatedComponentChild } from '../../../extractors/components/deduplicated-extractor.js';
-import { FlutterStyleLibrary, FlutterCodeGenerator } from '../../../extractors/flutter/style-library.js';
+import type { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
+import { FlutterCodeGenerator } from '../../../extractors/flutter/style-library.js';
 import { dartString, indentTail, textWidgetCode } from '../../../extractors/flutter/text-style.js';
 import { generateComponentVisualContext } from '../visual-context.js';
 import type { ComponentAnalysis, LayoutInfo } from '../../../extractors/components/types.js';
@@ -79,16 +80,15 @@ function wrapForMainAxisSizing(
   return `Expanded(\n  child: ${indentTail(widgetCode, 2)},\n)`;
 }
 
-/** The cached styles `code` refers to by id; the library also holds what other nodes cached. */
-export function referencedStyles(code: string) {
-  return FlutterStyleLibrary.getInstance().getAllStyles().filter(style => new RegExp(`\\b${style.id}\\b`).test(code));
+/** The styles of `styleLibrary` that `code` refers to by id; the library also holds the styles of other nodes. */
+export function referencedStyles(code: string, styleLibrary: FlutterStyleLibrary) {
+  return styleLibrary.getAllStyles().filter(style => new RegExp(`\\b${style.id}\\b`).test(code));
 }
 
 const NAME_THE_CLASS = 'Pass widgetName to generate_flutter_implementation to name the class.';
 
 /** The widget class for `analysis`, named `className` or from the layer name; with no valid class name, the reason instead of a class. */
-export function generateFlutterImplementation(analysis: DeduplicatedComponentAnalysis, className?: string): string {
-  const styleLibrary = FlutterStyleLibrary.getInstance();
+export function generateFlutterImplementation(analysis: DeduplicatedComponentAnalysis, styleLibrary: FlutterStyleLibrary, className?: string): string {
   let implementation = `Flutter Implementation:\n\n`;
   
   // Widget composition guidance
@@ -140,7 +140,7 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   root = constrained(boxConstraints(analysis.layout, fillAxes), root);
   if (limits.length > 0) root = box('LimitedBox', [...limits, `child: ${indentTail(root, 2)},`]);
   // A class named like a widget its body or its style definitions call would hide that widget (measured with dart analyze: `class Text` breaks `Text('x')`).
-  const generatedCode = [root, ...referencedStyles(root).map(style => style.flutterCode)].join('\n');
+  const generatedCode = [root, ...referencedStyles(root, styleLibrary).map(style => style.flutterCode)].join('\n');
   if (new RegExp(`\\b${widgetName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}[(.]`).test(generatedCode)) {
     return implementation.slice(0, implementation.indexOf(`class ${widgetName}`))
       + `No class generated for "${analysis.metadata.name}": "${widgetName}" is also a widget the generated body uses. ${NAME_THE_CLASS}\n`;
@@ -552,10 +552,11 @@ function sizedBox(sizeProps: string[]): string {
 }
 
 /**
- * Generate comprehensive deduplicated report with cached styles statistics
+ * Generate comprehensive deduplicated report with the style statistics of this call
  */
 export function generateComprehensiveDeduplicatedReport(
   analysis: DeduplicatedComponentAnalysis,
+  styleLibrary: FlutterStyleLibrary,
   includeStyleStats: boolean = true
 ): string {
   let output = `📊 Comprehensive Component Analysis (Deduplicated)\n`;
@@ -584,7 +585,6 @@ export function generateComprehensiveDeduplicatedReport(
   // Style references with usage information
   if (Object.keys(analysis.styleRefs).length > 0) {
     output += `🎨 Style References (Deduplicated):\n`;
-    const styleLibrary = FlutterStyleLibrary.getInstance();
     
     Object.entries(analysis.styleRefs).forEach(([category, styleId]) => {
       const style = styleLibrary.getStyle(styleId);
@@ -654,12 +654,11 @@ export function generateComprehensiveDeduplicatedReport(
     output += `\n`;
   }
 
-  // Cached styles statistics (if requested)
+  // Style statistics of this call (if requested)
   if (includeStyleStats) {
-    const styleLibrary = FlutterStyleLibrary.getInstance();
     const allStyles = styleLibrary.getAllStyles();
     
-    output += `📚 Cached styles summary:\n`;
+    output += `📚 Styles in this analysis:\n`;
     output += `   • Total unique styles: ${allStyles.length}\n`;
     
     if (allStyles.length > 0) {
@@ -686,8 +685,7 @@ export function generateComprehensiveDeduplicatedReport(
   // Quick actions
   output += `🚀 Quick Actions:\n`;
   output += `   • Use 'generate_flutter_implementation' tool for complete Flutter code\n`;
-  output += `   • Use 'analyze_figma_component' with different components to build cached styles\n`;
-  output += `   • Use 'resetCachedStyles: true' to start fresh analysis\n\n`;
+  output += `\n`;
   
   output += `🏗️  Widget Composition Reminder:\n`;
   WIDGET_SPLIT_ADVICE.forEach(line => { output += `   • ${line}\n`; });
@@ -738,68 +736,4 @@ export function addVisualContextToDeduplicatedReport(
   };
 
   return generateComponentVisualContext(componentAnalysis, figmaUrl, nodeId);
-}
-
-/**
- * Generate cached styles status report
- */
-export function generateStyleLibraryReport(): string {
-  const styleLibrary = FlutterStyleLibrary.getInstance();
-  const allStyles = styleLibrary.getAllStyles();
-  
-  let output = `📚 Cached styles status report\n`;
-  output += `${'='.repeat(40)}\n\n`;
-
-  if (allStyles.length === 0) {
-    output += `⚠️  Cached styles are empty.\n`;
-    output += `   • Analyze components with 'useDeduplication: true' to populate\n`;
-    output += `   • Use 'analyze_figma_component' tool to start building your cached styles\n`;
-    return output;
-  }
-
-  output += `📊 Library Statistics:\n`;
-  output += `   • Total unique styles: ${allStyles.length}\n`;
-  
-  // Category breakdown
-  const categoryStats = allStyles.reduce((acc, style) => {
-    acc[style.category] = (acc[style.category] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-  
-  output += `   • Style categories:\n`;
-  Object.entries(categoryStats).forEach(([category, count]) => {
-    output += `     - ${category}: ${count} style(s)\n`;
-  });
-
-  // Usage statistics
-  const totalUsage = allStyles.reduce((sum, style) => sum + style.usageCount, 0);
-  output += `   • Total style usage: ${totalUsage}\n`;
-  
-  if (totalUsage > allStyles.length) {
-    const efficiency = ((totalUsage - allStyles.length) / totalUsage * 100).toFixed(1);
-    output += `   • Deduplication efficiency: ${efficiency}% reduction\n`;
-  }
-
-  // Most used styles
-  const sortedByUsage = [...allStyles].sort((a, b) => b.usageCount - a.usageCount);
-  const topStyles = sortedByUsage.slice(0, 5);
-  
-  if (topStyles.length > 0) {
-    output += `\n🔥 Most Used Styles:\n`;
-    topStyles.forEach((style, index) => {
-      output += `   ${index + 1}. ${style.id} (${style.category}) - used ${style.usageCount} times\n`;
-    });
-  }
-
-  // Detailed style list
-  output += `\n📋 All Styles:\n`;
-  Object.entries(categoryStats).forEach(([category, count]) => {
-    const categoryStyles = allStyles.filter(s => s.category === category);
-    output += `\n   ${category.toUpperCase()} (${count}):\n`;
-    categoryStyles.forEach(style => {
-      output += `   • ${style.id} (used ${style.usageCount} times)\n`;
-    });
-  });
-
-  return output;
 }

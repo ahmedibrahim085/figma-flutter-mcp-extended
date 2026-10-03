@@ -14,7 +14,7 @@ import {
     type DeduplicatedComponentAnalysis
 } from "../../../extractors/components/index.js";
 import {generateFigmaUrl} from "../../../utils/figma-url-parser.js";
-import {FlutterStyleLibrary, OptimizationReport} from "../../../extractors/flutter/style-library.js";
+import {OptimizationReport} from "../../../extractors/flutter/style-library.js";
 import {Logger} from "../../../utils/logger.js";
 import {typeName} from "../../../utils/dart-names.js";
 
@@ -26,7 +26,6 @@ import {
     generateFlutterImplementation,
     referencedStyles,
     generateComprehensiveDeduplicatedReport,
-    generateStyleLibraryReport,
     addVisualContextToDeduplicatedReport
 } from "./deduplicated-helpers.js";
 
@@ -59,23 +58,14 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 exportAssets: z.boolean().optional().describe("Export descendants that have exportSettings or a visible IMAGE fill (default: true)"),
                 useDeduplication: z.boolean().optional().describe("Use style deduplication for token efficiency (default: true)"),
                 generateFlutterCode: z.boolean().optional().describe("Generate full Flutter implementation code (default: false)"),
-                resetCachedStyles: z.boolean().optional().describe("Reset cached styles before analysis (default: false)"),
                 devicePixelRatios: devicePixelRatiosInput
             }
         },
-        figmaTool('Error analyzing component', async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true, useDeduplication = true, generateFlutterCode = false, resetCachedStyles = false, devicePixelRatios}) => {
-            // Reset cached styles if requested
-            const styleLibrary = FlutterStyleLibrary.getInstance();
-            
-            if (resetCachedStyles) {
-                styleLibrary.reset();
-            }
-            
+        figmaTool('Error analyzing component', async ({input, nodeId, userDefinedComponent = false, maxChildNodes = 10, includeVariants = true, variantSelection, projectPath = process.cwd(), exportAssets = true, useDeduplication = true, generateFlutterCode = false, devicePixelRatios}) => {
             Logger.info(`🎯 Component Analysis Started:`, {
                 input: input.substring(0, 50) + '...',
                 nodeId,
-                useDeduplication,
-                resetCachedStyles
+                useDeduplication
             });
 
             // Parse input to get file ID and node ID
@@ -182,12 +172,12 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                         newStyleDefinitions: deduplicatedAnalysis.newStyleDefinitions ? Object.keys(deduplicatedAnalysis.newStyleDefinitions).length : 0
                     });
 
-                    analysisReport = generateComprehensiveDeduplicatedReport(deduplicatedAnalysis, true);
+                    analysisReport = generateComprehensiveDeduplicatedReport(deduplicatedAnalysis, deduplicatedExtractor.styleLibrary, true);
 
                     firstDeduplicatedAnalysis ??= deduplicatedAnalysis;
 
                     if (generateFlutterCode) {
-                        analysisReport += "\n\n" + generateFlutterImplementation(deduplicatedAnalysis);
+                        analysisReport += "\n\n" + generateFlutterImplementation(deduplicatedAnalysis, deduplicatedExtractor.styleLibrary);
                     }
                 } else {
                     const componentAnalysis: ComponentAnalysis = await componentExtractor.analyzeComponent(node, userDefinedComponent);
@@ -388,15 +378,15 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
             // A component set gives one class per variant, named from the set name and the variant name.
             const implementation = node.type === 'COMPONENT_SET'
                 ? (await Promise.all((node.children ?? []).filter(variant => variant.type === 'COMPONENT').map(async variant =>
-                    generateFlutterImplementation(await extractor.analyzeComponent(variant, true), typeName(`${widgetName ?? node.name} ${variant.name}`))))).join('\n')
-                : generateFlutterImplementation(await extractor.analyzeComponent(node, true),
+                    generateFlutterImplementation(await extractor.analyzeComponent(variant, true), extractor.styleLibrary, typeName(`${widgetName ?? node.name} ${variant.name}`))))).join('\n')
+                : generateFlutterImplementation(await extractor.analyzeComponent(node, true), extractor.styleLibrary,
                     // A variant passed on its own is named as it is through its set: set name plus variant name.
                     componentSetName ? typeName(`${widgetName ?? componentSetName} ${node.name}`) : widgetName);
 
             let output = "🏗️  Flutter Implementation\n";
             output += `${'='.repeat(50)}\n\n`;
 
-            const styles = referencedStyles(implementation);
+            const styles = referencedStyles(implementation, extractor.styleLibrary);
             if (includeStyleDefinitions && styles.length > 0) {
                 output += "📋 Style Definitions:\n";
                 output += `${'─'.repeat(30)}\n`;
@@ -411,23 +401,6 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
 
             return {
                 content: [{ type: "text", text: output }]
-            };
-        })
-    );
-
-    // Cached styles status tool
-    server.registerTool(
-        "cached_styles_status",
-        {
-            title: "Cached Styles Status",
-            description: "Get comprehensive status report of the cached styles",
-            inputSchema: {}
-        },
-        figmaTool('Error generating cached styles report', async () => {
-            const report = generateStyleLibraryReport();
-            
-            return {
-                content: [{ type: "text", text: report }]
             };
         })
     );

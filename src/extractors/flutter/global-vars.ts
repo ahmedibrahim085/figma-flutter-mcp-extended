@@ -10,7 +10,7 @@ export interface GlobalVars {
 
 export class GlobalStyleManager {
   private globalVars: GlobalVars = { styles: {}, usage: {} };
-  private styleLibrary = FlutterStyleLibrary.getInstance();
+  constructor(private styleLibrary: FlutterStyleLibrary) {}
   
   addStyle(properties: any, context?: string): string {
     Logger.info(`🌐 GlobalStyleManager: Adding style with context: ${context}`);
@@ -155,11 +155,6 @@ export class GlobalStyleManager {
   
   getUsageStats(): Record<string, number> {
     return { ...this.globalVars.usage };
-  }
-  
-  reset(): void {
-    this.globalVars = { styles: {}, usage: {} };
-    this.styleLibrary.reset();
   }
   
   // Helper methods (delegated to style library for consistency)

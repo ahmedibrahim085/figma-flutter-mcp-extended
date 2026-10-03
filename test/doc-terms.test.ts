@@ -42,7 +42,7 @@ test('showAllChildren includes hidden child layers in inspect_frame_structure; s
     assert.match(old.text, /Use showAllChildren: true/);
 });
 
-test('resetCachedStyles clears the cached styles before analysis; resetStyleLibrary no longer does', async () => {
+test('style totals count the current call only; resetCachedStyles and resetStyleLibrary are ignored', async () => {
     const args = {input: FILE_KEY, nodeId: TEXT_FRAME.id, exportAssets: false, userDefinedComponent: true};
     const usage = async (extra: object) => {
         const [, second] = await callToolsOffline(nodeRoute(TEXT_FRAME.id, TEXT_FRAME),
@@ -50,9 +50,10 @@ test('resetCachedStyles clears the cached styles before analysis; resetStyleLibr
         return second.text.match(/Total style usage: (\d+)/)?.[1];
     };
 
-    // Each analysis uses 2 cached styles; a reset drops the first call's use from the total.
+    // Each analysis uses 2 styles; the first call's use is never in the second call's total.
+    assert.equal(await usage({}), '2');
     assert.equal(await usage({resetCachedStyles: true}), '2');
-    assert.equal(await usage({resetStyleLibrary: true}), '4');
+    assert.equal(await usage({resetStyleLibrary: true}), '2');
 });
 
 test('report headings use Figma and Flutter terms', async () => {
@@ -60,15 +61,13 @@ test('report headings use Figma and Flutter terms', async () => {
     // A URL input adds the layout map section to the report.
     const screen = await call(SCREEN, 'analyze_frame_as_screen',
         {input: `https://www.figma.com/design/${FILE_KEY}/x?node-id=30-1`, extractAssets: false});
-    const status = await callToolOffline({}, 'cached_styles_status', {});
 
     assert.match(plain.text, /Child layers \(1 analyzed\)/);
     assert.match(screen.text, /Layout sizing \(FIXED\/HUG\/FILL\)/);
     assert.match(screen.text, /Screen layout map for AI Implementation/);
     assert.match(screen.text, /Child widgets:/);
-    assert.match(status.text, /Cached styles/);
     for (const old of [/Child Layers \(/, /Child Widgets:/, /Screen Layout map/, /child elements/i, /Child Elements/, /Layout Sizing Semantics/, /Visual Context/, /Enhanced Semantic Detection/, /Section Widgets/, /Style Library/]) {
-        for (const {text} of [plain, screen, status]) assert.doesNotMatch(text, old);
+        for (const {text} of [plain, screen]) assert.doesNotMatch(text, old);
     }
 });
 

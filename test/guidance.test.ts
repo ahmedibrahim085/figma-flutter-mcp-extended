@@ -37,10 +37,9 @@ test('no tool output carries an invented rule, ranking or advice', async () => {
         ['inspect_component_structure', {...base, userDefinedComponent: true}],
         ['analyze_frame_as_screen', {...base, extractAssets: false}],
         ['inspect_frame_structure', base],
-        ['cached_styles_status', {}],
     ]);
 
-    assert.equal(results.length, 7);
+    assert.equal(results.length, 6);
     for (const {text: out} of results) {
         assert.ok(out.length > 150, `tool output too short to prove anything: ${out}`);
         assert.doesNotMatch(out, BANNED);
@@ -49,7 +48,6 @@ test('no tool output carries an invented rule, ranking or advice', async () => {
     assert.match(results[0].text, /Wide Card/);
     assert.match(results[4].text, /Screen Analysis Report/);
     assert.match(results[5].text, /Screen Structure Inspection/);
-    assert.match(results[6].text, /Cached styles status report/);
 });
 
 test('guidance quotes Flutter instead of a line count', async () => {

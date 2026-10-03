@@ -1,9 +1,11 @@
 // Render check, step 1: run the code generator offline on one Figma node and write a Dart
 // library plus a widget test that pumps it in four hosts.
-// Usage: node --import tsx tools/render-check/generate.mts [--theme] <fixture name in test/fixtures, or a path> <nodeId>
+// Usage: node --import tsx tools/render-check/generate.mts [--theme | --typography] <fixture name in test/fixtures, or a path> <nodeId>
 // --theme runs extract_theme_colors instead: lib/theme gets app_colors.dart and app_theme.dart, and a test pumps
 // MaterialApp(theme: AppTheme.lightTheme) in the four hosts.
-import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
+// --typography runs extract_theme_typography: lib/theme gets app_text.dart and, when a style is named like a TextTheme
+// slot, text_theme.dart; a test pumps a Text in AppText's first style under that TextTheme in the four hosts.
+import {existsSync, mkdirSync, readFileSync, rmSync, writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {isAbsolute, resolve} from 'node:path';
 import {callToolsOffline, nodeRoute, FILE_KEY} from '../../test/helpers/offline-tool.ts';
@@ -13,9 +15,10 @@ const FLUTTER = fileURLToPath(new URL('./flutter/', import.meta.url));
 
 const args = process.argv.slice(2);
 const themeMode = args[0] === '--theme';
-const [fixture, nodeId] = themeMode ? args.slice(1) : args;
+const typographyMode = args[0] === '--typography';
+const [fixture, nodeId] = themeMode || typographyMode ? args.slice(1) : args;
 if (!fixture || !nodeId) {
-    console.error('usage: generate.mts [--theme] <fixture name or path> <nodeId>');
+    console.error('usage: generate.mts [--theme | --typography] <fixture name or path> <nodeId>');
     process.exit(2);
 }
 const fixturePath = isAbsolute(fixture) ? fixture : resolve(ROOT, 'test/fixtures', fixture);
@@ -77,6 +80,49 @@ void main() {
 `);
     console.log(result.text);
     console.log('\nwrote lib/theme and test/theme_host_test.dart in tools/render-check/flutter');
+    process.exit(0);
+}
+
+if (typographyMode) {
+    // The theme tool writes into <projectPath>/lib/theme; the harness is the project. Files of an earlier run would be analysed too.
+    rmSync(resolve(FLUTTER, 'lib/theme'), {recursive: true, force: true});
+    const entry = (Object.values(payload.nodes) as any[]).find((e) => find(e.document));
+    const [result] = await callToolsOffline(nodeRoute(node.id, node, entry.styles), [
+        ['extract_theme_typography', {fileId: FILE_KEY, nodeId: node.id, projectPath: FLUTTER, generateTextTheme: true}],
+    ]);
+    if (!result.text.startsWith('Successfully')) {
+        console.error(result.text);
+        process.exit(1);
+    }
+    const firstStyle = readFileSync(resolve(FLUTTER, 'lib/theme/app_text.dart'), 'utf-8').match(/static const TextStyle (\S+) =/)![1];
+    const hasTextTheme = existsSync(resolve(FLUTTER, 'lib/theme/text_theme.dart'));
+    mkdirSync(resolve(FLUTTER, 'test'), {recursive: true});
+    writeFileSync(resolve(FLUTTER, 'test/typography_host_test.dart'), `import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:render_check/theme/app_text.dart';
+${hasTextTheme ? "import 'package:render_check/theme/text_theme.dart';\n" : ''}
+// The generated text styles must build and lay out without a Flutter error in each host a screen can give them.
+void main() {
+  final hosts = ${HOSTS};
+  for (final host in hosts.entries) {
+    testWidgets('AppText.${firstStyle} in a \${host.key} host', (tester) async {
+      final errors = <String>[];
+      final previous = FlutterError.onError;
+      FlutterError.onError = (details) => errors.add(details.exceptionAsString().split('\\n').first);
+      await tester.pumpWidget(MaterialApp(
+        theme: ThemeData(${hasTextTheme ? 'textTheme: AppTextTheme.textTheme' : ''}),
+        home: Scaffold(body: host.value(const Text('Sample', style: AppText.${firstStyle}))),
+      ));
+      FlutterError.onError = previous;
+      // ignore: avoid_print
+      print('\${host.key}: \${tester.getSize(find.text('Sample'))}');
+      expect(errors, isEmpty);
+    });
+  }
+}
+`);
+    console.log(result.text);
+    console.log('\nwrote lib/theme and test/typography_host_test.dart in tools/render-check/flutter');
     process.exit(0);
 }
 

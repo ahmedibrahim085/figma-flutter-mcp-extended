@@ -1,0 +1,532 @@
+{
+  "name": "Type scale (synthetic: 15 TextTheme slot names, Material 3 default sizes)",
+  "nodes": {
+    "98:1": {
+      "document": {
+        "id": "98:1",
+        "name": "Type scale",
+        "type": "FRAME",
+        "absoluteBoundingBox": {
+          "x": 0,
+          "y": 0,
+          "width": 400,
+          "height": 1100
+        },
+        "children": [
+          {
+            "id": "98:2",
+            "name": "Layer 1",
+            "type": "TEXT",
+            "characters": "Display/Large",
+            "styles": {
+              "text": "S:0"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 400,
+              "fontSize": 57,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": -0.25,
+              "lineHeightPx": 64,
+              "lineHeightPercentFontSize": 112.28070175438596,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 0,
+              "width": 400,
+              "height": 64
+            }
+          },
+          {
+            "id": "98:3",
+            "name": "Layer 2",
+            "type": "TEXT",
+            "characters": "Display/Medium",
+            "styles": {
+              "text": "S:1"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 400,
+              "fontSize": 45,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0,
+              "lineHeightPx": 52,
+              "lineHeightPercentFontSize": 115.55555555555554,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 70,
+              "width": 400,
+              "height": 52
+            }
+          },
+          {
+            "id": "98:4",
+            "name": "Layer 3",
+            "type": "TEXT",
+            "characters": "Display/Small",
+            "styles": {
+              "text": "S:2"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 400,
+              "fontSize": 36,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0,
+              "lineHeightPx": 44,
+              "lineHeightPercentFontSize": 122.22222222222223,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 140,
+              "width": 400,
+              "height": 44
+            }
+          },
+          {
+            "id": "98:5",
+            "name": "Layer 4",
+            "type": "TEXT",
+            "characters": "Headline/Large",
+            "styles": {
+              "text": "S:3"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 400,
+              "fontSize": 32,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0,
+              "lineHeightPx": 40,
+              "lineHeightPercentFontSize": 125,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 210,
+              "width": 400,
+              "height": 40
+            }
+          },
+          {
+            "id": "98:6",
+            "name": "Layer 5",
+            "type": "TEXT",
+            "characters": "Headline/Medium",
+            "styles": {
+              "text": "S:4"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 400,
+              "fontSize": 28,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0,
+              "lineHeightPx": 36,
+              "lineHeightPercentFontSize": 128.57142857142858,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 280,
+              "width": 400,
+              "height": 36
+            }
+          },
+          {
+            "id": "98:7",
+            "name": "Layer 6",
+            "type": "TEXT",
+            "characters": "Headline/Small",
+            "styles": {
+              "text": "S:5"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 400,
+              "fontSize": 24,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0,
+              "lineHeightPx": 32,
+              "lineHeightPercentFontSize": 133.33333333333331,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 350,
+              "width": 400,
+              "height": 32
+            }
+          },
+          {
+            "id": "98:8",
+            "name": "Layer 7",
+            "type": "TEXT",
+            "characters": "Title/Large",
+            "styles": {
+              "text": "S:6"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 400,
+              "fontSize": 22,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0,
+              "lineHeightPx": 28,
+              "lineHeightPercentFontSize": 127.27272727272727,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 420,
+              "width": 400,
+              "height": 28
+            }
+          },
+          {
+            "id": "98:9",
+            "name": "Layer 8",
+            "type": "TEXT",
+            "characters": "Title/Medium",
+            "styles": {
+              "text": "S:7"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 500,
+              "fontSize": 16,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0.15,
+              "lineHeightPx": 24,
+              "lineHeightPercentFontSize": 150,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 490,
+              "width": 400,
+              "height": 24
+            }
+          },
+          {
+            "id": "98:10",
+            "name": "Layer 9",
+            "type": "TEXT",
+            "characters": "Title/Small",
+            "styles": {
+              "text": "S:8"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 500,
+              "fontSize": 14,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0.1,
+              "lineHeightPx": 20,
+              "lineHeightPercentFontSize": 142.85714285714286,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 560,
+              "width": 400,
+              "height": 20
+            }
+          },
+          {
+            "id": "98:11",
+            "name": "Layer 10",
+            "type": "TEXT",
+            "characters": "Body/Large",
+            "styles": {
+              "text": "S:9"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 400,
+              "fontSize": 16,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0.5,
+              "lineHeightPx": 24,
+              "lineHeightPercentFontSize": 150,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 630,
+              "width": 400,
+              "height": 24
+            }
+          },
+          {
+            "id": "98:12",
+            "name": "Layer 11",
+            "type": "TEXT",
+            "characters": "Body/Medium",
+            "styles": {
+              "text": "S:10"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 400,
+              "fontSize": 14,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0.25,
+              "lineHeightPx": 20,
+              "lineHeightPercentFontSize": 142.85714285714286,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 700,
+              "width": 400,
+              "height": 20
+            }
+          },
+          {
+            "id": "98:13",
+            "name": "Layer 12",
+            "type": "TEXT",
+            "characters": "Body/Small",
+            "styles": {
+              "text": "S:11"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 400,
+              "fontSize": 12,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0.4,
+              "lineHeightPx": 16,
+              "lineHeightPercentFontSize": 133.33333333333331,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 770,
+              "width": 400,
+              "height": 16
+            }
+          },
+          {
+            "id": "98:14",
+            "name": "Layer 13",
+            "type": "TEXT",
+            "characters": "Label/Large",
+            "styles": {
+              "text": "S:12"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 500,
+              "fontSize": 14,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0.1,
+              "lineHeightPx": 20,
+              "lineHeightPercentFontSize": 142.85714285714286,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 840,
+              "width": 400,
+              "height": 20
+            }
+          },
+          {
+            "id": "98:15",
+            "name": "Layer 14",
+            "type": "TEXT",
+            "characters": "Label/Medium",
+            "styles": {
+              "text": "S:13"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 500,
+              "fontSize": 12,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0.5,
+              "lineHeightPx": 16,
+              "lineHeightPercentFontSize": 133.33333333333331,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 910,
+              "width": 400,
+              "height": 16
+            }
+          },
+          {
+            "id": "98:16",
+            "name": "Layer 15",
+            "type": "TEXT",
+            "characters": "Label/Small",
+            "styles": {
+              "text": "S:14"
+            },
+            "style": {
+              "fontFamily": "Inter",
+              "fontPostScriptName": "Inter-Regular",
+              "fontWeight": 500,
+              "fontSize": 11,
+              "textAlignHorizontal": "LEFT",
+              "textAlignVertical": "TOP",
+              "letterSpacing": 0.5,
+              "lineHeightPx": 16,
+              "lineHeightPercentFontSize": 145.45454545454547,
+              "lineHeightUnit": "PIXELS"
+            },
+            "absoluteBoundingBox": {
+              "x": 0,
+              "y": 980,
+              "width": 400,
+              "height": 16
+            }
+          }
+        ]
+      },
+      "styles": {
+        "S:0": {
+          "name": "Display/Large",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:1": {
+          "name": "Display/Medium",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:2": {
+          "name": "Display/Small",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:3": {
+          "name": "Headline/Large",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:4": {
+          "name": "Headline/Medium",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:5": {
+          "name": "Headline/Small",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:6": {
+          "name": "Title/Large",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:7": {
+          "name": "Title/Medium",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:8": {
+          "name": "Title/Small",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:9": {
+          "name": "Body/Large",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:10": {
+          "name": "Body/Medium",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:11": {
+          "name": "Body/Small",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:12": {
+          "name": "Label/Large",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:13": {
+          "name": "Label/Medium",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        },
+        "S:14": {
+          "name": "Label/Small",
+          "styleType": "TEXT",
+          "key": "",
+          "remote": false,
+          "description": ""
+        }
+      }
+    }
+  }
+}

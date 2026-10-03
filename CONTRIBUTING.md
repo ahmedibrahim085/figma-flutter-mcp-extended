@@ -124,6 +124,16 @@ These run from any clone and are not part of the published package: `npm pack` s
   - on Ctrl-C, SIGTERM or SIGHUP it puts back the file it was mutating. Killed with SIGKILL, it leaves the mutant in the file. When its output is piped into a command that stops reading early, the run usually puts the file back (exit 141 when stdout is piped into `head`), but it has been seen to leave the mutant. Either way, a leftover mutant makes the next run refuse to start until you restore the file with `git checkout -- <file>`;
   - with `npm run`, the list path and the test files are both relative to the repo root (npm runs scripts there); called directly as `tools/mutants.sh`, the list path is relative to where you run it, and the test files are still relative to the repo root.
 - **Literal scan.** `npm run --silent audit:literals > literals.tsv` lists every number, string, template and regex literal in `src/` with file, line and context. `node tools/lex-count.cjs` counts the same literals with the TypeScript lexer, as a cross-check. Digits and quotes inside regex literals count only there.
+- **Literal baseline.** `npm test` runs `node tools/literal-scan.cjs --check`, which compares every literal in `src/` with `tools/literal-baseline.tsv` and fails on a new literal and on a baselined literal that is gone.
+  - A line has the columns `file`, `kind`, `text`, `context`, `function`, `count`, `class`, `reason`. The first five are the key (no line number, so edits above a literal do not re-key it); `count` is how many times the key occurs. Moving code to another file or function re-keys its literals: delete the old line and add the new one.
+  - The failure message prints the file:line and the exact line to add or delete. Nothing writes the file for you. A fact (a cap, threshold, default, URL, name or list that Figma, Flutter or the owner decides) belongs in `src/defaults.json`; add a line only for something that stays in code.
+  - Classes:
+    - `K-TEXT`: report, label, log or error text.
+    - `K-API`: a Figma or Flutter protocol value, path, enum, file name or documented default.
+    - `K-DART`: emitted Dart code, or its punctuation and indentation.
+    - `K-CONV`: an index, count, identity element, layout fallback, or unit or base conversion.
+    - `K-SCHEMA`: tool and parameter names and descriptions, type-level literals, Dart reserved words, parsing and sanitising regexes.
+    - `F-HEUR`, `F-DEFAULT`, `F-FACT`, `F-GUIDE`, `F-LEAK`: recorded debt, allowed only when the reason names the ticket, `B3.NN` entry or decision that removes it.
 
 ## 🧪 Local Testing & Development
 

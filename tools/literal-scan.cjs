@@ -101,16 +101,17 @@ if (!checking) {
     // A literal is identified by file|kind|text|context|function with a count; the line is left out so
     // unrelated edits above it do not re-key it. Moving code to another function or file does re-key it.
     const baselineFile = path.join(repo, 'tools', 'literal-baseline.tsv');
+    const keyOf = (cells) => cells.slice(0, 5).join('\t');
     const allowed = new Map();
     for (const line of fs.readFileSync(baselineFile, 'utf8').split('\n').slice(1)) {
         if (line === '') continue;
         const cells = line.split('\t');
-        allowed.set(cells.slice(0, 5).join('\t'), {count: Number(cells[5]), line});
+        allowed.set(keyOf(cells), {count: Number(cells[5]), line});
     }
     const seen = new Map();
     const problems = [];
     for (const {line, cells} of rows) {
-        const key = cells.join('\t');
+        const key = keyOf(cells);
         const n = (seen.get(key) ?? 0) + 1;
         seen.set(key, n);
         const have = allowed.get(key)?.count ?? 0;

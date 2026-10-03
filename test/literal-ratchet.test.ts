@@ -36,7 +36,8 @@ function withFixture(source: string, baselineRows: string[], run: (repo: string)
     }
 }
 
-const CAP_ROW = ['src/tools/x.ts', 'number', '37', 'var(CAP)', 'CAP', '1', 'K-CONV', 'a fixture constant'].join('\t');
+const CAP_KEY = ['src/tools/x.ts', 'number', '37', 'var(CAP)', 'CAP'].join('\t');
+const CAP_ROW = [CAP_KEY, '1', 'K-CONV', 'a fixture constant'].join('\t');
 
 test('a new literal fails the check, naming the file, the literal and where facts belong', () => {
     withFixture('export const CAP = 37;\n', [], (repo) => {
@@ -46,7 +47,7 @@ test('a new literal fails the check, naming the file, the literal and where fact
         assert.match(result.stderr, /number 37/);
         assert.match(result.stderr, /src\/defaults\.json/);
         // The message prints the exact baseline line to add.
-        assert.ok(result.stderr.includes(CAP_ROW.split('\t').slice(0, 5).join('\t') + '\t1\t'), result.stderr);
+        assert.ok(result.stderr.includes(CAP_KEY + '\t1\t'), result.stderr);
     });
 });
 
@@ -69,7 +70,7 @@ test('a baselined literal that left src fails the check until its line is delete
     withFixture('export const CAP = process.env.CAP;\n', [CAP_ROW], (repo) => {
         const result = check(repo);
         assert.equal(result.status, 1, result.stderr);
-        assert.ok(result.stderr.includes(CAP_ROW.split('\t').slice(0, 5).join('\t')), result.stderr);
+        assert.ok(result.stderr.includes(CAP_KEY), result.stderr);
         assert.match(result.stderr, /Delete/);
     });
 });

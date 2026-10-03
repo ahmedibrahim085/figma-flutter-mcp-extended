@@ -120,18 +120,18 @@ src/extractors/components/extractor.ts	number	0	binary(>)	extractBasicStyling	2	
 src/extractors/components/extractor.ts	number	0	binary(>)	extractMetadata	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	0	binary(>)	extractStylingInfo	3	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	0	binary(>)	getActualTextContent	2	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
-src/extractors/components/extractor.ts	number	0	binary(??)	extractLayoutInfo	2	F-DEFAULT	paint and geometry default; removed by ticket 11
-src/extractors/components/extractor.ts	number	0	binary(||)	extractLayoutInfo	3	F-DEFAULT	paint and geometry default; removed by ticket 11
+src/extractors/components/extractor.ts	number	0	binary(??)	extractLayoutInfo	2	K-CONV	layout fallback: a missing absoluteBoundingBox reads as zero size; ticket 11 left it in place
+src/extractors/components/extractor.ts	number	0	binary(||)	extractLayoutInfo	3	K-CONV	layout fallback: a missing origin or item spacing reads as zero; ticket 11 left it in place
 src/extractors/components/extractor.ts	number	0	binary(||)	extractMetadata	1	K-CONV	count of absent children = 0
 src/extractors/components/extractor.ts	number	0	binary(||)	extractPadding	4	K-CONV	absent padding = 0 inset; REST paddingX default UNVERIFIED in fetched docs
 src/extractors/components/extractor.ts	number	0	index	detectTextCase	4	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
-src/extractors/components/extractor.ts	number	0	index	textOverrides	1	F-HEUR	paint and geometry default; removed by ticket 11
-src/extractors/components/extractor.ts	number	0	index	textStyleFields	1	F-HEUR	paint and geometry default; removed by ticket 11
+src/extractors/components/extractor.ts	number	0	index	textOverrides	1	F-HEUR	only fills[0] is read; decision 14 says the last fill is on top and this is not yet probed; B3.90
+src/extractors/components/extractor.ts	number	0	index	textStyleFields	1	F-HEUR	only fills[0] is read; decision 14 says the last fill is on top and this is not yet probed; B3.90
 src/extractors/components/extractor.ts	number	0	param-default(depth)	createComponentChild	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	0	var(i)	analyzeChildren	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/components/extractor.ts	number	1	binary(!==)	extractStylingInfo	1	K-API	node opacity 1 = fully opaque, Figma identity
 src/extractors/components/extractor.ts	number	1	binary(+)	createComponentChild	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
-src/extractors/components/extractor.ts	number	1	binary(??)	categorizeEffects	2	F-DEFAULT	paint and geometry default; removed by ticket 11
+src/extractors/components/extractor.ts	number	1	binary(??)	categorizeEffects	2	K-API	Figma Color: an absent alpha means fully opaque (1)
 src/extractors/components/extractor.ts	number	16	arg(b.toString)	rgbaToHex	1	K-CONV	rule R13: 8-bit colour / hex / string slicing / indentation width
 src/extractors/components/extractor.ts	number	16	arg(g.toString)	rgbaToHex	1	K-CONV	rule R13: 8-bit colour / hex / string slicing / indentation width
 src/extractors/components/extractor.ts	number	16	arg(r.toString)	rgbaToHex	1	K-CONV	rule R13: 8-bit colour / hex / string slicing / indentation width
@@ -173,7 +173,7 @@ src/extractors/components/extractor.ts	string	max_nodes	prop(reason)	analyzeChil
 src/extractors/components/extractor.ts	string	mixed	return	detectTextCase	2	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/components/extractor.ts	string	sentence	return	detectTextCase	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
 src/extractors/components/extractor.ts	string	uppercase	return	detectTextCase	1	K-SCHEMA	rule R16: own category / layout / semantic enum value or output key
-src/extractors/components/extractor.ts	string	vertical	ternary	extractLayoutInfo	1	F-DEFAULT	paint and geometry default; removed by ticket 11
+src/extractors/components/extractor.ts	string	vertical	ternary	extractLayoutInfo	1	K-API	layout direction: any layoutMode other than HORIZONTAL maps to vertical; GRID is reported separately by ticket 11
 src/extractors/components/extractor.ts	template	#${…}${…}${…}	PropertyAccessExpression	rgbaToHex	1	K-CONV	hex colour string formatting
 src/extractors/components/extractor.ts	type-string	COMPONENT	LiteralType	createNestedComponentInfo	1	K-API	rule R5: Figma enum in a TS type
 src/extractors/components/extractor.ts	type-string	COMPONENT	LiteralType	extractMetadata	1	K-API	rule R5: Figma enum in a TS type
@@ -283,7 +283,7 @@ src/extractors/flutter/style-library.ts	number	0	binary(>)	generateDecoration	2	
 src/extractors/flutter/style-library.ts	number	0	binary(>)	optimizeLibrary	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/flutter/style-library.ts	number	0	binary(>=)	nestFillLayers	1	K-CONV	index, count, midpoint or identity element
 src/extractors/flutter/style-library.ts	number	0	index	createSemanticKey	4	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
-src/extractors/flutter/style-library.ts	number	0	index	generateDecoration	2	F-HEUR	paint and geometry default; removed by ticket 11
+src/extractors/flutter/style-library.ts	number	0	index	generateDecoration	2	K-CONV	index of the fill the style library reads
 src/extractors/flutter/style-library.ts	number	0	index	optimizeLibrary	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/flutter/style-library.ts	number	0	var(duplicatesRemoved)	optimizeLibrary	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
 src/extractors/flutter/style-library.ts	number	1	arg((properties.fills ?? []).slice)	generateFillLayers	1	K-CONV	index, count, midpoint or identity element
@@ -1122,8 +1122,8 @@ src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(??)	overflo
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(||)	dartNumber	1	K-CONV	hand-reviewed: || 0 turns -0/NaN into 0
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(||)	generateComprehensiveDeduplicatedReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	binary(||)	generateStyleLibraryReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/deduplicated-helpers.ts	number	0	prop(x)	positioned	2	F-DEFAULT	paint and geometry default; removed by ticket 11
-src/tools/flutter/components/deduplicated-helpers.ts	number	0	prop(y)	positioned	2	F-DEFAULT	paint and geometry default; removed by ticket 11
+src/tools/flutter/components/deduplicated-helpers.ts	number	0	prop(x)	positioned	2	K-CONV	positioned child: a missing origin reads as zero; ticket 11 left it in place
+src/tools/flutter/components/deduplicated-helpers.ts	number	0	prop(y)	positioned	2	K-CONV	positioned child: a missing origin reads as zero; ticket 11 left it in place
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	ternary	overflowsMax	1	K-CONV	hand-reviewed: no padding = 0
 src/tools/flutter/components/deduplicated-helpers.ts	number	0	var(gap)	flexWidget	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/deduplicated-helpers.ts	number	1	arg(yles.length) / totalUsage * 100).toFixed)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: display precision of a report percentage
@@ -1226,7 +1226,7 @@ src/tools/flutter/components/deduplicated-helpers.ts	string	HUG	binary(===)	hugL
 src/tools/flutter/components/deduplicated-helpers.ts	string	Horizontal sizing	prop(horizontal)	generateComprehensiveDeduplicatedReport	2	K-TEXT	rule: user-facing/log text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	string	IntrinsicHeight	ternary	flexWidget	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	IntrinsicWidth	ternary	flexWidget	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/deduplicated-helpers.ts	string	LEFT	binary(??)	positioned	1	F-DEFAULT	paint and geometry default; removed by ticket 11
+src/tools/flutter/components/deduplicated-helpers.ts	string	LEFT	binary(??)	positioned	1	K-API	Figma constraints: an absent horizontal constraint means LEFT
 src/tools/flutter/components/deduplicated-helpers.ts	string	LEFT_RIGHT	binary(===)	positioned	1	K-API	rule: Figma REST enum value
 src/tools/flutter/components/deduplicated-helpers.ts	string	LINE	array	BOUNDING_BOX_TYPES	1	K-API	rule: Figma REST enum value
 src/tools/flutter/components/deduplicated-helpers.ts	string	LimitedBox	arg(box)	generateFlutterImplementation	1	K-DART	rule: Flutter identifier in emitted code
@@ -1249,7 +1249,7 @@ src/tools/flutter/components/deduplicated-helpers.ts	string	SizedBox	ternary	chi
 src/tools/flutter/components/deduplicated-helpers.ts	string	Stack	arg(multiChild)	clipStack	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	TEXT	binary(!==)	flexWidget	1	K-API	rule: Figma REST enum value
 src/tools/flutter/components/deduplicated-helpers.ts	string	TEXT	binary(===)	childWidget	1	K-API	rule: Figma REST enum value
-src/tools/flutter/components/deduplicated-helpers.ts	string	TOP	binary(??)	positioned	1	F-DEFAULT	paint and geometry default; removed by ticket 11
+src/tools/flutter/components/deduplicated-helpers.ts	string	TOP	binary(??)	positioned	1	K-API	Figma constraints: an absent vertical constraint means TOP
 src/tools/flutter/components/deduplicated-helpers.ts	string	TOP_BOTTOM	binary(===)	positioned	1	K-API	rule: Figma REST enum value
 src/tools/flutter/components/deduplicated-helpers.ts	string	UnconstrainedBox	arg(box)	overflowLayout	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	Vertical sizing	prop(vertical)	generateComprehensiveDeduplicatedReport	2	K-TEXT	rule: user-facing/log text, no design fact
@@ -1498,7 +1498,7 @@ src/tools/flutter/components/helpers.ts	number	1	binary(+)	generateFlutterGuidan
 src/tools/flutter/components/helpers.ts	number	1	binary(+)	generateStructureInspectionReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/helpers.ts	number	100	binary(*)	generateComponentAnalysisReport	1	K-CONV	rule: percent
 src/tools/flutter/components/helpers.ts	number	15	arg(childrenSource.slice)	generateStructureInspectionReport	1	F-HEUR	analysis cap; removed by ticket 15
-src/tools/flutter/components/helpers.ts	number	2	arg(indentContinuation)	generateFlutterGuidance	1	F-HEUR	paint and geometry default; removed by ticket 11
+src/tools/flutter/components/helpers.ts	number	2	arg(indentContinuation)	generateFlutterGuidance	1	K-DART	indent width of emitted Dart
 src/tools/flutter/components/helpers.ts	regex	/[^a-zA-Z0-9]/g	arg(str\n        .replace)	toPascalCase	1	K-DART	rule: Dart identifier / emitted-code text munging
 src/tools/flutter/components/helpers.ts	regex	/\s/g	arg(slice(1).toLowerCase())\n        .replace)	toPascalCase	1	K-DART	rule: Dart identifier / emitted-code text munging
 src/tools/flutter/components/helpers.ts	regex	/\w+/g	arg(e(/[^a-zA-Z0-9]/g, ' ')\n        .replace)	toPascalCase	1	K-DART	rule: Dart identifier / emitted-code text munging
@@ -1865,8 +1865,8 @@ src/tools/flutter/theme/colors/theme-generator.ts	string		ternary	generateColorS
 src/tools/flutter/theme/colors/theme-generator.ts	string		ternary	generateThemeDataContent	2	K-TEXT	report, label, log or error text
 src/tools/flutter/theme/colors/theme-generator.ts	string	color	arg(nameConstants)	themeConstants	1	K-DART	prefix for a generated Dart identifier
 src/tools/flutter/theme/colors/theme-generator.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
-src/tools/flutter/theme/colors/theme-generator.ts	string	primary	arg(names.has)	generateThemeDataContent	1	F-HEUR	role name that decides whether a ColorScheme is built; decision 16
-src/tools/flutter/theme/colors/theme-generator.ts	string	surface	arg(names.has)	generateColorScheme	1	F-HEUR	role name match; removed by decision 16
+src/tools/flutter/theme/colors/theme-generator.ts	string	primary	arg(names.has)	generateThemeDataContent	1	K-DART	Flutter ColorScheme role name; decision 16
+src/tools/flutter/theme/colors/theme-generator.ts	string	surface	arg(names.has)	generateColorScheme	1	K-DART	Flutter ColorScheme role name; decision 16
 src/tools/flutter/theme/colors/theme-generator.ts	template	        ${…}: AppColors.${…},\n	ArrowFunction	generateColorScheme	1	K-DART	emitted Dart code
 src/tools/flutter/theme/colors/theme-generator.ts	template	        brightness: ThemeData.estimateBrightnessForColor(AppColors.surface),\n	ternary	generateColorScheme	1	K-DART	emitted Dart code
 src/tools/flutter/theme/colors/theme-generator.ts	template	      colorScheme: ColorScheme.fromSeed(\n        seedColor: AppColors.primary,\n${…}${…}      ),\n	return	generateColorScheme	1	K-DART	emitted Dart code
@@ -1900,7 +1900,7 @@ src/tools/flutter/theme/colors/theme-tool.ts	string	extract_theme_colors	arg(ser
 src/tools/flutter/theme/colors/theme-tool.ts	string	inspect_color_frame	arg(server.registerTool)	registerThemeTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/theme/colors/theme-tool.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
 src/tools/flutter/theme/colors/theme-tool.ts	string	lib	arg(join)	registerThemeTools	1	F-FACT	lib folder written in code; removed by B3.80
-src/tools/flutter/theme/colors/theme-tool.ts	string	primary	arg(constants.includes)	registerThemeTools	1	F-HEUR	role name that decides whether a ColorScheme is built; decision 16
+src/tools/flutter/theme/colors/theme-tool.ts	string	primary	arg(constants.includes)	registerThemeTools	1	K-DART	Flutter ColorScheme role name; decision 16
 src/tools/flutter/theme/colors/theme-tool.ts	string	text	prop(type)	registerThemeTools	9	K-API	rule: MCP content type
 src/tools/flutter/theme/colors/theme-tool.ts	template	   Color: ${…}\n	binary(+=)	registerThemeTools	1	K-TEXT	rule: tool report / log text
 src/tools/flutter/theme/colors/theme-tool.ts	template	   Text: ${…}\n	binary(+=)	registerThemeTools	1	K-TEXT	rule: tool report / log text

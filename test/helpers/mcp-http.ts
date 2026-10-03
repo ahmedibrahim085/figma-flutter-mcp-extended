@@ -5,36 +5,53 @@ import {createServer} from 'node:net';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {startFakeFigma, type FakeRoutes} from './fake-figma.ts';
-import {builtCliPath} from './mcp-stdio.ts';
+import {builtCliPath, SERVER_START_TIMEOUT_MS} from './mcp-stdio.ts';
 
-/** One `--http` server on a free port, with Figma replaced by the fake serving `routes`; `body` gets its MCP endpoint and its working folder. */
-export async function withHttpServer(routes: FakeRoutes, body: (endpoint: string, cwd: string) => Promise<void>) {
+/**
+ * One `--http` server with Figma replaced by the fake serving `routes`; `body` gets its MCP endpoint and its working folder.
+ * The port is a free one the helper picked, unless `port` says otherwise (a test of a server that cannot start).
+ * The server is ready when it logs that it listens: a probe request could be answered by another process that took the port.
+ * A server that exits before that fails the helper with its own error text, and one that never listens fails it after
+ * SERVER_START_TIMEOUT_MS, so a broken start never hangs the test run.
+ */
+export async function withHttpServer(routes: FakeRoutes, body: (endpoint: string, cwd: string) => Promise<void>, {port: fixedPort}: {port?: number} = {}) {
     const figma = await startFakeFigma(routes);
-    const port = await new Promise<number>((resolve) => {
-        const probe = createServer().listen(0, () => {
-            const {port} = probe.address() as {port: number};
-            probe.close(() => resolve(port));
-        });
-    });
-    const cwd = mkdtempSync(join(tmpdir(), 'mcp-http-'));
-    const child = spawn(process.execPath, [builtCliPath(), '--http', `--port=${port}`], {
-        cwd,
-        env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', FIGMA_CACHE: 'off', FIGMA_API_BASE_URL: figma.baseUrl},
-        stdio: 'ignore',
-    });
     try {
-        const endpoint = `http://127.0.0.1:${port}/mcp`;
-        for (let attempt = 0; ; attempt++) {
-            try { await fetch(endpoint, {method: 'POST'}); break; } catch (error) {
-                if (attempt >= 50) throw error;
-                await new Promise((resolve) => setTimeout(resolve, 100));
-            }
+        const port = fixedPort ?? await new Promise<number>((resolve) => {
+            // The probe frees the port before the server binds it; a process that takes it in between makes the server exit with EADDRINUSE, which fails fast below.
+            const probe = createServer().listen(0, () => {
+                const {port} = probe.address() as {port: number};
+                probe.close(() => resolve(port));
+            });
+        });
+        const cwd = mkdtempSync(join(tmpdir(), 'mcp-http-'));
+        const child = spawn(process.execPath, [builtCliPath(), '--http', `--port=${port}`], {
+            cwd,
+            env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', FIGMA_CACHE: 'off', FIGMA_API_BASE_URL: figma.baseUrl},
+            stdio: ['ignore', 'ignore', 'pipe'],
+        });
+        let stderr = '';
+        // Made at spawn: a promise made after the server exited would wait for an 'exit' event that never comes again.
+        const exited = new Promise<string>((resolve) =>
+            child.once('exit', (code, signal) => resolve(`the server exited (code ${code}, signal ${signal}) before it listened`)));
+        const listening = new Promise<undefined>((resolve) => child.stderr.on('data', (chunk) => {
+            stderr += chunk;
+            if (stderr.includes(`listening on port ${port}`)) resolve(undefined);
+        }));
+        let timer: NodeJS.Timeout | undefined;
+        const timedOut = new Promise<string>((resolve) => {
+            timer = setTimeout(() => resolve(`the server did not listen within ${SERVER_START_TIMEOUT_MS} ms`), SERVER_START_TIMEOUT_MS);
+        });
+        const failure = await Promise.race([listening, exited, timedOut]);
+        clearTimeout(timer);
+        try {
+            if (failure !== undefined) throw new Error(`${failure}. stderr:\n${stderr}`);
+            await body(`http://127.0.0.1:${port}/mcp`, cwd);
+        } finally {
+            child.kill('SIGKILL');
+            await exited;
         }
-        await body(endpoint, cwd);
     } finally {
-        const exited = new Promise((resolve) => child.once('exit', resolve));
-        child.kill('SIGKILL');
-        await exited;
         await figma.close();
     }
 }

@@ -85,7 +85,7 @@ The key can also be passed as `--figma-api-key=YOUR-API-KEY`, or loaded from a f
 | `analyze_figma_component` | Structure, styles and (optionally) Flutter code for a component or component set |
 | `list_component_variants` | The variants in a component set |
 | `inspect_component_structure` | Quick overview of a component's children and nested components |
-| `generate_flutter_implementation` | Flutter widget code from the cached style definitions |
+| `generate_flutter_implementation` | Flutter widget code for one node (file key or URL plus node ID), with the style definitions it uses |
 | `cached_styles_status` | Status of the cached styles |
 | `analyze_frame_as_screen` | Layout, child layers, navigation and assets of a frame treated as a screen |
 | `inspect_frame_structure` | Quick overview of a frame's child layers and navigation |

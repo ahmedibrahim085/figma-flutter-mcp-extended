@@ -113,7 +113,7 @@ Environment facts live in `src/defaults.json`, not in code: the HTTP port, the i
 These run from any clone and are not part of the published package: `npm pack` ships only `dist/`, `README.md`, `LICENSE.md` and `package.json`, and `test/package-contents.test.ts` fails if anything else would ship.
 
 - **Render check.** `npm run render-check -- <fixture> <nodeId>` (needs Flutter on `PATH`):
-  - generates Dart for one node of a fixture in `test/fixtures/` (or a JSON file path), offline, through `analyze_figma_component` and `generate_flutter_implementation`;
+  - generates Dart for one node of a fixture in `test/fixtures/` (or a JSON file path), offline, through `generate_flutter_implementation`;
   - runs `dart analyze`;
   - renders the widget in four hosts: bounded, horizontal scroll, vertical scroll, and inside a `Row`. The test screen is the node's own Figma size (`absoluteBoundingBox`); for a node without one, flutter_test's default screen is used.
 

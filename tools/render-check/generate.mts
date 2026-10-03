@@ -193,19 +193,18 @@ void main() {
     process.exit(0);
 }
 
-const [analysis, implementation] = await callToolsOffline(nodeRoute(node.id, node), [
-    ['analyze_figma_component', {input: FILE_KEY, nodeId: node.id, exportAssets: false, userDefinedComponent: true, generateFlutterCode: true}],
+const [implementation] = await callToolsOffline(nodeRoute(node.id, node), [
     ['generate_flutter_implementation', {input: FILE_KEY, nodeId: node.id}],
 ]);
-// The widget class comes from the analysis; the style constants it refers to come from the implementation.
+// The widget class and the style constants it refers to both come from generate_flutter_implementation.
 const styleDefinitions = [...implementation.text.matchAll(/^final \w+ = [\s\S]*?;$/gm)].map((m) => m[0]).join('\n');
-const classStart = analysis.text.indexOf('class ');
-const classEnd = analysis.text.indexOf('\n}\n', classStart) + 3;
+const classStart = implementation.text.indexOf('class ');
+const classEnd = implementation.text.indexOf('\n}\n', classStart) + 3;
 if (classStart < 0 || classEnd < 3) {
-    console.error('no widget class in the analyze_figma_component output:\n' + analysis.text);
+    console.error('no widget class in the generate_flutter_implementation output:\n' + implementation.text);
     process.exit(1);
 }
-const widgetClass = analysis.text.slice(classStart, classEnd);
+const widgetClass = implementation.text.slice(classStart, classEnd);
 // The test screen is the node's own Figma size, so a host gives it exactly the room the design has.
 // Without a Figma box the test keeps flutter_test's default view.
 const box = node.absoluteBoundingBox;
@@ -241,6 +240,6 @@ void main() {
   }
 }
 `);
-// The analysis text after the class lists approximations and notes; they belong next to the render result.
-console.log(analysis.text.slice(classEnd).trim());
+// The text after the class lists approximations and notes; they belong next to the render result.
+console.log(implementation.text.slice(classEnd).trim());
 console.log(`\nwrote ${className} to tools/render-check/flutter/lib/generated.dart`);

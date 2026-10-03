@@ -87,3 +87,12 @@ test('collections that share a name stay apart, keyed by id with the name inside
     assert.deepEqual(collections['VC:b'].variables.map((v: any) => v.id), ['V:b']);
     assert.deepEqual(collections['VC:a'].modes, [{id: 'm:1', name: 'Mode 1'}]);
 });
+
+test('ff_get_screenshot defaults to scale 1, one pixel per Figma unit', async () => {
+    const {requests, isError} = await callToolOffline((baseUrl) => ({
+        [`/images/${FILE_KEY}?ids=1:1&format=png&scale=1`]: {body: {images: {'1:1': `${baseUrl}/render/1`}}},
+        '/render/1': {body: Buffer.from('png-bytes')},
+    }), 'ff_get_screenshot', {fileKey: FILE_KEY, nodeId: '1:1'});
+    assert.deepEqual(requests[0].query, {ids: '1:1', format: 'png', scale: '1'});
+    assert.equal(isError, false);
+});

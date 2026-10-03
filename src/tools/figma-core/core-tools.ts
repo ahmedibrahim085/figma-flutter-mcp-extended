@@ -7,6 +7,7 @@ import {z} from 'zod';
 import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {FigmaService, figmaApiBaseUrl} from '../../services/figma.js';
 import {Logger} from '../../utils/logger.js';
+import defaults from '../../defaults.json' with { type: 'json' };
 import fetch from 'node-fetch';
 
 // ────────────────────────────────────────────────────────────
@@ -159,10 +160,10 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 scale: z
                     .number()
                     .optional()
-                    .describe('Scale factor 0.01-4 (default: 2). Higher = more detail.'),
+                    .describe(`Scale factor 0.01-4 (default: ${defaults.screenshotScale}). Higher = more detail.`),
             },
         },
-        async ({fileKey, nodeId, format = 'png', scale = 2}) => {
+        async ({fileKey, nodeId, format = 'png', scale = defaults.screenshotScale}) => {
             try {
                 const params = new URLSearchParams({
                     ids: nodeId,

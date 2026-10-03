@@ -73,15 +73,6 @@ test('a hidden child renders nothing', async () => {
     assert.doesNotMatch(code, /width: 30,/);
 });
 
-test('frames deeper than the depth limit are named as approximations, in the code and in the tool output', async () => {
-    // Twelve nested frames; the innermost carries a 7 px rectangle that the depth limit cuts off.
-    const text = await toolText(nestedFrames(11));
-
-    assert.match(text, /\/\/ approximate: "Level \d+" is deeper than 8 levels; its children are not rendered/);
-    assert.match(text, /Approximations:\n(?:- [^\n]*\n)*- "Level \d+" is deeper than 8 levels; its children are not rendered/);
-    assert.doesNotMatch(text, /width: 7,/);
-});
-
 test('a nested component instance renders as a placeholder named for separate analysis', async () => {
     const text = await toolText({
         id: '45:1', name: 'Card', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(200, 80),
@@ -101,14 +92,13 @@ function nestedFrames(levels: number) {
     return {id: '46:0', name: 'Root', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(100, 100), children: [node]};
 }
 
-test('content eight levels below the component renders; the ninth level is an approximation', async () => {
-    const eight = await toolText(nestedFrames(7));
-    assert.match(eight, /width: 7,/);
-    assert.doesNotMatch(eight, /approximate:/);
+test('content at any depth renders: nothing is cut at eight levels or at twenty', async () => {
+    for (const levels of [7, 8, 11, 20]) {
+        const text = await toolText(nestedFrames(levels));
 
-    const nine = await toolText(nestedFrames(8));
-    assert.doesNotMatch(nine, /width: 7,/);
-    assert.match(nine, /\/\/ approximate: "Level 8" is deeper than 8 levels; its children are not rendered/);
+        assert.match(text, /width: 7,/, `${levels} levels`);
+        assert.doesNotMatch(text, /approximate:|deeper than/, `${levels} levels`);
+    }
 });
 
 test('a layer name with a line break stays inside its approximation comment', async () => {
@@ -170,15 +160,6 @@ test('a boolean operation renders as its bounding box, named as an approximation
     assert.match(text, /\/\/ approximate: "Badge" \(STAR\) is drawn as its bounding box\n\s*Container\(\n\s*width: 12,/);
     assert.doesNotMatch(text, /width: 20,/);
     assert.match(text, /Approximations:\n- "Union" \(BOOLEAN_OPERATION\) is drawn as its bounding box\n- "Badge" \(STAR\) is drawn as its bounding box\n/);
-});
-
-test('a frame cut off at the depth limit keeps its own size and decoration', async () => {
-    const root = nestedFrames(9);
-    let level: any = root;
-    while (level.name !== 'Level 8') level = level.children[0];
-    level.fills = [RED];
-
-    assert.match(await toolText(root), /\/\/ approximate: "Level 8" is deeper than 8 levels; its children are not rendered\n\s*Container\(\n\s*width: 100,\n\s*height: 100,\n\s*decoration: decorationID,\n\s*\)/);
 });
 
 test('a nested frame with nothing but children renders its Row or Column directly', async () => {

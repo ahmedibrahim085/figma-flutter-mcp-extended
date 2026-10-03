@@ -93,9 +93,6 @@ src/extractors/components/core.ts	string	./variant-analyzer.js	arg(import)	analy
 src/extractors/components/core.ts	string	COMPONENT_SET	binary(!==)	analyzeComponentWithVariants	1	K-API	rule R9: Figma REST enum value
 src/extractors/components/core.ts	string	Node is not a COMPONENT_SET	arg(Error)	analyzeComponentWithVariants	1	K-TEXT	rule R2: error message
 src/extractors/components/deduplicated-extractor.ts	number	0	binary(>)	analyzeComponent	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
-src/extractors/components/deduplicated-extractor.ts	number	1	binary(+)	analyzeChildren	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
-src/extractors/components/deduplicated-extractor.ts	number	1	param-default(depth)	analyzeChildren	1	K-CONV	rule R14: 0/1/-1/2 as index, count, comparator, loop bound or identity
-src/extractors/components/deduplicated-extractor.ts	number	8	var(MAX_CHILD_DEPTH)	MAX_CHILD_DEPTH	1	F-HEUR	analysis cap; removed by ticket 15
 src/extractors/components/deduplicated-extractor.ts	string	BOOLEAN_OPERATION	binary(!==)	analyzeChildren	1	K-API	rule R9: Figma REST enum value
 src/extractors/components/deduplicated-extractor.ts	string	COMPONENT	array	NESTED_COMPONENT_TYPES	1	K-API	rule R9: Figma REST enum value
 src/extractors/components/deduplicated-extractor.ts	string	COMPONENT_SET	array	NESTED_COMPONENT_TYPES	1	K-API	rule R9: Figma REST enum value
@@ -1114,7 +1111,7 @@ src/tools/flutter/components/deduplicated-helpers.ts	string	CENTER	binary(===)	p
 src/tools/flutter/components/deduplicated-helpers.ts	string	ClipRRect	arg(box)	clipStack	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	Column	ternary	flexWidget	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	ConstrainedBox	arg(box)	constrained	1	K-DART	rule: Flutter identifier in emitted code
-src/tools/flutter/components/deduplicated-helpers.ts	string	Container	arg(box)	childWidget	2	K-DART	rule: Flutter identifier in emitted code
+src/tools/flutter/components/deduplicated-helpers.ts	string	Container	arg(box)	childWidget	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	Container	arg(box)	generateFlutterImplementation	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	Container	ternary	childWidget	1	K-DART	rule: Flutter identifier in emitted code
 src/tools/flutter/components/deduplicated-helpers.ts	string	FILL	binary(!==)	axisSize	1	K-API	hand-reviewed: size > 0 = measured size present
@@ -1275,7 +1272,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	template	"${…}" has count
 src/tools/flutter/components/deduplicated-helpers.ts	template	"${…}" has primary-axis alignment ${…}; start is used	arg(notes.push)	flexWidget	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	"${…}" is absolute between flow children of "${…}"; it is painted in front of them	arg(approximate)	layoutWidget	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	"${…}" is clamped beside other FILL siblings; it keeps its Figma ${…} ${…}	arg(notes.push)	flexWidget	1	K-TEXT	report, label, log or error text
-src/tools/flutter/components/deduplicated-helpers.ts	template	"${…}" is deeper than ${…} levels; its children are not rendered	arg(approximate)	childWidget	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	"${…}" is rotated; it is placed by its bounding box	arg(approximate)	positioned	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	"${…}" shows its children past its max ${…} in Figma; they are clipped here	arg(approximate)	overflowLayout	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	${…}${…}	return	flexWidget	1	K-DART	rule: Dart syntax template carrying no design value
@@ -1342,7 +1338,6 @@ src/tools/flutter/components/deduplicated-helpers.ts	template	constraints: ${…
 src/tools/flutter/components/deduplicated-helpers.ts	template	crossAxisAlignment: CrossAxisAlignment.${…},	arg(args.push)	flexWidget	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	decoration: ${…},	arg(props.push)	childWidget	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	decoration: ${…},	arg(rootProps.push)	generateFlutterImplementation	1	K-DART	rule: Dart syntax template carrying no design value
-src/tools/flutter/components/deduplicated-helpers.ts	template	decoration: ${…},	array-arg(box)	childWidget	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	height: ${…},	ternary	childWidget	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	mainAxisAlignment: MainAxisAlignment.${…},	arg(args.push)	flexWidget	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	no absoluteBoundingBox from Figma for "${…}"; it is not positioned	arg(approximate)	positioned	1	K-TEXT	report, label, log or error text

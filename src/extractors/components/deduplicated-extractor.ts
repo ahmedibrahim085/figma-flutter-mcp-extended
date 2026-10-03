@@ -44,12 +44,7 @@ export interface DeduplicatedComponentChild {
   textWidget?: TextWidgetFields;
   /** This child's own visible children, for frames and groups rendered inline. */
   children?: DeduplicatedComponentChild[];
-  /** True when the child has children below the depth limit, which are not analysed. */
-  truncated?: boolean;
 }
-
-/** How many frame levels below the component are analysed; deeper content is named as an approximation. */
-export const MAX_CHILD_DEPTH = 8;
 
 /** Types rendered as a placeholder and analysed separately, never inlined. */
 export const NESTED_COMPONENT_TYPES = new Set(['INSTANCE', 'COMPONENT', 'COMPONENT_SET']);
@@ -109,7 +104,7 @@ export class DeduplicatedComponentExtractor {
     return result;
   }
   
-  private async analyzeChildren(node: FigmaNode, depth = 1): Promise<DeduplicatedComponentChild[]> {
+  private async analyzeChildren(node: FigmaNode): Promise<DeduplicatedComponentChild[]> {
     if (!node.children) return [];
     
     const children: DeduplicatedComponentChild[] = [];
@@ -131,7 +126,7 @@ export class DeduplicatedComponentExtractor {
         }, 'decoration');
         childStyleRefs.push(decorationRef);
       }
-      // Frames and groups render their own children inline, down to MAX_CHILD_DEPTH. Text, nested components
+      // Frames and groups render their own children inline, at any depth. Text, nested components
       // and boolean operations (whose children are operands, not layout) do not.
       const rendersOwnChildren = child.type !== 'TEXT' && child.type !== 'BOOLEAN_OPERATION' && !NESTED_COMPONENT_TYPES.has(child.type);
       if (rendersOwnChildren && childLayout.padding) {
@@ -156,8 +151,7 @@ export class DeduplicatedComponentExtractor {
       }
       
       const hasVisibleChildren = rendersOwnChildren && (child.children ?? []).some(grandchild => isEffectivelyVisible(grandchild));
-      const truncated = hasVisibleChildren && depth >= MAX_CHILD_DEPTH;
-      const grandchildren = hasVisibleChildren && !truncated ? await this.analyzeChildren(child, depth + 1) : undefined;
+      const grandchildren = hasVisibleChildren ? await this.analyzeChildren(child) : undefined;
 
       children.push({
         nodeId: child.id,
@@ -168,8 +162,7 @@ export class DeduplicatedComponentExtractor {
         textContent,
         textWidget,
         ...(child.interactions?.length ? {interactions: child.interactions} : {}),
-        ...(grandchildren ? {children: grandchildren} : {}),
-        ...(truncated ? {truncated: true} : {})
+        ...(grandchildren ? {children: grandchildren} : {})
       });
     }
     

@@ -1,7 +1,7 @@
 // src/tools/flutter/components/deduplicated-helpers.mts
 
 import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
-import { MAX_CHILD_DEPTH, NESTED_COMPONENT_TYPES, type DeduplicatedComponentAnalysis, type DeduplicatedComponentChild } from '../../../extractors/components/deduplicated-extractor.js';
+import { NESTED_COMPONENT_TYPES, type DeduplicatedComponentAnalysis, type DeduplicatedComponentChild } from '../../../extractors/components/deduplicated-extractor.js';
 import { FlutterCodeGenerator, type FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
 import { dartString, indentTail, textWidgetCode } from '../../../extractors/flutter/text-style.js';
 import { generateComponentVisualContext } from '../visual-context.js';
@@ -533,10 +533,6 @@ function childWidget(child: DeduplicatedComponentChild, styleLibrary: FlutterSty
   }
   const decoration = styleOf('decoration');
   const fillLayers = decoration ? FlutterCodeGenerator.generateFillLayers(styleLibrary.getStyle(decoration)!.properties) : [];
-  if (child.truncated) {
-    const widget = decoration ? box('Container', [...placeholderSize, `decoration: ${decoration},`, ...fillLayerChild(fillLayers)]) : placeholder;
-    return approximate(`"${child.name}" is deeper than ${MAX_CHILD_DEPTH} levels; its children are not rendered`, widget, approximations);
-  }
   const props = fixedSizeProps(child.layout);
   if (decoration) props.push(`decoration: ${decoration},`);
   const paddingInside = paddingInsideStack(child.layout, child.children);

@@ -27,13 +27,10 @@ export class TypographyGenerator {
         // Determine primary font family
         const fontFamilies = new Set(typography.map(t => t.fontFamily));
         const primaryFontFamily = this.determinePrimaryFontFamily(typography);
-        const familyVariableName = options.familyVariableName || 'fontFamily';
 
         // Generate AppText class
         const appTextContent = this.generateAppTextClass(
             typography,
-            primaryFontFamily,
-            familyVariableName,
             options
         );
 
@@ -45,8 +42,6 @@ export class TypographyGenerator {
         if (options.generateTextTheme) {
             const textThemeContent = this.generateTextThemeClass(
                 typography,
-                primaryFontFamily,
-                familyVariableName,
                 options
             );
             const textThemePath = join(outputDir, defaults.output.textThemeFile);
@@ -83,8 +78,6 @@ export class TypographyGenerator {
      */
     private generateAppTextClass(
         typography: TypographyStyle[],
-        primaryFontFamily: string,
-        familyVariableName: string,
         options: TypographyGenerationOptions
     ): string {
         const className = 'AppText';
@@ -107,16 +100,10 @@ export class TypographyGenerator {
         content += `class ${className} {\n`;
         content += `  ${className}._();\n\n`;
 
-        // Font family variable
-        if (primaryFontFamily && primaryFontFamily !== 'default') {
-            content += `  /// Primary font family used throughout the app\n`;
-            content += `  static const String ${familyVariableName} = '${primaryFontFamily}';\n\n`;
-        }
-
         // Generate text styles
         typography.forEach(style => {
             const dartName = this.generateDartPropertyName(style.name);
-            content += this.generateTextStyleProperty(style, dartName, familyVariableName, options);
+            content += this.generateTextStyleProperty(style, dartName, options);
         });
 
         content += '}\n';
@@ -129,8 +116,6 @@ export class TypographyGenerator {
      */
     private generateTextThemeClass(
         typography: TypographyStyle[],
-        primaryFontFamily: string,
-        familyVariableName: string,
         options: TypographyGenerationOptions
     ): string {
         let content = '';
@@ -175,7 +160,6 @@ export class TypographyGenerator {
     private generateTextStyleProperty(
         style: TypographyStyle,
         dartName: string,
-        familyVariableName: string,
         options: TypographyGenerationOptions
     ): string {
         let content = '';
@@ -187,11 +171,7 @@ export class TypographyGenerator {
 
         // Font family
         if (style.fontFamily && style.fontFamily !== 'default') {
-            if (familyVariableName && style.fontFamily === this.determinePrimaryFontFamily([style])) {
-                content += `    fontFamily: ${familyVariableName},\n`;
-            } else {
-                content += `    fontFamily: '${style.fontFamily}',\n`;
-            }
+            content += `    fontFamily: '${style.fontFamily}',\n`;
         }
 
         // Font size

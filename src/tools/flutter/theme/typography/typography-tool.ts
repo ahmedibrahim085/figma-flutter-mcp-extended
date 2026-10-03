@@ -19,11 +19,10 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 fileId: z.string().describe("Figma file ID"),
                 nodeId: z.string().describe("Node ID of the frame of text samples"),
                 projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)"),
-                generateTextTheme: z.boolean().optional().describe("Generate Flutter TextTheme class (defaults to false)"),
-                familyVariableName: z.string().optional().describe("Name for shared font family variable (defaults to 'fontFamily')")
+                generateTextTheme: z.boolean().optional().describe("Generate Flutter TextTheme class (defaults to false)")
             }
         },
-        async ({fileId, nodeId, projectPath = process.cwd(), generateTextTheme = false, familyVariableName = 'fontFamily'}) => {
+        async ({fileId, nodeId, projectPath = process.cwd(), generateTextTheme = false}) => {
             const token = figmaApiKey;
             if (!token) {
                 return {
@@ -68,7 +67,6 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 const outputPath = join(projectPath, 'lib', defaults.output.themeSubdir);
                 const generatedFilePath = await generator.generateAppText(themeTypography, outputPath, {
                     generateTextTheme,
-                    familyVariableName,
                     includeLineHeight: true,
                     includeLetterSpacing: true
                 });
@@ -126,17 +124,6 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                     output += `  // ... your app\n`;
                     output += `)\n`;
                 }
-
-                output += `\n// Font Family Variable:\n`;
-                output += `Container(\n`;
-                output += `  child: Text(\n`;
-                output += `    'Custom Text',\n`;
-                output += `    style: TextStyle(\n`;
-                output += `      fontFamily: AppText.${familyVariableName},\n`;
-                output += `      fontSize: 16,\n`;
-                output += `    ),\n`;
-                output += `  ),\n`;
-                output += `)\n`;
 
                 return {
                     content: [{type: "text", text: output}]

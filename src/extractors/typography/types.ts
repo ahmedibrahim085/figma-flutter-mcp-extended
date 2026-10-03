@@ -69,7 +69,6 @@ export interface TypographyExtractionOptions {
 export interface TypographyGenerationOptions {
     generateAppText?: boolean;
     generateTextTheme?: boolean;
-    familyVariableName?: string; // Name for shared font family variable
     includeLineHeight?: boolean;
     includeLetterSpacing?: boolean;
 }

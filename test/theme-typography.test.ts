@@ -152,3 +152,9 @@ test('usage examples name a generated constant and carry no made-up font size', 
     assert.match(report, /Text\('Hello World', style: AppText\.h1\)/);
     assert.doesNotMatch(report, /fontSize: 16|AppText\.fontFamily/);
 });
+
+test('a 12 px style on a 16 px line emits its height at full precision', async (t) => {
+    const {appText} = await extract(t, frame(text('95:2', 'Ratio', inter(12, {lineHeightPx: 16, lineHeightUnit: 'PIXELS'}))));
+
+    assert.match(appText!, /height: 1\.3333333333333333,/);
+});

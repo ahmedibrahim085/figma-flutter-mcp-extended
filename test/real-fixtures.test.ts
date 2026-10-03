@@ -46,17 +46,17 @@ test('Text fixture: each TextStyle carries the Figma style fields', async () => 
     const {routes} = fixture('text-frame.json', '1:8');
     const code = await widgetCode(routes, '1:8');
 
-    // Heights by hand: 40/32 = 1.25; 150 % = 1.5; Auto 16.9432/14 = 1.2102; 28/18 = 1.5556; Auto 19.3636/16 = 1.2102.
+    // Heights by hand: 40/32 = 1.25; 150 % = 1.5; Auto 16.94318199157715/14 = 1.2102272851126534; 28/18 = 1.5555555555555556; Auto 19.363636016845703/16 = 1.2102272510528564.
     // The two color cases are pinned in the color test and the bold run in the Text.rich test; these are the other eight texts.
     for (const [label, style] of [
         ["'Heading styled by text style'", "fontFamily: 'Inter', fontSize: 32, fontWeight: FontWeight.w700, color: Color(0xFF000000), letterSpacing: -0.5, height: 1.25, leadingDistribution: TextLeadingDistribution.even"],
         ["'Body copy styled by text style, line height 150%.'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.5, leadingDistribution: TextLeadingDistribution.even"],
-        ["'TRACKED LABEL'", "fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF000000), letterSpacing: 2, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
-        ["'Raw line height 28px without a style'", "fontFamily: 'Inter', fontSize: 18, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.5556, leadingDistribution: TextLeadingDistribution.even"],
-        ["'Centered in a fixed 320px box'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
-        ["'Right aligned'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
-        ["'Underlined link text'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even, decoration: TextDecoration.underline"],
-        ["'This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even"],
+        ["'TRACKED LABEL'", "fontFamily: 'Inter', fontSize: 14, fontWeight: FontWeight.w500, color: Color(0xFF000000), letterSpacing: 2, height: 1.2102272851126534, leadingDistribution: TextLeadingDistribution.even"],
+        ["'Raw line height 28px without a style'", "fontFamily: 'Inter', fontSize: 18, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.5555555555555556, leadingDistribution: TextLeadingDistribution.even"],
+        ["'Centered in a fixed 320px box'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102272510528564, leadingDistribution: TextLeadingDistribution.even"],
+        ["'Right aligned'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102272510528564, leadingDistribution: TextLeadingDistribution.even"],
+        ["'Underlined link text'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102272510528564, leadingDistribution: TextLeadingDistribution.even, decoration: TextDecoration.underline"],
+        ["'This long paragraph is clipped after two lines with an ellipsis so the generator must emit maxLines and overflow handling for it.'", "fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102272510528564, leadingDistribution: TextLeadingDistribution.even"],
     ]) {
         assert.ok(dedent(code).includes(`${label},\nstyle: TextStyle(${style}),\n`), `${label}\n${code}`);
     }
@@ -96,7 +96,7 @@ test('Text fixture: the regular-then-bold run is a Text.rich whose bold span car
         "              TextSpan(text: 'Regular then '),",
         "              TextSpan(text: 'bold run', style: TextStyle(fontWeight: FontWeight.w700)),",
         '            ]),',
-        "            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even),",
+        "            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w400, color: Color(0xFF000000), letterSpacing: 0, height: 1.2102272510528564, leadingDistribution: TextLeadingDistribution.even),",
         '            textAlign: TextAlign.left,',
         '          ),',
     ].join('\n')), code);
@@ -110,8 +110,8 @@ test('Text fixture: variable and paint-style colours become literals (pins curre
     assert.ok(byName('Colour from paint style').styles.fill);
 
     const code = await widgetCode(routes, '1:8');
-    assert.ok(code.includes("'Colour from variable',\n            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF0066E5), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even),"), code);
-    assert.ok(code.includes("'Colour from paint style',\n            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFFD93359), letterSpacing: 0, height: 1.2102, leadingDistribution: TextLeadingDistribution.even),"), code);
+    assert.ok(code.includes("'Colour from variable',\n            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFF0066E5), letterSpacing: 0, height: 1.2102272510528564, leadingDistribution: TextLeadingDistribution.even),"), code);
+    assert.ok(code.includes("'Colour from paint style',\n            style: TextStyle(fontFamily: 'Inter', fontSize: 16, fontWeight: FontWeight.w500, color: Color(0xFFD93359), letterSpacing: 0, height: 1.2102272510528564, leadingDistribution: TextLeadingDistribution.even),"), code);
 });
 
 test('Text fixture: the frame\'s variable-bound item spacing is emitted as its value; the binding is dropped (pins current behaviour, slice 5 replaces this)', async () => {

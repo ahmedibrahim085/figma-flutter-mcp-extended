@@ -85,7 +85,7 @@ export function convertTypeStyle(style: FigmaTextStyle, fill?: FigmaFill): TextS
     color: fill ? argbHex(fill) : undefined,
     // Figma's default is 0; emitting it keeps Material 3's 0.25 from being inherited.
     letterSpacing: style.letterSpacing ?? 0,
-    height: height === undefined ? undefined : Number(height.toFixed(4)),
+    height,
     decoration: style.textDecoration ? decorations[style.textDecoration] : undefined,
     fontFeatures: style.textCase === 'SMALL_CAPS' ? ['smcp']
       : style.textCase === 'SMALL_CAPS_FORCED' ? ['smcp', 'c2sc'] : undefined,

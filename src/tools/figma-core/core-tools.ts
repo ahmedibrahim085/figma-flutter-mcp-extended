@@ -358,26 +358,23 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 const variables = meta.variables || {};
                 const collections = meta.variableCollections || {};
 
-                // Structure the output by collection
+                // Collections are keyed by id (names can repeat); a variable whose collection
+                // Figma did not send is still listed, under its collection id.
                 const structured: any = {
-                    collectionCount: Object.keys(collections).length,
-                    variableCount: Object.keys(variables).length,
+                    collectionCount: 0,
+                    variableCount: 0,
                     collections: {} as any,
                 };
 
-                // Group variables by collection
                 for (const [collId, coll] of Object.entries(collections) as any[]) {
-                    structured.collections[coll.name] = {
-                        id: collId,
+                    structured.collections[collId] = {
+                        name: coll.name,
                         modes: coll.modes?.map((m: any) => ({id: m.modeId, name: m.name})),
                         variables: [] as any[],
                     };
                 }
 
                 for (const [varId, v] of Object.entries(variables) as any[]) {
-                    const collName =
-                        (Object.values(collections).find((c: any) => c.id === v.variableCollectionId) as any)?.name ||
-                        'Unknown';
                     const entry: any = {
                         id: varId,
                         name: v.name,
@@ -387,10 +384,10 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     if (v.description) entry.description = v.description;
                     if (v.scopes) entry.scopes = v.scopes;
 
-                    if (structured.collections[collName]) {
-                        structured.collections[collName].variables.push(entry);
-                    }
+                    (structured.collections[v.variableCollectionId] ??= {variables: []}).variables.push(entry);
+                    structured.variableCount++;
                 }
+                structured.collectionCount = Object.keys(structured.collections).length;
 
                 const json = JSON.stringify(structured, null, 2);
 

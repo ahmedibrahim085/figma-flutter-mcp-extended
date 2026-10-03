@@ -55,3 +55,35 @@ for (const tool of ['ff_get_metadata', 'ff_get_design_context']) {
         });
     }
 }
+
+const variable = (id: string, collectionId: string) =>
+    ({id, name: id, variableCollectionId: collectionId, resolvedType: 'FLOAT', valuesByMode: {'m:1': 4}});
+const collection = (id: string, name: string) => ({id, name, modes: [{modeId: 'm:1', name: 'Mode 1'}], variableIds: []});
+
+function variablesRoute(variables: object[], collections: object[]): FakeRoutes {
+    const byId = (list: any[]) => Object.fromEntries(list.map((item) => [item.id, item]));
+    return {[`/files/${FILE_KEY}/variables/local`]: {body: {meta: {variables: byId(variables), variableCollections: byId(collections)}}}};
+}
+
+test('a variable whose collection is not in the response is still listed', async () => {
+    const {text} = await callToolOffline(
+        variablesRoute([variable('V:1', 'VC:known'), variable('V:2', 'VC:remote')], [collection('VC:known', 'Local')]),
+        'ff_get_variable_defs', {fileKey: FILE_KEY});
+    const out = JSON.parse(text);
+    assert.deepEqual(Object.keys(out.collections).sort(), ['VC:known', 'VC:remote']);
+    assert.deepEqual(out.collections['VC:remote'].variables.map((v: any) => v.id), ['V:2']);
+    assert.equal(out.variableCount, 2);
+    assert.equal(out.collectionCount, 2);
+});
+
+test('collections that share a name stay apart, keyed by id with the name inside', async () => {
+    const {text} = await callToolOffline(
+        variablesRoute([variable('V:a', 'VC:a'), variable('V:b', 'VC:b')], [collection('VC:a', 'Tokens'), collection('VC:b', 'Tokens')]),
+        'ff_get_variable_defs', {fileKey: FILE_KEY});
+    const {collections} = JSON.parse(text);
+    assert.deepEqual(Object.keys(collections).sort(), ['VC:a', 'VC:b']);
+    assert.equal(collections['VC:a'].name, 'Tokens');
+    assert.deepEqual(collections['VC:a'].variables.map((v: any) => v.id), ['V:a']);
+    assert.deepEqual(collections['VC:b'].variables.map((v: any) => v.id), ['V:b']);
+    assert.deepEqual(collections['VC:a'].modes, [{id: 'm:1', name: 'Mode 1'}]);
+});

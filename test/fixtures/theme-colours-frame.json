@@ -1,0 +1,28 @@
+{
+ "nodes": {
+  "90:1": {
+   "document": {
+    "id": "90:1",
+    "name": "Palette",
+    "type": "FRAME",
+    "absoluteBoundingBox": {"x": 0, "y": 0, "width": 300, "height": 100},
+    "children": [
+     {"id": "90:2", "name": "Rectangle 1", "type": "RECTANGLE", "styles": {"fill": "S:1"},
+      "absoluteBoundingBox": {"x": 0, "y": 0, "width": 40, "height": 40},
+      "fills": [{"type": "SOLID", "color": {"r": 0.4, "g": 0.2, "b": 0.8, "a": 1}}]},
+     {"id": "90:3", "name": "Rectangle 2", "type": "RECTANGLE", "styles": {"fill": "S:2"},
+      "absoluteBoundingBox": {"x": 40, "y": 0, "width": 40, "height": 40},
+      "fills": [{"type": "SOLID", "color": {"r": 1, "g": 1, "b": 1, "a": 1}}]},
+     {"id": "90:4", "name": "Surface Large", "type": "FRAME",
+      "absoluteBoundingBox": {"x": 80, "y": 0, "width": 40, "height": 40},
+      "fills": [{"type": "SOLID", "color": {"r": 1, "g": 0, "b": 0, "a": 1}, "opacity": 0.5}],
+      "children": [{"id": "90:5", "name": "label", "type": "TEXT", "characters": "Surface Large", "absoluteBoundingBox": {"x": 80, "y": 0, "width": 40, "height": 10}}]}
+    ]
+   },
+   "styles": {
+    "S:1": {"name": "Brand/Primary", "styleType": "FILL"},
+    "S:2": {"name": "Brand/Surface", "styleType": "FILL"}
+   }
+  }
+ }
+}

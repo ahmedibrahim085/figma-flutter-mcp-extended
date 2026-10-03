@@ -1,6 +1,8 @@
 // Render check, step 1: run the code generator offline on one Figma node and write a Dart
 // library plus a widget test that pumps it in four hosts.
-// Usage: node --import tsx tools/render-check/generate.mts <fixture name in test/fixtures, or a path> <nodeId>
+// Usage: node --import tsx tools/render-check/generate.mts [--theme] <fixture name in test/fixtures, or a path> <nodeId>
+// --theme runs extract_theme_colors instead: lib/theme gets app_colors.dart and app_theme.dart, and a test pumps
+// MaterialApp(theme: AppTheme.lightTheme) in the four hosts.
 import {existsSync, mkdirSync, readFileSync, writeFileSync} from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {isAbsolute, resolve} from 'node:path';
@@ -9,9 +11,11 @@ import {callToolsOffline, nodeRoute, FILE_KEY} from '../../test/helpers/offline-
 const ROOT = fileURLToPath(new URL('../..', import.meta.url));
 const FLUTTER = fileURLToPath(new URL('./flutter/', import.meta.url));
 
-const [fixture, nodeId] = process.argv.slice(2);
+const args = process.argv.slice(2);
+const themeMode = args[0] === '--theme';
+const [fixture, nodeId] = themeMode ? args.slice(1) : args;
 if (!fixture || !nodeId) {
-    console.error('usage: generate.mts <fixture name or path> <nodeId>');
+    console.error('usage: generate.mts [--theme] <fixture name or path> <nodeId>');
     process.exit(2);
 }
 const fixturePath = isAbsolute(fixture) ? fixture : resolve(ROOT, 'test/fixtures', fixture);
@@ -25,6 +29,55 @@ const node = (Object.values(payload.nodes) as any[]).map((entry) => find(entry.d
 if (!node) {
     console.error(`node ${nodeId} not found in ${fixturePath}`);
     process.exit(2);
+}
+
+const HOSTS = `<String, Widget Function(Widget)>{
+    'bounded': (w) => Align(alignment: Alignment.topLeft, child: w),
+    'horizontal scroll': (w) => SingleChildScrollView(scrollDirection: Axis.horizontal, child: w),
+    'vertical scroll': (w) => SingleChildScrollView(child: w),
+    'row': (w) => Row(crossAxisAlignment: CrossAxisAlignment.start, children: [w]),
+  }`;
+
+if (themeMode) {
+    // The theme tool writes into <projectPath>/lib/theme; the harness is the project.
+    const entry = (Object.values(payload.nodes) as any[]).find((e) => find(e.document));
+    const [result] = await callToolsOffline(nodeRoute(node.id, node, entry.styles), [
+        ['extract_theme_colors', {fileId: FILE_KEY, nodeId: node.id, projectPath: FLUTTER, generateThemeData: true}],
+    ]);
+    if (!result.text.startsWith('Successfully')) {
+        console.error(result.text);
+        process.exit(1);
+    }
+    const firstColor = readFileSync(resolve(FLUTTER, 'lib/theme/app_colors.dart'), 'utf-8').match(/static const Color (\w+) =/)![1];
+    mkdirSync(resolve(FLUTTER, 'test'), {recursive: true});
+    writeFileSync(resolve(FLUTTER, 'test/theme_host_test.dart'), `import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:render_check/theme/app_colors.dart';
+import 'package:render_check/theme/app_theme.dart';
+
+// The generated theme must build and lay out without a Flutter error in each host a screen can give it.
+void main() {
+  final hosts = ${HOSTS};
+  for (final host in hosts.entries) {
+    testWidgets('AppTheme.lightTheme in a \${host.key} host', (tester) async {
+      final errors = <String>[];
+      final previous = FlutterError.onError;
+      FlutterError.onError = (details) => errors.add(details.exceptionAsString().split('\\n').first);
+      await tester.pumpWidget(MaterialApp(
+        theme: AppTheme.lightTheme,
+        home: Scaffold(body: host.value(const SizedBox(width: 40, height: 40, child: ColoredBox(color: AppColors.${firstColor})))),
+      ));
+      FlutterError.onError = previous;
+      // ignore: avoid_print
+      print('\${host.key}: \${tester.getSize(find.byWidgetPredicate((w) => w is ColoredBox && w.color == AppColors.${firstColor}))}');
+      expect(errors, isEmpty);
+    });
+  }
+}
+`);
+    console.log(result.text);
+    console.log('\nwrote lib/theme and test/theme_host_test.dart in tools/render-check/flutter');
+    process.exit(0);
 }
 
 const [analysis, implementation] = await callToolsOffline(nodeRoute(node.id, node), [

@@ -13,3 +13,5 @@ tools/render-check/flutter/build/
 tools/render-check/flutter/pubspec.lock
 tools/render-check/flutter/lib/generated.dart
 tools/render-check/flutter/test/host_matrix_test.dart
+tools/render-check/flutter/test/theme_host_test.dart
+tools/render-check/flutter/lib/theme/

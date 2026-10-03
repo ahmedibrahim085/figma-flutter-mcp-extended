@@ -2,8 +2,7 @@
 
 import {WIDGET_SPLIT_ADVICE} from "../../../utils/flutter-guidance.js";
 import { MAX_CHILD_DEPTH, NESTED_COMPONENT_TYPES, type DeduplicatedComponentAnalysis, type DeduplicatedComponentChild } from '../../../extractors/components/deduplicated-extractor.js';
-import type { FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
-import { FlutterCodeGenerator } from '../../../extractors/flutter/style-library.js';
+import { FlutterCodeGenerator, type FlutterStyleLibrary } from '../../../extractors/flutter/style-library.js';
 import { dartString, indentTail, textWidgetCode } from '../../../extractors/flutter/text-style.js';
 import { generateComponentVisualContext } from '../visual-context.js';
 import type { ComponentAnalysis, LayoutInfo } from '../../../extractors/components/types.js';
@@ -684,8 +683,7 @@ export function generateComprehensiveDeduplicatedReport(
 
   // Quick actions
   output += `🚀 Quick Actions:\n`;
-  output += `   • Use 'generate_flutter_implementation' tool for complete Flutter code\n`;
-  output += `\n`;
+  output += `   • Use 'generate_flutter_implementation' tool for complete Flutter code\n\n`;
   
   output += `🏗️  Widget Composition Reminder:\n`;
   WIDGET_SPLIT_ADVICE.forEach(line => { output += `   • ${line}\n`; });

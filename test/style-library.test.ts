@@ -74,7 +74,9 @@ async function withHttpServer(body: (endpoint: string) => Promise<void>) {
         }
         await body(endpoint);
     } finally {
+        const exited = new Promise((resolve) => child.once('exit', resolve));
         child.kill('SIGKILL');
+        await exited;
         await figma.close();
     }
 }

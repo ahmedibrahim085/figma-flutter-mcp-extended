@@ -1317,7 +1317,7 @@ src/tools/flutter/components/deduplicated-helpers.ts	template	   • Size: not s
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Total style usage: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Total unique styles: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	   • Type: ${…}\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
-src/tools/flutter/components/deduplicated-helpers.ts	template	   • Use 'generate_flutter_implementation' tool for complete Flutter code\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
+src/tools/flutter/components/deduplicated-helpers.ts	template	   • Use 'generate_flutter_implementation' tool for complete Flutter code\n\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	  ${…}\n	ArrowFunction	box	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	  ${…}\n	ArrowFunction	multiChild	1	K-DART	rule: Dart syntax template carrying no design value
 src/tools/flutter/components/deduplicated-helpers.ts	template	  @override\n	binary(+=)	generateFlutterImplementation	1	K-DART	rule: Dart syntax template carrying no design value
@@ -1375,7 +1375,7 @@ src/tools/flutter/components/deduplicated-helpers.ts	template	Style References:\
 src/tools/flutter/components/deduplicated-helpers.ts	template	Type: ${…}\n	binary(+=)	generateDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	\b${…}[(.]	arg(RegExp)	generateFlutterImplementation	1	K-SCHEMA	regex built from a widget or class name
 src/tools/flutter/components/deduplicated-helpers.ts	template	\b${…}\b	arg(RegExp)	referencedStyles	1	K-SCHEMA	regex built from a widget or class name
-src/tools/flutter/components/deduplicated-helpers.ts	template	\n	binary(+=)	generateComprehensiveDeduplicatedReport	7	K-TEXT	rule: report/log/approximation text, no design fact
+src/tools/flutter/components/deduplicated-helpers.ts	template	\n	binary(+=)	generateComprehensiveDeduplicatedReport	6	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	\n	binary(+=)	generateDeduplicatedReport	2	K-TEXT	rule: report/log/approximation text, no design fact
 src/tools/flutter/components/deduplicated-helpers.ts	template	\n	binary(+=)	generateFlutterImplementation	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	\nUse generate_flutter_implementation tool for complete Flutter code.\n	binary(+=)	generateDeduplicatedReport	1	K-TEXT	rule: report/log/approximation text, no design fact

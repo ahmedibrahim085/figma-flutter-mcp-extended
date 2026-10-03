@@ -4,16 +4,11 @@ import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
 import {join} from 'path';
 import {
-    createAssetsDirectory,
-    generateAssetFilename,
-    downloadImage,
-    getFileStats,
-    updatePubspecAssets,
-    generateAssetConstants,
+    devicePixelRatiosInput,
+    exportAssetNodes,
     groupAssetsByBaseName,
-    type AssetInfo
+    selectAssetNodes
 } from "./asset-manager.js";
-import {isEffectivelyVisible} from "../../../utils/visibility.js";
 import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
 import defaults from '../../../defaults.json' with { type: 'json' };
 
@@ -24,17 +19,16 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
         "export_flutter_assets",
         {
             title: "Export Flutter Assets",
-            description: "Export images from Figma nodes and set up Flutter assets directory with pubspec.yaml",
+            description: "Export the given Figma nodes, plus descendants that have exportSettings or a visible IMAGE fill, into the Flutter assets folders and pubspec.yaml. A node's exportSettings give its format and scale (SVG and PDF at 1x; WIDTH/HEIGHT are converted to the nearest ratio of 1, 1.5, 2, 3, 4); a node without them is exported in `format` at each of devicePixelRatios.",
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
-                nodeIds: z.array(z.string()).describe("Array of node IDs to export as images"),
+                nodeIds: z.array(z.string()).describe("Array of node IDs to export; each is exported, and so are its descendants with exportSettings or a visible IMAGE fill"),
                 projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)"),
-                format: z.enum(['png', 'jpg', 'svg']).optional().describe("Export format (default: png)"),
-                scale: z.number().optional().describe("Export scale (1x, 2x, 3x, 4x) (default: 2)"),
-                includeMultipleResolutions: z.boolean().optional().describe("Generate @2x, @3x variants for different screen densities (default: false)")
+                format: z.enum(['png', 'jpg', 'svg']).optional().describe("Export format for nodes without exportSettings (default: png)"),
+                devicePixelRatios: devicePixelRatiosInput
             }
         },
-        async ({fileId, nodeIds, projectPath = process.cwd(), format = 'png', scale = 2, includeMultipleResolutions = false}) => {
+        async ({fileId, nodeIds, projectPath = process.cwd(), format = 'png', devicePixelRatios}) => {
             const token = figmaApiKey;
             if (!token) {
                 return {
@@ -48,65 +42,25 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
             try {
                 const figmaService = new FigmaService(token);
 
-                // First, get node details to filter for actual images/illustrations
                 nodeIds = nodeIds.map(validateAndConvertNodeId);
-                const imageNodes = await filterImageNodes(fileId, nodeIds, figmaService);
+                const roots = Object.values(await figmaService.getNodes(fileId, nodeIds));
+                const imageNodes = selectAssetNodes(roots, true);
 
                 if (imageNodes.length === 0) {
                     return {
                         content: [{
                             type: "text",
-                            text: "No visible image assets found in the specified nodes. Hidden nodes (visible: false) and empty icon slots are skipped. Only custom illustrations, photos, and non-icon graphics are exported."
+                            text: "No visible nodes to export in the specified IDs. Hidden nodes (visible: false) and empty icon slots are skipped."
                         }]
                     };
                 }
 
-                // Create assets directory structure
-                const assetsDir = await createAssetsDirectory(projectPath);
-
-                let downloadedAssets: AssetInfo[] = [];
-
-                // Process each resolution if multi-resolution is enabled
-                const scales = includeMultipleResolutions ? [1, 2, 3] : [scale];
-
-                for (const currentScale of scales) {
-                    const imageUrls = await figmaService.getImageExportUrls(fileId, imageNodes.map(n => n.id), {
-                        format,
-                        scale: currentScale
-                    });
-
-                    for (const node of imageNodes) {
-                        const imageUrl = imageUrls[node.id];
-                        if (!imageUrl) continue;
-
-                        const filename = generateAssetFilename(node.name, format, currentScale);
-                        const filepath = join(assetsDir, filename);
-
-                        // Download the image
-                        await downloadImage(imageUrl, filepath);
-
-                        // Get file size for reporting
-                        const stats = await getFileStats(filepath);
-
-                        downloadedAssets.push({
-                            nodeId: node.id,
-                            nodeName: node.name,
-                            filename,
-                            path: `${defaults.output.imagesDir}/${filename}`,
-                            size: stats.size
-                        });
-                    }
-                }
-
-                // Constants first: updatePubspecAssets throws on pubspec shapes it refuses to edit
-                const constantsFile = await generateAssetConstants(downloadedAssets, projectPath);
-
-                // Update pubspec.yaml
-                const pubspecPath = join(projectPath, 'pubspec.yaml');
-                await updatePubspecAssets(pubspecPath, downloadedAssets);
+                const {assets: downloadedAssets, notes, constantsFiles} = await exportAssetNodes({
+                    figmaService, fileId, projectPath, nodes: imageNodes, ratios: devicePixelRatios, fallbackFormat: format
+                });
 
                 let output = `Successfully exported ${imageNodes.length} image assets to Flutter project!\n\n`;
-                output += `Assets Directory: ${assetsDir}\n\n`;
+                output += `Assets Directory: ${join(projectPath, defaults.output.imagesDir)}\n\n`;
                 output += `Downloaded Assets:\n`;
 
                 // Group by base name for cleaner output
@@ -117,13 +71,16 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                         output += `  • ${asset.filename} (${asset.size})\n`;
                     });
                 });
+                if (notes.length > 0) {
+                    output += `\nExport settings:\n${notes.map(note => `- ${note}\n`).join('')}`;
+                }
 
                 output += `\nPubspec Configuration:\n`;
                 output += `- Merged asset declarations into pubspec.yaml\n`;
                 output += `- Assets available under: ${defaults.output.imagesDir}/\n\n`;
 
                 output += `Generated Code:\n`;
-                output += `- Merged asset constants into: ${constantsFile}\n`;
+                output += `- Merged asset constants into: ${constantsFiles.join(', ')}\n`;
                 output += `- Import in your Flutter code: import 'package:your_app/constants/assets.dart';\n`;
 
                 return {
@@ -139,68 +96,4 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
             }
         }
     );
-}
-
-// OPTIMIZED: Helper functions for filtering image nodes - only searches within target nodes
-async function filterImageNodes(fileId: string, targetNodeIds: string[], figmaService: any): Promise<Array<{id: string, name: string, node: any}>> {
-    // OPTIMIZED: Only get the target nodes instead of the entire file (massive performance improvement)
-    const targetNodes = await figmaService.getNodes(fileId, targetNodeIds);
-
-    const allNodesWithImages: Array<{id: string, name: string, node: any}> = [];
-
-    function extractImageNodes(node: any, nodeId: string = node.id): void {
-        // Never export explicitly hidden nodes or empty containers that only wrap hidden content
-        if (!isEffectivelyVisible(node)) {
-            return;
-        }
-
-        // Check if this node has image fills
-        if (node.fills && node.fills.some((fill: any) => fill.type === 'IMAGE' && fill.visible !== false)) {
-            allNodesWithImages.push({
-                id: nodeId,
-                name: node.name,
-                node: node
-            });
-        }
-
-        // Check if this is a vector/illustration that should be exported
-        if (node.type === 'VECTOR' && node.name) {
-            const name = node.name.toLowerCase();
-            if ((name.includes('image') || name.includes('illustration') || name.includes('graphic')) &&
-                !name.includes('icon') && !name.includes('button')) {
-                allNodesWithImages.push({
-                    id: nodeId,
-                    name: node.name,
-                    node: node
-                });
-            }
-        }
-
-        // Recursively check children
-        if (node.children) {
-            node.children.forEach((child: any) => {
-                extractImageNodes(child, child.id);
-            });
-        }
-    }
-
-    // OPTIMIZED: Extract only from target nodes instead of entire file
-    // This eliminates the need for expensive boundary checking since we only search within target nodes
-    Object.values(targetNodes).forEach((node: any) => {
-        extractImageNodes(node);
-    });
-
-    // OPTIMIZED: No filtering needed since we only searched within target nodes
-    return allNodesWithImages;
-}
-
-// REMOVED: isNodeWithinTarget function no longer needed since we only search within target nodes
-
-function toCamelCase(str: string): string {
-    return str
-        .toLowerCase()
-        .replace(/[^a-z0-9]/g, '_')
-        .replace(/_+/g, '_')
-        .replace(/^_|_$/g, '')
-        .replace(/_(.)/g, (_, char) => char.toUpperCase());
 }

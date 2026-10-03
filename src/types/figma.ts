@@ -39,6 +39,8 @@ export interface FigmaNode {
     constraints?: FigmaConstraints;
     layoutPositioning?: 'AUTO' | 'ABSOLUTE';
     clipsContent?: boolean;
+    /** Figma's export settings for the node: what to export it as (empty when none). */
+    exportSettings?: Array<{suffix?: string; format: string; constraint?: {type: string; value: number}}>;
     /** How a child behaves when its parent frame scrolls (Figma REST, on the child). */
     scrollBehavior?: 'SCROLLS' | 'FIXED' | 'STICKY_SCROLLS';
     /** Scroll direction of a frame that scrolls (Figma REST). */

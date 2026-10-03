@@ -2,6 +2,9 @@
 import {existsSync} from 'fs';
 import {writeFile, mkdir, readFile} from 'fs/promises';
 import {join, dirname} from 'path';
+import {z} from 'zod';
+import type {FigmaService} from '../../../services/figma.js';
+import {isEffectivelyVisible} from '../../../utils/visibility.js';
 import {detectConstantsDir} from '../../../utils/project-conventions.js';
 import defaults from '../../../defaults.json' with { type: 'json' };
 
@@ -355,4 +358,167 @@ function toCamelCase(str: string): string {
         .replace(/_+/g, '_')
         .replace(/^_|_$/g, '')
         .replace(/_(.)/g, (_, char) => char.toUpperCase());
+}
+
+// ── Which nodes to export, and how ──────────────────────────────────────────
+
+/** Flutter's documented device pixel ratios (docs.flutter.dev, resolution-aware image assets). */
+export const DEVICE_PIXEL_RATIOS = [1, 1.5, 2, 3, 4];
+
+/** The `devicePixelRatios` input of the PNG export tools; the default comes from defaults.json. */
+export const devicePixelRatiosInput = z.array(z.union([z.literal(1), z.literal(1.5), z.literal(2), z.literal(3), z.literal(4)])).min(1).optional()
+    .describe(`Device pixel ratios (1, 1.5, 2, 3, 4) to export PNG at for nodes without exportSettings (default: ${JSON.stringify(defaults.output.devicePixelRatios)})`);
+
+export interface AssetNode {
+    id: string;
+    name: string;
+    node: any;
+}
+
+type AssetFormat = 'png' | 'jpg' | 'svg' | 'pdf';
+
+interface AssetRequest {
+    node: AssetNode;
+    format: AssetFormat;
+    scale: number;
+}
+
+const hasExportSettings = (node: any): boolean => (node.exportSettings?.length ?? 0) > 0;
+const hasImageFill = (node: any): boolean =>
+    !!node.fills?.some((fill: any) => fill.type === 'IMAGE' && fill.visible !== false);
+
+/**
+ * The nodes to export: every visible descendant with exportSettings or a visible IMAGE fill. A root is exported
+ * only when `includeRoots` is set (the IDs the caller passed); the analyse tools export descendants only.
+ * No layer name or size decides.
+ */
+export function selectAssetNodes(roots: any[], includeRoots: boolean): AssetNode[] {
+    const found = new Map<string, AssetNode>();
+    const visit = (node: any, isRoot: boolean): void => {
+        if (!isEffectivelyVisible(node)) return;
+        if (isRoot ? includeRoots : hasExportSettings(node) || hasImageFill(node)) {
+            found.set(node.id, {id: node.id, name: node.name, node});
+        }
+        node.children?.forEach((child: any) => visit(child, false));
+    };
+    roots.forEach(root => visit(root, true));
+    return [...found.values()];
+}
+
+/** The nearest of Flutter's documented ratios. */
+const snapToRatio = (ratio: number): number =>
+    DEVICE_PIXEL_RATIOS.reduce((best, candidate) => Math.abs(candidate - ratio) < Math.abs(best - ratio) ? candidate : best);
+
+/**
+ * What to request for one node. With exportSettings, each setting gives a format and scale (SVG and PDF at 1;
+ * WIDTH/HEIGHT become the nearest documented ratio); without, `fallbackFormat` at each device pixel ratio.
+ */
+function planNode(node: AssetNode, ratios: number[], fallbackFormat: AssetFormat): {requests: AssetRequest[]; notes: string[]} {
+    const requests = new Map<string, AssetRequest>();
+    const notes: string[] = [];
+    const add = (format: AssetFormat, scale: number) => requests.set(`${format}@${scale}`, {node, format, scale});
+    const settings: any[] = node.node.exportSettings ?? [];
+
+    if (settings.length === 0) {
+        if (fallbackFormat === 'svg' || fallbackFormat === 'pdf') add(fallbackFormat, 1);
+        else ratios.forEach(ratio => add(fallbackFormat, ratio));
+    }
+    for (const setting of settings) {
+        const format = String(setting.format).toLowerCase() as AssetFormat;
+        if (!['png', 'jpg', 'svg', 'pdf'].includes(format)) {
+            notes.push(`${node.name}: export format ${setting.format} is not supported; not exported`);
+            continue;
+        }
+        if (setting.suffix) notes.push(`${node.name}: suffix "${setting.suffix}" is reported, not used in the file name`);
+        if (format === 'svg' || format === 'pdf') {
+            add(format, 1);
+            continue;
+        }
+        const constraint = setting.constraint;
+        if (constraint?.type === 'WIDTH' || constraint?.type === 'HEIGHT') {
+            const side = node.node.absoluteBoundingBox?.[constraint.type === 'WIDTH' ? 'width' : 'height'];
+            if (!side) {
+                notes.push(`${node.name}: ${constraint.type} ${constraint.value} needs an absoluteBoundingBox; not exported`);
+                continue;
+            }
+            const ratio = constraint.value / side;
+            const snapped = snapToRatio(ratio);
+            notes.push(`${node.name}: ${constraint.type} ${constraint.value} → ${Number(ratio.toFixed(2))}x, exported at ${snapped}x`);
+            add(format, snapped);
+        } else {
+            add(format, constraint?.value ?? 1);
+        }
+    }
+    return {requests: [...requests.values()], notes};
+}
+
+export interface ExportedAssets {
+    assets: AssetInfo[];
+    notes: string[];
+    constantsFiles: string[];
+}
+
+/**
+ * Plan, request (one /images call per format and scale), download and register `nodes`: constants and pubspec.
+ * PNG and JPG go under the images folder (`N.0x/` variants), SVG and PDF under the SVG folder.
+ */
+export async function exportAssetNodes(options: {
+    figmaService: FigmaService;
+    fileId: string;
+    projectPath: string;
+    nodes: AssetNode[];
+    ratios?: number[];
+    fallbackFormat?: AssetFormat;
+    /** Warn and go on when one download fails (the analyse tools), instead of failing the export. */
+    skipFailedDownloads?: boolean;
+}): Promise<ExportedAssets> {
+    const {figmaService, fileId, projectPath, nodes, skipFailedDownloads = false} = options;
+    const ratios = options.ratios ?? defaults.output.devicePixelRatios;
+    const plans = nodes.map(node => planNode(node, ratios, options.fallbackFormat ?? 'png'));
+    const groups = new Map<string, AssetRequest[]>();
+    plans.flatMap(plan => plan.requests).forEach(request => {
+        const key = `${request.format}@${request.scale}`;
+        groups.set(key, [...(groups.get(key) ?? []), request]);
+    });
+
+    const assets: AssetInfo[] = [];
+    if (groups.size > 0) {
+        const imagesDir = await createAssetsDirectory(projectPath);
+        const svgsDir = await createSvgAssetsDirectory(projectPath);
+        for (const requests of groups.values()) {
+            const {format, scale} = requests[0];
+            const urls = await figmaService.getImageExportUrls(fileId, requests.map(request => request.node.id), {format, scale});
+            for (const {node} of requests) {
+                const url = urls[node.id];
+                if (!url) continue;
+                const vector = format === 'svg' || format === 'pdf';
+                const filename = vector ? generateSvgFilename(node.name).replace(/\.svg$/, `.${format}`) : generateAssetFilename(node.name, format, scale);
+                const filepath = join(vector ? svgsDir : imagesDir, filename);
+                try {
+                    await downloadImage(url, filepath);
+                } catch (error) {
+                    if (!skipFailedDownloads) throw error;
+                    console.warn(`Failed to download ${node.name}:`, error);
+                    continue;
+                }
+                assets.push({
+                    nodeId: node.id,
+                    nodeName: node.name,
+                    filename,
+                    path: `${vector ? defaults.output.svgsDir : defaults.output.imagesDir}/${filename}`,
+                    size: (await getFileStats(filepath)).size
+                });
+            }
+        }
+    }
+
+    const constantsFiles: string[] = [];
+    const raster = assets.filter(asset => !/\.(svg|pdf)$/.test(asset.filename));
+    const svg = assets.filter(asset => asset.filename.endsWith('.svg'));
+    // Constants first: updatePubspecAssets throws on pubspec shapes it refuses to edit
+    if (raster.length > 0) constantsFiles.push(await generateAssetConstants(raster, projectPath));
+    if (svg.length > 0) constantsFiles.push(await generateSvgAssetConstants(svg, projectPath));
+    if (assets.length > 0) await updatePubspecAssets(join(projectPath, 'pubspec.yaml'), assets);
+
+    return {assets, notes: plans.flatMap(plan => plan.notes), constantsFiles};
 }

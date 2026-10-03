@@ -12,7 +12,6 @@ import {
     type AssetInfo,
     generateSvgAssetConstants
 } from "./asset-manager.js";
-import {Logger} from "../../../utils/logger.js";
 import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
 import {isEffectivelyVisible} from "../../../utils/visibility.js";
 import defaults from '../../../defaults.json' with { type: 'json' };
@@ -23,10 +22,10 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
         "export_svg_flutter_assets",
         {
             title: "Export SVG Flutter Assets",
-            description: "Export SVG assets from Figma nodes. Detects SVG content by analyzing vector percentage - nodes with >30% vector content are considered SVG assets. Handles nested GROUP/FRAME structures with mixed content.",
+            description: "Export Figma nodes as SVG: exactly the node IDs given, plus descendants whose exportSettings include SVG. Nothing is guessed from a node's contents; hidden nodes are skipped.",
             inputSchema: {
                 fileId: z.string().describe("Figma file ID"),
-                nodeIds: z.array(z.string()).describe("Array of node IDs to export as SVG assets"),
+                nodeIds: z.array(z.string()).describe("Array of node IDs to export as SVG; descendants with an SVG export setting are exported too"),
                 projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)")
             }
         },
@@ -44,19 +43,15 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
             try {
                 const figmaService = new FigmaService(token);
 
-                // Filter for SVG nodes (groups with vector children)
                 nodeIds = nodeIds.map(validateAndConvertNodeId);
-                const svgNodes = await filterSvgNodes(fileId, nodeIds, figmaService);
+                const svgNodes = await selectSvgNodes(fileId, nodeIds, figmaService);
 
                 if (svgNodes.length === 0) {
                     return {
                         content: [{
                             type: "text",
-                            text: "No SVG assets found in the specified nodes. SVG detection looks for:\n" +
-                                  "- Direct VECTOR or BOOLEAN_OPERATION nodes\n" +
-                                  "- GROUP/FRAME/COMPONENT/INSTANCE nodes with ≥30% vector content\n" +
-                                  "- Nodes created with pen tool\n\n" +
-                                  "Check the console logs for detailed analysis of each node's vector percentage."
+                            text: "No SVG assets to export: none of the specified nodes is visible. " +
+                                  "Hidden nodes (visible: false) and empty slots are skipped."
                         }]
                     };
                 }
@@ -105,10 +100,8 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
                 output += `SVG Assets Directory: ${assetsDir}\n\n`;
                 output += `Downloaded SVG Assets:\n`;
 
-                downloadedAssets.forEach((asset, index) => {
-                    const svgNode = svgNodes.find(n => n.id === asset.nodeId);
-                    const vectorInfo = svgNode?.vectorPercentage ? ` | Vector: ${(svgNode.vectorPercentage * 100).toFixed(1)}%` : '';
-                    output += `- ${asset.filename} (${asset.size})${vectorInfo}\n`;
+                downloadedAssets.forEach(asset => {
+                    output += `- ${asset.filename} (${asset.size})\n`;
                 });
 
                 output += `\nPubspec Configuration:\n`;
@@ -138,165 +131,18 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
     );
 }
 
-// Helper function to filter SVG nodes with enhanced detection
-async function filterSvgNodes(fileId: string, targetNodeIds: string[], figmaService: any): Promise<Array<{id: string, name: string, node: any, vectorPercentage?: number}>> {
-    // Get the target nodes
-    const targetNodes = await figmaService.getNodes(fileId, targetNodeIds);
-    
-    const svgNodes: Array<{id: string, name: string, node: any, vectorPercentage?: number}> = [];
-    const analysisResults: Array<{id: string, name: string, type: string, vectorPercentage: number, isSvg: boolean}> = [];
-
-    for (const nodeId of targetNodeIds) {
-        const node = targetNodes[nodeId];
-        if (!node) continue;
-
-        // Skip hidden nodes / empty slots that only wrap hidden icons
-        if (!isEffectivelyVisible(node)) {
-            analysisResults.push({
-                id: nodeId,
-                name: node.name,
-                type: node.type,
-                vectorPercentage: 0,
-                isSvg: false
-            });
-            continue;
-        }
-
-        // Calculate vector percentage for analysis
-        let vectorPercentage = 0;
-        if (node.type === 'VECTOR' || node.type === 'BOOLEAN_OPERATION') {
-            vectorPercentage = 1.0; // 100% vector
-        } else if (node.type === 'GROUP' || node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') {
-            vectorPercentage = calculateVectorPercentage(node);
-        }
-
-        const isSvg = isSvgNode(node);
-        
-        // Store analysis results for debugging
-        analysisResults.push({
-            id: nodeId,
-            name: node.name,
-            type: node.type,
-            vectorPercentage: Math.round(vectorPercentage * 100) / 100, // Round to 2 decimal places
-            isSvg
-        });
-
-        // Check if this is a potential SVG node
-        if (isSvg) {
-            svgNodes.push({
-                id: nodeId,
-                name: node.name,
-                node: node,
-                vectorPercentage
-            });
-        }
-    }
-
-    // Log analysis results for debugging (this will help users understand why nodes were/weren't selected)
-    Logger.diag('SVG Node Analysis Results:');
-    analysisResults.forEach(result => {
-        const status = result.isSvg ? '✓ SVG' : '✗ Not SVG';
-        Logger.diag(` 🎨 ${status} | ${result.name} (${result.type}) | Vector: ${(result.vectorPercentage * 100).toFixed(1)}%`);
-    });
-
-    return svgNodes;
-}
-
-function isSvgNode(node: any): boolean {
-    // Direct vector nodes are always SVG
-    if (node.type === 'VECTOR' || node.type === 'BOOLEAN_OPERATION') {
-        return true;
-    }
-
-    // For container nodes (GROUP, FRAME, COMPONENT, INSTANCE), calculate vector percentage
-    if (node.type === 'GROUP' || node.type === 'FRAME' || node.type === 'COMPONENT' || node.type === 'INSTANCE') {
-        const vectorPercentage = calculateVectorPercentage(node);
-        
-        // Consider it SVG if more than 25% of the content is vector-based
-        return vectorPercentage >= 0.25;
-    }
-
-    return false;
-}
-
 /**
- * Calculate the percentage of vector content in a node and its descendants
- * @param node The node to analyze
- * @returns A number between 0 and 1 representing the percentage of vector content
+ * The nodes to export as SVG: exactly the requested IDs, plus every visible descendant that has an SVG export
+ * setting in Figma. Nothing is guessed from the node's contents.
  */
-function calculateVectorPercentage(node: any): number {
-    const nodeStats = analyzeNodeComposition(node);
-    
-    if (nodeStats.totalNodes === 0) {
-        return 0;
-    }
-    
-    return nodeStats.vectorNodes / nodeStats.totalNodes;
+async function selectSvgNodes(fileId: string, targetNodeIds: string[], figmaService: FigmaService): Promise<Array<{id: string, name: string}>> {
+    const found = new Map<string, {id: string, name: string}>();
+    const visit = (node: any, isRoot: boolean): void => {
+        if (!isEffectivelyVisible(node)) return;
+        const hasSvgSetting = node.exportSettings?.some((setting: any) => String(setting.format).toUpperCase() === 'SVG');
+        if (isRoot || hasSvgSetting) found.set(node.id, {id: node.id, name: node.name});
+        node.children?.forEach((child: any) => visit(child, false));
+    };
+    Object.values(await figmaService.getNodes(fileId, targetNodeIds)).forEach(node => visit(node, true));
+    return [...found.values()];
 }
-
-/**
- * Recursively analyze the composition of a node and its descendants
- * @param node The node to analyze
- * @returns Object with counts of total nodes and vector nodes
- */
-function analyzeNodeComposition(node: any): { totalNodes: number; vectorNodes: number } {
-    let totalNodes = 1; // Count the current node
-    let vectorNodes = 0;
-    
-    // Check if current node is vector-based
-    if (isVectorBasedNode(node)) {
-        vectorNodes = 1;
-    }
-    
-    // Recursively analyze children
-    if (node.children && Array.isArray(node.children)) {
-        for (const child of node.children) {
-            const childStats = analyzeNodeComposition(child);
-            totalNodes += childStats.totalNodes;
-            vectorNodes += childStats.vectorNodes;
-        }
-    }
-    
-    return { totalNodes, vectorNodes };
-}
-
-/**
- * Check if a single node is vector-based (without considering children)
- * @param node The node to check
- * @returns True if the node is vector-based
- */
-function isVectorBasedNode(node: any): boolean {
-    // Direct vector types
-    if (node.type === 'VECTOR' || node.type === 'BOOLEAN_OPERATION') {
-        return true;
-    }
-    
-    // Some instances might be vector-based components
-    if (node.type === 'INSTANCE') {
-        // If an instance has vector-like properties, consider it vector-based
-        return hasVectorLikeProperties(node);
-    }
-    
-    return false;
-}
-
-/**
- * Check if a node has vector-like properties (for instances and other edge cases)
- * @param node The node to check
- * @returns True if the node has vector-like properties
- */
-function hasVectorLikeProperties(node: any): boolean {
-    // Check for vector-like fills or strokes
-    const hasVectorFills = node.fills && node.fills.some((fill: any) => 
-        fill.type === 'SOLID' || fill.type === 'GRADIENT_LINEAR' || fill.type === 'GRADIENT_RADIAL'
-    );
-    
-    const hasVectorStrokes = node.strokes && node.strokes.some((stroke: any) => 
-        stroke.type === 'SOLID' && stroke.visible !== false
-    );
-    
-    // The REST API sends no vectorNetwork, so fills and strokes are the only signal here.
-    return hasVectorFills && hasVectorStrokes;
-}
-
-

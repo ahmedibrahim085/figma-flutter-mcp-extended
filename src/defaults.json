@@ -21,7 +21,10 @@
     "textThemeFile": "text_theme.dart",
     "goldenTestSuffix": "_golden_test.dart",
     "goldenImagesDir": "goldens",
-    "goldenTestSubdir": "golden"
+    "goldenTestSubdir": "golden",
+    "devicePixelRatios": [
+      2
+    ]
   },
   "breakpoints": {
     "width": [

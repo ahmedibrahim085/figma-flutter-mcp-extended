@@ -15,13 +15,10 @@ import {
 } from "./helpers.js";
 
 import {
-    createAssetsDirectory,
-    generateAssetFilename,
-    downloadImage,
-    getFileStats,
-    updatePubspecAssets,
-    generateAssetConstants,
+    devicePixelRatiosInput,
+    exportAssetNodes,
     groupAssetsByBaseName,
+    selectAssetNodes,
     type AssetInfo
 } from "../assets/asset-manager.js";
 import {join} from 'path';
@@ -38,11 +35,12 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
                 input: z.string().describe("Figma frame URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
                 maxChildNodes: z.number().optional().describe("Maximum child layers to analyze (default: 15)"),
-                extractAssets: z.boolean().optional().describe("Extract and export screen assets (default: true)"),
-                projectPath: z.string().optional().describe("Path to Flutter project for asset export (defaults to current directory)")
+                extractAssets: z.boolean().optional().describe("Export descendants that have exportSettings or a visible IMAGE fill (default: true)"),
+                projectPath: z.string().optional().describe("Path to Flutter project for asset export (defaults to current directory)"),
+                devicePixelRatios: devicePixelRatiosInput
             }
         },
-        async ({input, nodeId, maxChildNodes = 15, extractAssets = true, projectPath = process.cwd()}) => {
+        async ({input, nodeId, maxChildNodes = 15, extractAssets = true, projectPath = process.cwd(), devicePixelRatios}) => {
             const token = figmaApiKey;
             if (!token) {
                 return {
@@ -90,15 +88,14 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
                 let assetExportInfo = '';
                 if (extractAssets) {
                     try {
-                        const imageNodes = await filterImageNodesInScreen(parsedInput.fileId, [parsedInput.nodeId], figmaService);
+                        // Descendants only: the analysed frame itself is never exported.
+                        const imageNodes = selectAssetNodes(Object.values(await figmaService.getNodes(parsedInput.fileId, [parsedInput.nodeId])), false);
                         if (imageNodes.length > 0) {
-                            const exportedAssets = await exportScreenAssets(
-                                imageNodes,
-                                parsedInput.fileId,
-                                figmaService,
-                                projectPath
-                            );
-                            assetExportInfo = generateAssetExportReport(exportedAssets);
+                            const exported = await exportAssetNodes({
+                                figmaService, fileId: parsedInput.fileId, projectPath, nodes: imageNodes,
+                                ratios: devicePixelRatios, skipFailedDownloads: true
+                            });
+                            assetExportInfo = generateAssetExportReport(exported.assets, exported.notes);
                         }
                     } catch (assetError) {
                         assetExportInfo = `\nAsset Export Warning: ${assetError instanceof Error ? assetError.message : String(assetError)}\n`;
@@ -192,146 +189,9 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
 }
 
 /**
- * OPTIMIZED: Filter image nodes within a screen - only searches within target nodes
- */
-async function filterImageNodesInScreen(fileId: string, targetNodeIds: string[], figmaService: FigmaService): Promise<Array<{id: string, name: string, node: any}>> {
-    // OPTIMIZED: Only get the target nodes instead of the entire file (massive performance improvement)
-    const targetNodes = await figmaService.getNodes(fileId, targetNodeIds);
-
-    const allNodesWithImages: Array<{id: string, name: string, node: any}> = [];
-
-    function extractImageNodes(node: any, nodeId: string = node.id): void {
-        // Check if this node has image fills
-        if (node.fills && node.fills.some((fill: any) => fill.type === 'IMAGE' && fill.visible !== false)) {
-            allNodesWithImages.push({
-                id: nodeId,
-                name: node.name,
-                node: node
-            });
-        }
-
-        // Check if this is a vector/illustration that should be exported
-        if (node.type === 'VECTOR' && node.name) {
-            const name = node.name.toLowerCase();
-            if ((name.includes('image') || name.includes('illustration') || name.includes('graphic') ||
-                 name.includes('photo') || name.includes('picture') || name.includes('asset') ||
-                 name.includes('logo') || name.includes('icon')) &&
-                !name.includes('button')) {
-                allNodesWithImages.push({
-                    id: nodeId,
-                    name: node.name,
-                    node: node
-                });
-            }
-        }
-
-        // Check for large frames that might be image placeholders
-        if ((node.type === 'RECTANGLE' || node.type === 'FRAME') && node.name) {
-            const name = node.name.toLowerCase();
-            const hasImageKeywords = name.includes('image') || name.includes('photo') || 
-                                   name.includes('picture') || name.includes('banner') ||
-                                   name.includes('hero') || name.includes('thumbnail') ||
-                                   name.includes('background') || name.includes('cover');
-            
-            // Check if it has image fills or is large enough to be an image placeholder
-            const hasImageFills = node.fills && node.fills.some((fill: any) => fill.type === 'IMAGE');
-            const isLargeEnough = node.absoluteBoundingBox && 
-                                (node.absoluteBoundingBox.width > 80 && node.absoluteBoundingBox.height > 80);
-            
-            if (hasImageKeywords && (hasImageFills || isLargeEnough)) {
-                allNodesWithImages.push({
-                    id: nodeId,
-                    name: node.name,
-                    node: node
-                });
-            }
-        }
-
-        // Recursively check children
-        if (node.children) {
-            node.children.forEach((child: any) => {
-                extractImageNodes(child, child.id);
-            });
-        }
-    }
-
-    // OPTIMIZED: Extract only from target nodes instead of entire file
-    // This eliminates the need for expensive boundary checking since we only search within target nodes
-    Object.values(targetNodes).forEach((node: any) => {
-        extractImageNodes(node);
-    });
-
-    // OPTIMIZED: No filtering needed since we only searched within target nodes
-    return allNodesWithImages;
-}
-
-// REMOVED: isNodeWithinTarget function no longer needed since we only search within target nodes
-
-/**
- * Export screen assets to Flutter project
- */
-async function exportScreenAssets(
-    imageNodes: Array<{id: string, name: string, node: any}>,
-    fileId: string,
-    figmaService: FigmaService,
-    projectPath: string
-): Promise<AssetInfo[]> {
-    if (imageNodes.length === 0) {
-        return [];
-    }
-
-    // Create assets directory structure
-    const assetsDir = await createAssetsDirectory(projectPath);
-    const downloadedAssets: AssetInfo[] = [];
-
-    // Export images at 2x scale (standard for Flutter)
-    const imageUrls = await figmaService.getImageExportUrls(fileId, imageNodes.map(n => n.id), {
-        format: 'png',
-        scale: 2
-    });
-
-    for (const imageNode of imageNodes) {
-        const imageUrl = imageUrls[imageNode.id];
-        if (!imageUrl) continue;
-
-        const filename = generateAssetFilename(imageNode.name, 'png', 2);
-        const filepath = join(assetsDir, filename);
-
-        try {
-            // Download the image
-            await downloadImage(imageUrl, filepath);
-
-            // Get file size for reporting
-            const stats = await getFileStats(filepath);
-
-            downloadedAssets.push({
-                nodeId: imageNode.id,
-                nodeName: imageNode.name,
-                filename,
-                path: `assets/images/${filename}`,
-                size: stats.size
-            });
-        } catch (downloadError) {
-            console.warn(`Failed to download image ${imageNode.name}:`, downloadError);
-        }
-    }
-
-    if (downloadedAssets.length > 0) {
-        // Constants first: updatePubspecAssets throws on pubspec shapes it refuses to edit
-        await generateAssetConstants(downloadedAssets, projectPath);
-
-        // Update pubspec.yaml
-        const pubspecPath = join(projectPath, 'pubspec.yaml');
-        await updatePubspecAssets(pubspecPath, downloadedAssets);
-    }
-
-    return downloadedAssets;
-}
-
-/**
  * Generate asset export report for screens
  */
-function generateAssetExportReport(exportedAssets: AssetInfo[]): string {
+function generateAssetExportReport(exportedAssets: AssetInfo[], notes: string[]): string {
     if (exportedAssets.length === 0) {
         return '';
     }
@@ -350,6 +210,10 @@ function generateAssetExportReport(exportedAssets: AssetInfo[]): string {
             report += `   • ${asset.filename} (${asset.size})\n`;
         });
     });
+
+    if (notes.length > 0) {
+        report += `\nExport settings:\n${notes.map(note => `   • ${note}\n`).join('')}`;
+    }
 
     report += `\n✅ Assets Configuration:\n`;
     report += `   • Images saved to: assets/images/\n`;

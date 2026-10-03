@@ -58,8 +58,8 @@ function renderRoutes(nodes: Array<{id: string}>, format: Format, scales: number
     };
 }
 
-async function exportImages(dir: string, nodes: Array<{id: string}>, args: {format?: Format; scale?: number; includeMultipleResolutions?: boolean} = {}) {
-    const scales = args.includeMultipleResolutions ? [1, 2, 3] : [args.scale ?? 2];
+async function exportImages(dir: string, nodes: Array<{id: string}>, args: {format?: Format; devicePixelRatios?: number[]} = {}) {
+    const scales = args.devicePixelRatios ?? [2];
     return callToolOffline(renderRoutes(nodes, args.format ?? 'png', scales), 'export_flutter_assets',
         {fileId: FILE_KEY, nodeIds: nodes.map((n) => n.id), projectPath: dir, ...args});
 }
@@ -92,7 +92,7 @@ flutter:
 
 test('a 2x render lands in the 2.0x variant folder; the pubspec lists the main path', async (t) => {
     const dir = await tempProject(t, FLUTTER_CREATE_PUBSPEC);
-    await exportImages(dir, [HERO], {scale: 2});
+    await exportImages(dir, [HERO], {devicePixelRatios: [2]});
 
     assert.deepEqual(await readFile(join(dir, 'assets/images/2.0x/hero_image.png')), PNG);
     assert.equal(existsSync(join(dir, 'assets/images/hero_image.png')), false);
@@ -100,9 +100,9 @@ test('a 2x render lands in the 2.0x variant folder; the pubspec lists the main p
     assert.deepEqual((await readPubspec(dir)).doc.flutter.assets, ['assets/images/hero_image.png']);
 });
 
-test('multiple resolutions write 1x, 2.0x and 3.0x and declare the main path once', async (t) => {
+test('multiple device pixel ratios write 1x, 2.0x and 3.0x and declare the main path once', async (t) => {
     const dir = await tempProject(t, FLUTTER_CREATE_PUBSPEC);
-    await exportImages(dir, [HERO], {includeMultipleResolutions: true});
+    await exportImages(dir, [HERO], {devicePixelRatios: [1, 2, 3]});
 
     for (const file of ['hero_image.png', '2.0x/hero_image.png', '3.0x/hero_image.png']) {
         assert.deepEqual(await readFile(join(dir, 'assets/images', file)), PNG, file);
@@ -146,12 +146,12 @@ flutter:
     - assets/images/
 `;
     const covered = await tempProject(t, withDirectory);
-    await exportImages(covered, [HERO], {includeMultipleResolutions: true});
+    await exportImages(covered, [HERO], {devicePixelRatios: [1, 2, 3]});
     assert.equal((await readPubspec(covered)).text, withDirectory);
 
     // Only 2.0x/hero_image.png exists: Flutter bundles nothing from the directory entry.
     const variantOnly = await tempProject(t, withDirectory);
-    await exportImages(variantOnly, [HERO], {scale: 2});
+    await exportImages(variantOnly, [HERO], {devicePixelRatios: [2]});
     assert.deepEqual((await readPubspec(variantOnly)).doc.flutter.assets,
         ['assets/images/', 'assets/images/hero_image.png']);
 });

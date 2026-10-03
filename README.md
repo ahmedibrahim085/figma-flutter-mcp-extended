@@ -93,8 +93,8 @@ The key can also be passed as `--figma-api-key=YOUR-API-KEY`, or loaded from a f
 | `inspect_color_frame` | Preview of a frame of color samples before extraction |
 | `extract_theme_typography` | Text styles from a frame of text samples, optionally as a `TextTheme` |
 | `inspect_text_style_frame` | Preview of a frame of text samples before extraction |
-| `export_flutter_assets` | Exports images into the Flutter assets folder and updates `pubspec.yaml` |
-| `export_svg_flutter_assets` | Exports SVG assets (nodes with at least 30% vector content) |
+| `export_flutter_assets` | Exports the given nodes, and descendants with export settings or an image fill, into the Flutter assets folder and updates `pubspec.yaml` |
+| `export_svg_flutter_assets` | Exports the given nodes, and descendants with an SVG export setting, as SVG |
 | `generate_golden_file_test` | Writes a `matchesGoldenFile` widget test file; it does not render or compare |
 <!-- tools:end -->
 

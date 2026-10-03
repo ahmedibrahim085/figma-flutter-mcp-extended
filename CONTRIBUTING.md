@@ -106,7 +106,7 @@ src/
 
 ### Defaults (`src/defaults.json`)
 
-Environment facts live in `src/defaults.json`, not in code: the HTTP port, the install command shown in the start-up hint, the Figma web URL, the retry policy, the Material 3 breakpoint steps (width and height lower bounds), and the folder and file names the tools write (assets, theme, typography, golden tests). Change a value there to change the behaviour; no code edit is needed. The `lib/` and `test/` folders themselves are not in it: the Dart package layout fixes them, so the folder names in the file are relative to them (`themeSubdir` and `constantsSubdir` under `lib/`, `goldenTestSubdir` under `test/`). The CLI flags and environment variables (`--port`, `HTTP_PORT`, `FIGMA_API_BASE_URL`, `FIGMA_API_KEY`) still override what they override.
+Environment facts live in `src/defaults.json`, not in code: the HTTP port, the install command shown in the start-up hint, the Figma web URL, the retry policy, the Material 3 breakpoint steps (width and height lower bounds), the default device pixel ratios for PNG export, and the folder and file names the tools write (assets, theme, typography, golden tests). Change a value there to change the behaviour; no code edit is needed. The `lib/` and `test/` folders themselves are not in it: the Dart package layout fixes them, so the folder names in the file are relative to them (`themeSubdir` and `constantsSubdir` under `lib/`, `goldenTestSubdir` under `test/`). The CLI flags and environment variables (`--port`, `HTTP_PORT`, `FIGMA_API_BASE_URL`, `FIGMA_API_KEY`) still override what they override.
 
 ### Developer tools (`tools/`)
 

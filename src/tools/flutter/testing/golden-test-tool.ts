@@ -3,7 +3,7 @@ import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {join} from "path";
 import {mkdir, writeFile} from "fs/promises";
-import {detectProjectName, detectGoldenTestDir, hasPubspec, missingPubspecMessage} from "../../../utils/project-conventions.js";
+import {detectProjectName, detectGoldenTestDir} from "../../../utils/project-conventions.js";
 import defaults from '../../../defaults.json' with { type: 'json' };
 
 function toSnakeCase(name: string): string {
@@ -30,12 +30,9 @@ export function registerGoldenTestTools(server: McpServer, _figmaApiKey: string)
         },
         async ({widgetName, widgetImportPath, projectPath = process.cwd()}) => {
             try {
-                if (!hasPubspec(projectPath)) {
-                    return {isError: true, content: [{type: "text", text: missingPubspecMessage(projectPath)}]};
-                }
                 const projectName = await detectProjectName(projectPath);
                 if (!projectName) {
-                    return {isError: true, content: [{type: "text", text: `pubspec.yaml in ${projectPath} has no name: line, so the widget import cannot be written.`}]};
+                    return {isError: true, content: [{type: "text", text: `Cannot read the package name from pubspec.yaml in ${projectPath} (no such file, or no name: line). Nothing was written.`}]};
                 }
                 const testDir = await detectGoldenTestDir(projectPath);
                 await mkdir(testDir, {recursive: true});

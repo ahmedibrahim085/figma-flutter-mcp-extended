@@ -131,7 +131,7 @@ export class FigmaService {
     /**
      * Get a single node by ID with the response's style map: style id to `{name, styleType}`.
      */
-    async getNodeWithStyles(fileId: string, nodeId: string): Promise<{document: FigmaNode; styles: Record<string, {name: string; styleType: string}>}> {
+    async getNodeWithStyles(fileId: string, nodeId: string): Promise<{document: FigmaNode; styles: Record<string, {name: string; styleType: string}>; componentSetName?: string}> {
         if (!nodeId || nodeId.trim().length === 0) {
             throw new FigmaError('Node ID is required', 'INVALID_INPUT');
         }
@@ -148,7 +148,8 @@ export class FigmaService {
                 throw new FigmaParseError('Invalid node structure received from Figma API', nodeData);
             }
 
-            return {document: nodeData.document, styles: nodeData.styles ?? {}};
+            const componentSetId = nodeData.components?.[nodeId]?.componentSetId;
+            return {document: nodeData.document, styles: nodeData.styles ?? {}, componentSetName: componentSetId ? nodeData.componentSets?.[componentSetId]?.name : undefined};
         } catch (error) {
             if (error instanceof FigmaError) {
                 throw error;

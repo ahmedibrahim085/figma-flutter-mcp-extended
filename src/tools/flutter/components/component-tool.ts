@@ -441,13 +441,15 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                         isError: true
                     };
                 }
-                const node = await new FigmaService(figmaApiKey).getNode(parsedInput.fileId, parsedInput.nodeId);
+                const {document: node, componentSetName} = await new FigmaService(figmaApiKey).getNodeWithStyles(parsedInput.fileId, parsedInput.nodeId);
                 const extractor = new DeduplicatedComponentExtractor();
                 // A component set gives one class per variant, named from the set name and the variant name.
                 const implementation = node.type === 'COMPONENT_SET'
                     ? (await Promise.all((node.children ?? []).filter(variant => variant.type === 'COMPONENT').map(async variant =>
                         generateFlutterImplementation(await extractor.analyzeComponent(variant, true), typeName(`${widgetName ?? node.name} ${variant.name}`))))).join('\n')
-                    : generateFlutterImplementation(await extractor.analyzeComponent(node, true), widgetName);
+                    : generateFlutterImplementation(await extractor.analyzeComponent(node, true),
+                        // A variant passed on its own is named as it is through its set: set name plus variant name.
+                        componentSetName ? typeName(`${widgetName ?? componentSetName} ${node.name}`) : widgetName);
 
                 let output = "🏗️  Flutter Implementation\n";
                 output += `${'='.repeat(50)}\n\n`;

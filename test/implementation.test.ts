@@ -74,6 +74,7 @@ test('a layer name that is not a valid Dart type name gets no class, and the rep
     assert.equal(result.isError, false);
     assert.doesNotMatch(result.text, /class \w+ extends StatelessWidget/);
     assert.match(result.text, /"404Card" is not a valid Dart type name/);
+    assert.match(result.text, /Pass widgetName to generate_flutter_implementation to name the class\./);
 });
 
 test('a widgetName that is not a valid Dart type name gets no class', async () => {
@@ -81,6 +82,7 @@ test('a widgetName that is not a valid Dart type name gets no class', async () =
 
     assert.doesNotMatch(result.text, /class \w+ extends StatelessWidget/);
     assert.match(result.text, /"Function" is not a valid Dart type name/);
+    assert.match(result.text, /Pass widgetName to generate_flutter_implementation to name the class\./);
 });
 
 test('a class named like a widget its own body uses gets no class, and the report says why', async () => {
@@ -89,6 +91,7 @@ test('a class named like a widget its own body uses gets no class, and the repor
 
     assert.doesNotMatch(result.text, /class \w+ extends StatelessWidget/);
     assert.match(result.text, /"Text" is also a widget the generated body uses/);
+    assert.match(result.text, /Pass widgetName to generate_flutter_implementation to name the class\./);
 });
 
 test('a component set gives one class per variant, named from the set name and the variant name', async () => {
@@ -106,4 +109,24 @@ test('a component set gives one class per variant, named from the set name and t
     assert.match(result.text, /'Continue'/);
     assert.match(result.text, /'Cancel'/);
     assert.equal(result.text.match(/^class /gm)?.length, 2);
+});
+
+test('a variant gets the same class name passed directly as through its component set', async () => {
+    const variant = {
+        id: '25:2', name: 'Size=Small, State=Default', type: 'COMPONENT', layoutMode: 'VERTICAL', absoluteBoundingBox: box(100, 40), fills: [],
+        children: [text('25:20', 'Continue')],
+    };
+    const set = frame('25:1', 'Button', {type: 'COMPONENT_SET', children: [variant]});
+    // Figma's node response names a variant's set in its `components` and `componentSets` maps.
+    const directRoutes = {[`/files/${FILE_KEY}/nodes?ids=${variant.id}`]: {body: {nodes: {[variant.id]: {
+        document: variant,
+        components: {[variant.id]: {name: variant.name, componentSetId: set.id}},
+        componentSets: {[set.id]: {name: 'Button'}},
+    }}}}};
+
+    const direct = await callToolOffline(directRoutes, 'generate_flutter_implementation', {input: FILE_KEY, nodeId: variant.id});
+    const viaSet = await generate(set);
+
+    assert.match(direct.text, /class ButtonSizeSmallStateDefault extends StatelessWidget/);
+    assert.match(viaSet.text, /class ButtonSizeSmallStateDefault extends StatelessWidget/);
 });

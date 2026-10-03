@@ -79,6 +79,8 @@ function wrapForMainAxisSizing(
   return `Expanded(\n  child: ${indentTail(widgetCode, 2)},\n)`;
 }
 
+const NAME_THE_CLASS = 'Pass widgetName to generate_flutter_implementation to name the class.';
+
 /** The widget class for `analysis`, named `className` or from the layer name; with no valid class name, the reason instead of a class. */
 export function generateFlutterImplementation(analysis: DeduplicatedComponentAnalysis, className?: string): string {
   const styleLibrary = FlutterStyleLibrary.getInstance();
@@ -92,7 +94,7 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   // Widget structure
   const widgetName = className ?? typeName(analysis.metadata.name);
   if (!isDartTypeName(widgetName)) {
-    return implementation + `No class generated for "${analysis.metadata.name}": "${widgetName}" is not a valid Dart type name.\n`;
+    return implementation + `No class generated for "${analysis.metadata.name}": "${widgetName}" is not a valid Dart type name. ${NAME_THE_CLASS}\n`;
   }
   implementation += `class ${widgetName} extends StatelessWidget {\n`;
   implementation += `  const ${widgetName}({Key? key}) : super(key: key);\n\n`;
@@ -135,7 +137,7 @@ export function generateFlutterImplementation(analysis: DeduplicatedComponentAna
   // A class named like a widget its body calls would hide that widget (measured with dart analyze: `class Text` breaks `Text('x')`).
   if (new RegExp(`\\b${widgetName}[(.]`).test(root)) {
     return implementation.slice(0, implementation.indexOf(`class ${widgetName}`))
-      + `No class generated for "${analysis.metadata.name}": "${widgetName}" is also a widget the generated body uses.\n`;
+      + `No class generated for "${analysis.metadata.name}": "${widgetName}" is also a widget the generated body uses. ${NAME_THE_CLASS}\n`;
   }
   implementation += `    return ${indentTail(root, 4)};\n`;
   implementation += `  }\n`;

@@ -91,6 +91,8 @@ export interface FigmaNode {
 }
 
 export interface FigmaComponent {
+    /** The component set this component is a variant of. */
+    componentSetId?: string;
     key: string;
     file_key: string;
     node_id: string;
@@ -292,6 +294,7 @@ export interface NodeResponse {
         [nodeId: string]: {
             document: FigmaNode;
             components?: {[key: string]: FigmaComponent};
+            componentSets?: {[key: string]: {name: string}};
             /** Style id to the style's name and type (FILL, TEXT, EFFECT or GRID). */
             styles?: {[key: string]: {name: string; styleType: string}};
         };

@@ -23,9 +23,7 @@ import {typeName} from "../../../utils/dart-names.js";
 
 export function generateChildLayoutEvidence(
     children: ComponentChild[],
-    indent: string = '   ',
-    depth: number = 0,
-    maxDepth: number = 2
+    indent: string = '   '
 ): string {
     let output = '';
 
@@ -57,13 +55,8 @@ export function generateChildLayoutEvidence(
             `${indent}  `
         );
 
-        if (child.children?.length && depth < maxDepth) {
-            output += generateChildLayoutEvidence(
-                child.children,
-                `${indent}  `,
-                depth + 1,
-                maxDepth
-            );
+        if (child.children?.length) {
+            output += generateChildLayoutEvidence(child.children, `${indent}  `);
         }
     });
 
@@ -155,16 +148,6 @@ export function generateScreenAnalysisReport(
         output += `\n`;
     }
 
-    // Skipped nodes report
-    if (analysis.skippedNodes && analysis.skippedNodes.length > 0) {
-        output += `Analysis Limitations:\n`;
-        output += `${analysis.skippedNodes.length} child layers were skipped due to limits:\n`;
-        analysis.skippedNodes.forEach((skipped, index) => {
-            output += `${index + 1}. ${skipped.name} (${skipped.type}) - ${skipped.reason}\n`;
-        });
-        output += `\nTo analyze all child layers, increase the maxChildNodes parameter.\n\n`;
-    }
-
     // Visual context for AI implementation
     if (parsedInput?.source === 'url') {
         // Reconstruct the Figma URL from the parsed input
@@ -215,10 +198,7 @@ export function generateScreenStructureReport(node: any, showAllChildren: boolea
 
     output += `Screen Structure:\n`;
 
-    const sectionsToShow = showAllChildren ? sectionsSource : sectionsSource.slice(0, 20);
-    const hasMore = sectionsSource.length > sectionsToShow.length;
-
-    sectionsToShow.forEach((section: any, index: number) => {
+    sectionsSource.forEach((section: any, index: number) => {
         const isComponent = section.type === 'COMPONENT' || section.type === 'INSTANCE';
         const componentMark = isComponent ? ' [COMPONENT]' : '';
         const hiddenMark = section.visible === false ? ' [HIDDEN]' : '';
@@ -260,11 +240,6 @@ export function generateScreenStructureReport(node: any, showAllChildren: boolea
     output += formatFixedOnScroll(sectionsSource.map((section: any) => ({
         name: section.name, type: section.type, nodeId: section.id, scrollBehavior: section.scrollBehavior
     })));
-
-    if (hasMore) {
-        output += `\n... and ${sectionsSource.length - sectionsToShow.length} more child layers.\n`;
-        output += `Use showAllChildren: true to see all child layers.\n`;
-    }
 
     if (!showAllChildren && hiddenSkipped > 0) {
         output += `\nSkipped ${hiddenSkipped} hidden / empty-slot child layer(s). Use showAllChildren: true to include them.\n`;

@@ -350,10 +350,7 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
 
     output += `Child Structure:\n`;
 
-    const childrenToShow = showAllChildren ? childrenSource : childrenSource.slice(0, 15);
-    const hasMore = childrenSource.length > childrenToShow.length;
-
-    childrenToShow.forEach((child: any, index: number) => {
+    childrenSource.forEach((child: any, index: number) => {
         const isComponent = child.type === 'COMPONENT' || child.type === 'INSTANCE';
         const componentMark = isComponent ? ' [COMPONENT]' : '';
         const hiddenMark = child.visible === false ? ' [HIDDEN]' : '';
@@ -381,11 +378,6 @@ export function generateStructureInspectionReport(node: any, showAllChildren: bo
         // Show basic styling info
         output += formatFills((child.fills ?? []).filter((fill: any) => fill.visible !== false && fill.color).map(convertFillToColorInfo), '   ', '');
     });
-
-    if (hasMore) {
-        output += `\n... and ${childrenSource.length - childrenToShow.length} more children.\n`;
-        output += `Use showAllChildren: true to see all children.\n`;
-    }
 
     if (!showAllChildren && hiddenSkipped > 0) {
         output += `\nSkipped ${hiddenSkipped} hidden / empty-slot child(ren). Use showAllChildren: true to include them.\n`;

@@ -279,14 +279,6 @@ test('analyze_frame_as_screen: a layer named "Login" or "Next" yields no button 
     assert.doesNotMatch(text, /ElevatedButton|TextButton|BottomNavigationBar|Icons\.(placeholder|home)|Navigation Items|extractNavigation/);
 });
 
-test('analyze_frame_as_screen: more child layers than maxChildNodes are named as skipped, in layer order', async () => {
-    const node = screenOf([frame('6:2', 'One', 0, 0, 10, 10), frame('6:3', 'Two', 0, 20, 10, 10), frame('6:4', 'Three', 0, 40, 10, 10)]);
-    const {text} = await callOnNode(node, 'analyze_frame_as_screen', {extractAssets: false, maxChildNodes: 2});
-
-    assert.match(text, /1\. One \(FRAME, 6:2\)[^]*2\. Two \(FRAME, 6:3\)/);
-    assert.match(text, /1 child layers were skipped due to limits:\n1\. Three \(FRAME\) - max_child_nodes/);
-});
-
 test('analyze_frame_as_screen: scaffold and child widget names are valid, distinct Dart class names', async () => {
     const node = screenOf([frame('6:2', '2FA code', 0, 0, 100, 40), frame('6:3', 'Card', 0, 50, 100, 40), frame('6:4', 'Card', 0, 100, 100, 40), frame('6:5', 'Card2', 0, 150, 100, 40)]);
     const {text} = await analyzeScreen(node);

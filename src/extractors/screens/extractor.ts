@@ -5,7 +5,6 @@ import type {
     ScreenMetadata,
     ScreenLayoutInfo,
     ScreenChild,
-    SkippedNodeInfo,
     ScreenExtractionOptions
 } from './types.js';
 import type {ComponentChild, NestedComponentInfo} from '../components/types.js';
@@ -44,7 +43,7 @@ export function extractScreenLayoutInfo(node: FigmaNode): ScreenLayoutInfo {
 }
 
 /**
- * List the visible child layers in Figma layer order, up to maxChildNodes; the rest are named in skippedNodes.
+ * List the visible child layers in Figma layer order.
  */
 export function analyzeScreenChildren(
     node: FigmaNode,
@@ -52,19 +51,13 @@ export function analyzeScreenChildren(
 ): {
     children: ScreenChild[];
     components: NestedComponentInfo[];
-    skippedNodes: SkippedNodeInfo[];
 } {
     const children: ScreenChild[] = [];
     const components: NestedComponentInfo[] = [];
-    const skippedNodes: SkippedNodeInfo[] = [];
 
     const visibleChildren = filterEffectivelyVisibleChildren(node.children ?? [], options.includeHiddenNodes);
 
-    visibleChildren.forEach((child, index) => {
-        if (index >= options.maxChildNodes) {
-            skippedNodes.push({nodeId: child.id, name: child.name, type: child.type, reason: 'max_child_nodes'});
-            return;
-        }
+    visibleChildren.forEach(child => {
         const screenChild = createScreenChild(child, node, options);
         children.push(screenChild);
         screenChild.components.forEach(comp => {
@@ -74,7 +67,7 @@ export function analyzeScreenChildren(
         });
     });
 
-    return {children, components, skippedNodes};
+    return {children, components};
 }
 
 /**
@@ -103,8 +96,10 @@ function createScreenChild(
 
             const siblings = visibleChildren.filter(sibling => sibling.id !== child.id);
             children.push(createComponentChild(child, isComponent, {
-                maxChildNodes: 20, // Higher limit for screens
-                maxDepth: options.maxDepth,
+                // SHORTCUT: the shared child walker still takes numeric limits (they go with the plain component path);
+                // a screen sets none.
+                maxChildNodes: Infinity,
+                maxDepth: Infinity,
                 includeHiddenNodes: options.includeHiddenNodes,
                 extractTextContent: true
             }, node, siblings));

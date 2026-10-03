@@ -18,7 +18,6 @@ export type {
     ScreenMetadata,
     ScreenLayoutInfo,
     ScreenChild,
-    SkippedNodeInfo,
     ScreenExtractionOptions
 } from './types.js';
 

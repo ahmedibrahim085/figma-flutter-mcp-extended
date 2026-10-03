@@ -295,7 +295,7 @@ export function registerComponentTools(server: McpServer, figmaApiKey: string) {
                 input: z.string().describe("Figma component URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
                 userDefinedComponent: z.boolean().optional().describe("Treat a FRAME as a component (when designer hasn't converted to actual component yet) (default: false)"),
-                showAllChildren: z.boolean().optional().describe("Show all children regardless of limits (default: false)")
+                showAllChildren: z.boolean().optional().describe("Include hidden child layers (Figma visible: false) and empty slots (default: false)")
             }
         },
         figmaTool('Error inspecting structure', async ({input, nodeId, userDefinedComponent = false, showAllChildren = false}) => {

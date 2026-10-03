@@ -35,13 +35,12 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
             inputSchema: {
                 input: z.string().describe("Figma frame URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
-                maxChildNodes: z.number().optional().describe("Maximum child layers to analyze (default: 15)"),
                 extractAssets: z.boolean().optional().describe("Export descendants that have exportSettings or a visible IMAGE fill (default: true)"),
                 projectPath: z.string().optional().describe("Path to Flutter project for asset export (defaults to current directory)"),
                 devicePixelRatios: devicePixelRatiosInput
             }
         },
-        figmaTool('Error analyzing screen', async ({input, nodeId, maxChildNodes = 15, extractAssets = true, projectPath = process.cwd(), devicePixelRatios}) => {
+        figmaTool('Error analyzing screen', async ({input, nodeId, extractAssets = true, projectPath = process.cwd(), devicePixelRatios}) => {
             // Parse input to get file ID and node ID
             const parsedInput = parseComponentInput(input, nodeId);
 
@@ -56,9 +55,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
             }
 
             const figmaService = new FigmaService(figmaApiKey);
-            const screenExtractor = new ScreenExtractor({
-                maxChildNodes
-            });
+            const screenExtractor = new ScreenExtractor();
 
             // Get the screen node
             const screenNode = await figmaService.getNode(parsedInput.fileId, parsedInput.nodeId);
@@ -115,7 +112,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
             inputSchema: {
                 input: z.string().describe("Figma frame URL or file ID"),
                 nodeId: z.string().optional().describe("Node ID (if providing file ID separately)"),
-                showAllChildren: z.boolean().optional().describe("Show all child layers regardless of limits (default: false)")
+                showAllChildren: z.boolean().optional().describe("Include hidden child layers (Figma visible: false) and empty slots (default: false)")
             }
         },
         figmaTool('Error inspecting screen structure', async ({input, nodeId, showAllChildren = false}) => {

@@ -32,3 +32,46 @@ test('analyze_figma_component with generateFlutterCode keeps content below eight
     assert.match(text, /'DEEPEST'/);
     assert.doesNotMatch(text, /deeper than/);
 });
+
+const screenOf = (children: object[], id = '81:0') => ({id, name: 'Home', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(375, 812), children});
+const rect = (id: string, name: string) => ({id, name, type: 'RECTANGLE', fills: [RED], absoluteBoundingBox: box(40, 40)});
+const screenText = async (node: {id: string}) =>
+    (await callToolOffline(nodeRoute(node.id, node), 'analyze_frame_as_screen', {input: FILE_KEY, nodeId: node.id, extractAssets: false})).text;
+
+test('a 16-section screen reports 16 child layers and names no skipped layer', async () => {
+    const text = await screenText(screenOf(Array.from({length: 16}, (_, i) => rect(`81:${i + 1}`, `S${i + 1}`))));
+
+    assert.match(text, /Child layers \(16 identified\)/);
+    assert.match(text, /16\. S16 \(RECTANGLE, 81:16\)/);
+    assert.doesNotMatch(text, /skipped|Analysis Limitations|max_child_nodes/);
+});
+
+test('a layer with 25 children reports all 25 in the screen evidence', async () => {
+    const holder = {id: '81:50', name: 'Holder', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(200, 800),
+        children: Array.from({length: 25}, (_, i) => rect(`81:6${i}`, `G${i + 1}`))};
+    const text = await screenText(screenOf([{id: '81:40', name: 'Section', type: 'FRAME', layoutMode: 'VERTICAL', fills: [], absoluteBoundingBox: box(375, 812), children: [holder]}]));
+
+    for (const n of [1, 20, 21, 25]) assert.match(text, new RegExp(`- G${n}: `), `G${n} is missing`);
+});
+
+test('a screen reports levels below four: a ten-level chain prints L10', async () => {
+    const text = await screenText(screenOf([chain(10).children[0]]));
+
+    assert.match(text, /- L10: /);
+});
+
+test('inspect_frame_structure lists 21 child layers and no "more" line', async () => {
+    const node = screenOf(Array.from({length: 21}, (_, i) => rect(`81:${i + 1}`, `S${i + 1}`)));
+    const {text} = await callToolOffline(nodeRoute(node.id, node), 'inspect_frame_structure', {input: FILE_KEY, nodeId: node.id});
+
+    assert.match(text, /S21/);
+    assert.doesNotMatch(text, /more child layers|showAllChildren: true/);
+});
+
+test('inspect_component_structure lists 16 children and no "more" line', async () => {
+    const node = screenOf(Array.from({length: 16}, (_, i) => rect(`81:${i + 1}`, `C${i + 1}`)));
+    const {text} = await callToolOffline(nodeRoute(node.id, node), 'inspect_component_structure', {input: FILE_KEY, nodeId: node.id, userDefinedComponent: true});
+
+    assert.match(text, /C16/);
+    assert.doesNotMatch(text, /more children|showAllChildren: true/);
+});

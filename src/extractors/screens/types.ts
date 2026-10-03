@@ -11,7 +11,6 @@ export interface ScreenAnalysis {
     layout: ScreenLayoutInfo;
     children: ScreenChild[];
     components: NestedComponentInfo[];
-    skippedNodes?: SkippedNodeInfo[];
 }
 
 /**
@@ -54,20 +53,8 @@ export interface ScreenChild {
 }
 
 /**
- * Information about nodes that were skipped
- */
-export interface SkippedNodeInfo {
-    nodeId: string;
-    name: string;
-    type: string;
-    reason: 'max_child_nodes';
-}
-
-/**
  * Screen extraction options
  */
 export interface ScreenExtractionOptions {
-    maxChildNodes?: number;
-    maxDepth?: number;
     includeHiddenNodes?: boolean;
 }

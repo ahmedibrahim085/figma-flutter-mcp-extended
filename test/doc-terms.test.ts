@@ -24,12 +24,12 @@ const TEXT_FRAME = {
 const call = (node: {id: string}, tool: string, args: object) =>
     callToolOffline(nodeRoute(node.id, node), tool, {input: FILE_KEY, nodeId: node.id, ...args});
 
-test('maxChildNodes limits the child layers analyze_frame_as_screen reports; maxSections no longer does', async () => {
+test('analyze_frame_as_screen reports every child layer; maxChildNodes and maxSections are ignored', async () => {
     const limited = await call(SCREEN, 'analyze_frame_as_screen', {extractAssets: false, maxChildNodes: 1});
     const old = await call(SCREEN, 'analyze_frame_as_screen', {extractAssets: false, maxSections: 1});
 
-    assert.match(limited.text, /Child layers \(1 identified\)/);
-    assert.match(limited.text, /increase the maxChildNodes parameter/);
+    assert.match(limited.text, /Child layers \(2 identified\)/);
+    assert.doesNotMatch(limited.text, /maxChildNodes|Analysis Limitations/);
     assert.match(old.text, /Child layers \(2 identified\)/);
 });
 
@@ -99,8 +99,8 @@ test('tool descriptions and input descriptions use Figma and Flutter terms', asy
     }
     for (const text of texts) assert.doesNotMatch(text, INVENTED_TERMS, text);
     const byKey = (tool: string, key: string) => tools.find((t) => t.name === tool).inputSchema.properties[key].description;
-    assert.equal(byKey('analyze_frame_as_screen', 'maxChildNodes'), 'Maximum child layers to analyze (default: 15)');
-    assert.equal(byKey('inspect_frame_structure', 'showAllChildren'), 'Show all child layers regardless of limits (default: false)');
+    assert.equal(byKey('inspect_component_structure', 'showAllChildren'), byKey('inspect_frame_structure', 'showAllChildren'));
+    assert.equal(byKey('inspect_frame_structure', 'showAllChildren'), 'Include hidden child layers (Figma visible: false) and empty slots (default: false)');
     assert.equal(byKey('extract_theme_colors', 'nodeId'), 'Node ID of the frame of color samples');
     assert.equal(byKey('extract_theme_typography', 'nodeId'), 'Node ID of the frame of text samples');
 });

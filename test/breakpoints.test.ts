@@ -72,6 +72,6 @@ test('analyze_frame_as_screen no longer takes the unused deviceTypeDetection inp
         properties = list.result.tools.find((t: any) => t.name === 'analyze_frame_as_screen').inputSchema.properties;
     });
 
-    assert.ok('maxChildNodes' in properties);
+    assert.ok(!('maxChildNodes' in properties));
     assert.ok(!('deviceTypeDetection' in properties));
 });

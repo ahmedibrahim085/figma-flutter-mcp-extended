@@ -19,8 +19,6 @@ export class ScreenExtractor {
 
     constructor(options: ScreenExtractionOptions = {}) {
         this.options = {
-            maxChildNodes: options.maxChildNodes ?? 15,
-            maxDepth: options.maxDepth ?? 4,
             includeHiddenNodes: options.includeHiddenNodes ?? false,
         };
     }
@@ -32,14 +30,13 @@ export class ScreenExtractor {
         const metadata = extractScreenMetadata(node);
         const layout = extractScreenLayoutInfo(node);
         
-        const {children, components, skippedNodes} = analyzeScreenChildren(node, this.options);
+        const {children, components} = analyzeScreenChildren(node, this.options);
 
         return {
             metadata,
             layout,
             children,
-            components,
-            skippedNodes: skippedNodes.length > 0 ? skippedNodes : undefined
+            components
         };
     }
 

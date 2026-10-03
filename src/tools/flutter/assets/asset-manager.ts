@@ -366,8 +366,8 @@ function toCamelCase(str: string): string {
 export const DEVICE_PIXEL_RATIOS = [1, 1.5, 2, 3, 4];
 
 /** The `devicePixelRatios` input of the PNG export tools; the default comes from defaults.json. */
-export const devicePixelRatiosInput = z.array(z.union([z.literal(1), z.literal(1.5), z.literal(2), z.literal(3), z.literal(4)])).min(1).optional()
-    .describe(`Device pixel ratios (1, 1.5, 2, 3, 4) to export PNG at for nodes without exportSettings (default: ${JSON.stringify(defaults.output.devicePixelRatios)})`);
+export const devicePixelRatiosInput = z.array(z.number().refine(ratio => DEVICE_PIXEL_RATIOS.includes(ratio), {message: `must be one of ${DEVICE_PIXEL_RATIOS.join(', ')}`})).min(1).optional()
+    .describe(`Device pixel ratios (${DEVICE_PIXEL_RATIOS.join(', ')}) to export PNG at for nodes without exportSettings (default: ${JSON.stringify(defaults.output.devicePixelRatios)})`);
 
 export interface AssetNode {
     id: string;
@@ -404,6 +404,8 @@ export function selectAssetNodes(roots: any[], includeRoots: boolean): AssetNode
     roots.forEach(root => visit(root, true));
     return [...found.values()];
 }
+
+const vectorFormat = (format: AssetFormat): boolean => format === 'svg' || format === 'pdf';
 
 /** The nearest of Flutter's documented ratios. */
 const snapToRatio = (ratio: number): number =>
@@ -446,7 +448,10 @@ function planNode(node: AssetNode, ratios: number[], fallbackFormat: AssetFormat
             notes.push(`${node.name}: ${constraint.type} ${constraint.value} → ${Number(ratio.toFixed(2))}x, exported at ${snapped}x`);
             add(format, snapped);
         } else {
-            add(format, constraint?.value ?? 1);
+            const value = constraint?.value ?? 1;
+            const snapped = snapToRatio(value);
+            if (snapped !== value) notes.push(`${node.name}: SCALE ${value} → exported at ${snapped}x`);
+            add(format, snapped);
         }
     }
     return {requests: [...requests.values()], notes};
@@ -482,6 +487,7 @@ export async function exportAssetNodes(options: {
     });
 
     const assets: AssetInfo[] = [];
+    const notes: string[] = [];
     if (groups.size > 0) {
         const imagesDir = await createAssetsDirectory(projectPath);
         const svgsDir = await createSvgAssetsDirectory(projectPath);
@@ -490,8 +496,11 @@ export async function exportAssetNodes(options: {
             const urls = await figmaService.getImageExportUrls(fileId, requests.map(request => request.node.id), {format, scale});
             for (const {node} of requests) {
                 const url = urls[node.id];
-                if (!url) continue;
-                const vector = format === 'svg' || format === 'pdf';
+                if (!url) {
+                    notes.push(`${node.name} (${node.id}): Figma returned no image for ${format}${vectorFormat(format) ? '' : ` at ${scale}x`}; not exported`);
+                    continue;
+                }
+                const vector = vectorFormat(format);
                 const filename = vector ? generateSvgFilename(node.name).replace(/\.svg$/, `.${format}`) : generateAssetFilename(node.name, format, scale);
                 const filepath = join(vector ? svgsDir : imagesDir, filename);
                 try {
@@ -520,5 +529,5 @@ export async function exportAssetNodes(options: {
     if (svg.length > 0) constantsFiles.push(await generateSvgAssetConstants(svg, projectPath));
     if (assets.length > 0) await updatePubspecAssets(join(projectPath, 'pubspec.yaml'), assets);
 
-    return {assets, notes: plans.flatMap(plan => plan.notes), constantsFiles};
+    return {assets, notes: [...plans.flatMap(plan => plan.notes), ...notes], constantsFiles};
 }

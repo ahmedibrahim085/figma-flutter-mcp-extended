@@ -16,7 +16,7 @@ const SVG = Buffer.from('<svg xmlns="http://www.w3.org/2000/svg"/>');
 const PUBSPEC = 'name: app\n\ndependencies:\n  flutter:\n    sdk: flutter\n\nflutter:\n  uses-material-design: true\n';
 
 type Format = 'png' | 'jpg' | 'svg';
-interface ImageCall {ids: string[]; format: Format; scale?: number}
+interface ImageCall {ids: string[]; format: Format; scale?: number; missing?: string[]}
 
 const box = (width: number, height: number) => ({x: 0, y: 0, width, height});
 const setting = (format: string, type: string, value: number, suffix = '') => ({suffix, format, constraint: {type, value}});
@@ -39,10 +39,10 @@ function figma(root: {id: string}, calls: ImageCall[]): FakeRoutes {
         const routes: Record<string, FakeResponse> = {
             [`/files/${FILE_KEY}/nodes?ids=${root.id}`]: {body: {nodes: {[root.id]: {document: root}}}},
         };
-        for (const {ids, format, scale} of calls) {
+        for (const {ids, format, scale, missing = []} of calls) {
             const query = format === 'svg' ? `ids=${ids.join(',')}&format=svg` : `ids=${ids.join(',')}&format=${format}&scale=${scale}`;
-            routes[`/images/${FILE_KEY}?${query}`] = {body: {images: Object.fromEntries(ids.map((id) => [id, `${baseUrl}/render/${format}/${scale ?? 1}/${id}`]))}};
-            for (const id of ids) routes[`/render/${format}/${scale ?? 1}/${id}`] = {body: format === 'svg' ? SVG : PNG};
+            routes[`/images/${FILE_KEY}?${query}`] = {body: {images: Object.fromEntries(ids.map((id) => [id, missing.includes(id) ? null : `${baseUrl}/render/${format}/${scale ?? 1}/${id}`]))}};
+            for (const id of ids.filter((id) => !missing.includes(id))) routes[`/render/${format}/${scale ?? 1}/${id}`] = {body: format === 'svg' ? SVG : PNG};
         }
         return routes;
     };
@@ -207,4 +207,45 @@ test('export_svg_flutter_assets also exports a descendant that has an SVG export
         {fileId: FILE_KEY, nodeIds: ['5:1'], projectPath: dir});
 
     assert.deepEqual(imageRequests(requests), [{ids: '5:1,5:2', format: 'svg', scale: undefined}]);
+});
+
+// ── 6. Every raster scale is one of Flutter's ratios ────────────────────────
+
+for (const [value, snapped, folder] of [[0.5, 1, ''], [5, 4, '4.0x/']] as const) {
+    test(`a SCALE ${value} export setting is exported at ${snapped}x and the report says so`, async (t) => {
+        const dir = await tempProject(t);
+        const root = screen([photo('5:2', 'Tile', {exportSettings: [setting('PNG', 'SCALE', value)]})]);
+        const {text, requests} = await callToolOffline(figma(root, [{ids: ['5:2'], format: 'png', scale: snapped}]), 'analyze_frame_as_screen',
+            {input: FILE_KEY, nodeId: '5:1', extractAssets: true, projectPath: dir});
+
+        assert.deepEqual(imageRequests(requests), [{ids: '5:2', format: 'png', scale: String(snapped)}]);
+        assert.match(text, new RegExp(`SCALE ${value} → exported at ${snapped}x`));
+        assert.deepEqual(await readFile(join(dir, `assets/images/${folder}tile.png`)), PNG);
+        assert.equal(existsSync(join(dir, 'assets/images/0.5x')) || existsSync(join(dir, 'assets/images/5.0x')) || existsSync(join(dir, 'assets/images/5x')), false);
+    });
+}
+
+// ── 7. A node Figma gave no image for is named, and not counted ─────────────
+
+test('export_flutter_assets names a node Figma returned no image for and counts only what it wrote', async (t) => {
+    const dir = await tempProject(t);
+    const root = screen([photo('5:2', 'Kept'), photo('5:3', 'Lost')]);
+    const {text} = await callToolOffline(figma(root, [
+        {ids: ['5:1', '5:2', '5:3'], format: 'png', scale: 2, missing: ['5:3']},
+    ]), 'export_flutter_assets', {fileId: FILE_KEY, nodeIds: ['5:1'], projectPath: dir});
+
+    assert.match(text, /Successfully exported 2 image assets/);
+    assert.match(text, /Lost \(5:3\): Figma returned no image/);
+    assert.equal(existsSync(join(dir, 'assets/images/2.0x/lost.png')), false);
+    assert.deepEqual(await readFile(join(dir, 'assets/images/2.0x/kept.png')), PNG);
+});
+
+test('the analyse tools name a node Figma returned no image for too', async (t) => {
+    const dir = await tempProject(t);
+    const root = screen([photo('5:2', 'Kept'), photo('5:3', 'Lost')]);
+    const {text} = await callToolOffline(figma(root, [{ids: ['5:2', '5:3'], format: 'png', scale: 2, missing: ['5:3']}]), 'analyze_frame_as_screen',
+        {input: FILE_KEY, nodeId: '5:1', extractAssets: true, projectPath: dir});
+
+    assert.match(text, /Found and exported 1 screen asset/);
+    assert.match(text, /Lost \(5:3\): Figma returned no image/);
 });

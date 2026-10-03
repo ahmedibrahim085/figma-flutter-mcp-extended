@@ -193,7 +193,7 @@ export function registerScreenTools(server: McpServer, figmaApiKey: string) {
  */
 function generateAssetExportReport(exportedAssets: AssetInfo[], notes: string[]): string {
     if (exportedAssets.length === 0) {
-        return '';
+        return notes.length > 0 ? `\nExport notes:\n${notes.map(note => `   • ${note}\n`).join('')}` : '';
     }
 
     let report = `\n${'='.repeat(50)}\n`;
@@ -212,7 +212,7 @@ function generateAssetExportReport(exportedAssets: AssetInfo[], notes: string[])
     });
 
     if (notes.length > 0) {
-        report += `\nExport settings:\n${notes.map(note => `   • ${note}\n`).join('')}`;
+        report += `\nExport notes:\n${notes.map(note => `   • ${note}\n`).join('')}`;
     }
 
     report += `\n✅ Assets Configuration:\n`;

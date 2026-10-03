@@ -59,7 +59,13 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                     figmaService, fileId, projectPath, nodes: imageNodes, ratios: devicePixelRatios, fallbackFormat: format
                 });
 
-                let output = `Successfully exported ${imageNodes.length} image assets to Flutter project!\n\n`;
+                if (downloadedAssets.length === 0) {
+                    return {
+                        content: [{type: "text", text: `No assets were exported.\n${notes.map(note => `- ${note}\n`).join('')}`}]
+                    };
+                }
+
+                let output = `Successfully exported ${new Set(downloadedAssets.map(asset => asset.nodeId)).size} image assets to Flutter project!\n\n`;
                 output += `Assets Directory: ${join(projectPath, defaults.output.imagesDir)}\n\n`;
                 output += `Downloaded Assets:\n`;
 
@@ -72,7 +78,7 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                     });
                 });
                 if (notes.length > 0) {
-                    output += `\nExport settings:\n${notes.map(note => `- ${note}\n`).join('')}`;
+                    output += `\nExport notes:\n${notes.map(note => `- ${note}\n`).join('')}`;
                 }
 
                 output += `\nPubspec Configuration:\n`;

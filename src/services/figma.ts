@@ -143,7 +143,7 @@ export class FigmaService {
             const data = await this.makeRequest<NodeResponse>(`/files/${fileId}/nodes?ids=${nodeId}`);
 
             if (!data.nodes || !data.nodes[nodeId]) {
-                throw new FigmaNotFoundError('Node', nodeId);
+                throw new FigmaNotFoundError(`Node not found: ${nodeId}`);
             }
 
             const nodeData = data.nodes[nodeId];

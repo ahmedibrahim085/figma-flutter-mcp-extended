@@ -16,8 +16,8 @@ export class FigmaAuthError extends FigmaError {
 }
 
 export class FigmaNotFoundError extends FigmaError {
-    constructor(resource: string, id: string) {
-        super(`${resource} not found: ${id}`, 'NOT_FOUND', 404);
+    constructor(message: string) {
+        super(message, 'NOT_FOUND', 404);
         this.name = 'FigmaNotFoundError';
     }
 }
@@ -52,7 +52,7 @@ export function createFigmaError(response: Response, message?: string): FigmaErr
         case 403:
             return new FigmaAuthError(defaultMessage, response.status);
         case 404:
-            return new FigmaError(defaultMessage, 'NOT_FOUND', 404);
+            return new FigmaNotFoundError(defaultMessage);
         case 429:
             const retryAfter = response.headers.get('Retry-After');
             const details = ['x-figma-plan-tier', 'x-figma-rate-limit-type']

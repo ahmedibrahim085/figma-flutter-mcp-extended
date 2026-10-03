@@ -617,7 +617,6 @@ src/services/figma.ts	string	INVALID_INPUT	arg(FigmaError)	getNodeWithStyles	1	K
 src/services/figma.ts	string	INVALID_INPUT	arg(FigmaError)	getNodes	1	K-SCHEMA	R6: our error code identifier
 src/services/figma.ts	string	Invalid JSON response from Figma API	arg(FigmaParseError)	makeRequest	1	K-TEXT	R8: error message text
 src/services/figma.ts	string	Invalid node structure received from Figma API	arg(FigmaParseError)	getNodeWithStyles	1	K-TEXT	report, label, log or error text
-src/services/figma.ts	string	Node	arg(FigmaNotFoundError)	getNodeWithStyles	1	K-TEXT	report, label, log or error text
 src/services/figma.ts	string	Node ID is required	arg(FigmaError)	getNodeWithStyles	1	K-TEXT	report, label, log or error text
 src/services/figma.ts	string	SyntaxError	binary(===)	makeRequest	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/services/figma.ts	string	Unable to connect to Figma API	arg(FigmaNetworkError)	makeRequest	1	K-TEXT	R8: error message text
@@ -646,6 +645,7 @@ src/services/figma.ts	template	Failed to fetch image fills: ${…}	arg(FigmaErro
 src/services/figma.ts	template	Failed to fetch node ${…}: ${…}	arg(FigmaError)	getNodeWithStyles	1	K-TEXT	report, label, log or error text
 src/services/figma.ts	template	Failed to fetch nodes: ${…}	arg(FigmaError)	getNodes	1	K-TEXT	R8: error message text
 src/services/figma.ts	template	Image export failed: ${…}	arg(FigmaError)	getImageExportUrls	1	K-TEXT	R8: error message text
+src/services/figma.ts	template	Node not found: ${…}	arg(FigmaNotFoundError)	getNodeWithStyles	1	K-TEXT	R8: error message text
 src/services/figma.ts	template	Unexpected error: ${…}	arg(FigmaNetworkError)	makeRequest	1	K-TEXT	R8: error message text
 src/services/figma.ts	template	✅ Successfully fetched: ${…}	arg(Logger.diag)	makeRequest	1	K-TEXT	R5: log/console text
 src/services/figma.ts	template	🔄 Making Figma API request: ${…}	arg(Logger.diag)	makeRequest	1	K-TEXT	R5: log/console text
@@ -690,7 +690,6 @@ src/tools/figma-core/core-tools.ts	string	Get the node tree structure of a Figma
 src/tools/figma-core/core-tools.ts	string	How deep into the node tree to traverse; omit for all levels. 	binary(+)	registerCoreTools	2	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	Image format: png, jpg, svg, or pdf (default: png)	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Maps to the Figma REST API /v1/files/:key/variables/local endpoint.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
-src/tools/figma-core/core-tools.ts	string	Node	arg(FigmaNotFoundError)	registerCoreTools	2	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	Node ID to extract (e.g. "12:3458")	arg(z.string().describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Node ID to screenshot (e.g. "12:3458")	arg(z.string().describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Optional node ID to scope the tree (e.g. "12:86"). Omit for full file.	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
@@ -736,6 +735,7 @@ src/tools/figma-core/core-tools.ts	template	/files/${…}/variables/local	arg(fi
 src/tools/figma-core/core-tools.ts	template	/images/${…}	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
 src/tools/figma-core/core-tools.ts	template	Figma image error: ${…}	arg(FigmaError)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	template	No image returned for node ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
+src/tools/figma-core/core-tools.ts	template	Node not found: ${…}	arg(FigmaNotFoundError)	registerCoreTools	2	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	template	Scale factor 0.01-4 (default: ${…}). Higher = more detail.	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/figma-core/core-tools.ts	template	Screenshot URL (fetch failed): ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
 src/tools/figma-core/core-tools.ts	template	image/${…}	ternary	registerCoreTools	1	K-API	R15: MIME type
@@ -2122,7 +2122,6 @@ src/types/errors.ts	number	10	arg(parseInt)	createFigmaError	1	K-CONV	hand: pars
 src/types/errors.ts	number	401	case	createFigmaError	1	K-API	R7: HTTP status
 src/types/errors.ts	number	401	param-default(statusCode)	FigmaAuthError	1	K-API	R7: HTTP status
 src/types/errors.ts	number	403	case	createFigmaError	1	K-API	R7: HTTP status
-src/types/errors.ts	number	404	arg(FigmaError)	createFigmaError	1	K-API	R7: HTTP status
 src/types/errors.ts	number	404	arg(super)	FigmaNotFoundError	1	K-API	R7: HTTP status
 src/types/errors.ts	number	404	case	createFigmaError	1	K-API	R7: HTTP status
 src/types/errors.ts	number	429	arg(super)	FigmaRateLimitError	1	K-API	R7: HTTP status
@@ -2137,14 +2136,12 @@ src/types/errors.ts	string	FigmaParseError	binary(=)	FigmaParseError	1	K-SCHEMA	
 src/types/errors.ts	string	FigmaRateLimitError	binary(=)	FigmaRateLimitError	1	K-SCHEMA	R9: error class name
 src/types/errors.ts	string	Invalid Figma access token	param-default(message)	FigmaAuthError	1	K-TEXT	R8: error message text
 src/types/errors.ts	string	NETWORK_ERROR	arg(super)	FigmaNetworkError	1	K-SCHEMA	R6: our error code identifier
-src/types/errors.ts	string	NOT_FOUND	arg(FigmaError)	createFigmaError	1	K-SCHEMA	R6: our error code identifier
 src/types/errors.ts	string	NOT_FOUND	arg(super)	FigmaNotFoundError	1	K-SCHEMA	R6: our error code identifier
 src/types/errors.ts	string	PARSE_ERROR	arg(super)	FigmaParseError	1	K-SCHEMA	R6: our error code identifier
 src/types/errors.ts	string	RATE_LIMIT	arg(super)	FigmaRateLimitError	1	K-SCHEMA	R6: our error code identifier
 src/types/errors.ts	string	Retry-After	arg(response.headers.get)	createFigmaError	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/types/errors.ts	string	x-figma-plan-tier	array	createFigmaError	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/types/errors.ts	string	x-figma-rate-limit-type	array	createFigmaError	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/types/errors.ts	template	${…} not found: ${…}	arg(super)	FigmaNotFoundError	1	K-TEXT	R8: error message text
 src/types/errors.ts	template	${…}: ${…}	array	createFigmaError	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
 src/types/errors.ts	template	Failed to parse Figma response: ${…}	arg(super)	FigmaParseError	1	K-TEXT	R8: error message text
 src/types/errors.ts	template	Network error: ${…}	arg(super)	FigmaNetworkError	1	K-TEXT	R8: error message text

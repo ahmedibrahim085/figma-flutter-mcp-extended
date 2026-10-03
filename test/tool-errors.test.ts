@@ -59,10 +59,12 @@ test('every Figma-calling tool reports a 404 as an error that names the status',
 
 test('every Figma-calling tool retries a 429 the same way, three requests', async (t) => {
     const calls = figmaTools(await tempProject(t));
-    const results = await callToolsOffline(
+    // Each tool waits through two Retry-After seconds, so the calls run on several servers at once.
+    const chunks = Array.from({length: Math.ceil(calls.length / 3)}, (_, i) => calls.slice(i * 3, i * 3 + 3));
+    const results = (await Promise.all(chunks.map((chunk) => callToolsOffline(
         answerEverywhere({status: 429, headers: {'Retry-After': '1'}, body: {status: 429, err: 'Rate limit exceeded'}}),
-        calls,
-    );
+        chunk,
+    )))).flat();
 
     const wrong = results.flatMap((r, i) => (r.isError && /429/.test(r.text) && r.requests.length === 3 ? [] : [`${calls[i][0]}: isError=${r.isError} requests=${r.requests.length} ${r.text.slice(0, 80)}`]));
     assert.deepEqual(wrong, []);

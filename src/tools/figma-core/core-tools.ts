@@ -142,7 +142,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
 
             if (nodeId && data.nodes) {
                 const nodeData = data.nodes[nodeId];
-                if (!nodeData?.document) throw new FigmaNotFoundError('Node', nodeId);
+                if (!nodeData?.document) throw new FigmaNotFoundError(`Node not found: ${nodeId}`);
                 rootNode = nodeData.document;
             } else {
                 rootNode = data.document;
@@ -255,7 +255,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 ...(depth === undefined ? {} : {depth: String(depth)}),
             });
             const nodeData = data.nodes?.[nodeId];
-            if (!nodeData?.document) throw new FigmaNotFoundError('Node', nodeId);
+            if (!nodeData?.document) throw new FigmaNotFoundError(`Node not found: ${nodeId}`);
 
             const doc = nodeData.document;
             const components = nodeData.components || {};

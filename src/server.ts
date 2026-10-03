@@ -1,14 +1,13 @@
-import { randomUUID } from "node:crypto";
 import express, { type Request, type Response } from "express";
 import { Server } from "http";
 import cors from "cors";
 import {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {StdioServerTransport} from "@modelcontextprotocol/sdk/server/stdio.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { isInitializeRequest } from "@modelcontextprotocol/sdk/types.js";
 import {registerAllTools} from "./tools/index.js";
 import { Logger } from "./utils/logger.js";
 import { getPackageVersion } from "./config.js";
+import { configureProjectPath } from "./utils/project-conventions.js";
 
 export function createServer(figmaApiKey: string) {
     const server = new McpServer({
@@ -20,18 +19,7 @@ export function createServer(figmaApiKey: string) {
     return server;
 }
 
-// Create a server instance that can handle per-user API keys
-export function createServerForUser(figmaApiKey: string) {
-    return createServer(figmaApiKey);
-}
-
 let httpServer: Server | null = null;
-const transports = {
-  streamable: {} as Record<string, StreamableHTTPServerTransport>,
-};
-
-// Store MCP server instances per session (for per-user API keys)
-const sessionServers = {} as Record<string, McpServer>;
 
 // Helper function to extract Figma API key from request
 function extractFigmaApiKey(req: Request, fallbackApiKey?: string): string | null {
@@ -70,10 +58,10 @@ export async function startMcpServer(figmaApiKey: string): Promise<void> {
 }
 
 export async function startHttpServer(port: number, figmaApiKey?: string): Promise<void> {
-  // For remote mode, we don't create a single server instance
-  // Instead, we create per-user servers based on their API keys
-  // For non-remote HTTP mode, we use the provided API key
+  // HTTP mode keeps no session (MCP 2025-11-25 makes sessions optional): every POST is served by its own server and
+  // transport, which are closed when the response closes. The Figma key comes from the request, or the fallback key.
   const app = express();
+  configureProjectPath(true);
 
   // Configure CORS to expose Mcp-Session-Id header for browser-based clients
   app.use(cors({
@@ -84,11 +72,9 @@ export async function startHttpServer(port: number, figmaApiKey?: string): Promi
   // Parse JSON requests for the Streamable HTTP endpoint only, will break SSE endpoint
   app.use("/mcp", express.json());
 
-  // Modern Streamable HTTP endpoint
   app.post("/mcp", async (req, res) => {
     Logger.log("Received StreamableHTTP request");
-    const sessionId = req.headers["mcp-session-id"] as string | undefined;
-    
+
     // Extract Figma API key from request
     const userFigmaApiKey = extractFigmaApiKey(req, figmaApiKey);
     if (!userFigmaApiKey) {
@@ -102,81 +88,27 @@ export async function startHttpServer(port: number, figmaApiKey?: string): Promi
       });
       return;
     }
-    
-    let transport: StreamableHTTPServerTransport;
-    let mcpServer: McpServer;
 
-    if (sessionId && transports.streamable[sessionId]) {
-      // Reuse existing transport and server
-      Logger.log("Reusing existing StreamableHTTP transport for sessionId", sessionId);
-      transport = transports.streamable[sessionId];
-      mcpServer = sessionServers[sessionId];
-    } else if (isInitializeRequest(req.body)) {
-      Logger.log("New initialization request for StreamableHTTP");
-      
-      // Create new server instance for this user's API key
-      mcpServer = createServerForUser(userFigmaApiKey);
-      
-      transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => randomUUID(),
-        enableJsonResponse: true, // Enable JSON response mode for better remote compatibility
-        onsessioninitialized: (newSessionId) => {
-          // Store the transport and server by session ID
-          transports.streamable[newSessionId] = transport;
-          sessionServers[newSessionId] = mcpServer;
-          Logger.log("Session initialized with ID:", newSessionId);
-        },
-      });
-      transport.onclose = () => {
-        if (transport.sessionId) {
-          delete transports.streamable[transport.sessionId];
-          delete sessionServers[transport.sessionId];
-        }
-      };
-      await mcpServer.connect(transport);
-    } else if (sessionId) {
-      // Session ID provided but transport not found - create new one
-      Logger.log("Creating new transport for existing sessionId", sessionId);
-      
-      // Create new server instance for this user's API key
-      mcpServer = createServerForUser(userFigmaApiKey);
-      
-      transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: () => sessionId,
-        enableJsonResponse: true, // Enable JSON response mode for better remote compatibility
-        onsessioninitialized: (newSessionId) => {
-          transports.streamable[newSessionId] = transport;
-          sessionServers[newSessionId] = mcpServer;
-        },
-      });
-      transport.onclose = () => {
-        if (transport.sessionId) {
-          delete transports.streamable[transport.sessionId];
-          delete sessionServers[transport.sessionId];
-        }
-      };
-      await mcpServer.connect(transport);
-    } else {
-      // Invalid request
-      Logger.log("Invalid request:", req.body);
-      res.status(400).json({
-        jsonrpc: "2.0",
-        error: {
-          code: -32000,
-          message: "Bad Request: No valid session ID provided",
-        },
-        id: null,
-      });
-      return;
-    }
+    // A request with a progressToken is answered as an event stream so its progress reaches the client;
+    // any other request is answered as plain JSON.
+    const progressToken = req.body?.params?._meta?.progressToken;
+    const mcpServer = createServer(userFigmaApiKey);
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+      enableJsonResponse: progressToken === undefined,
+    });
 
     let progressInterval: NodeJS.Timeout | null = null;
-    const progressToken = req.body.params?._meta?.progressToken;
-    let progress = 0;
-    if (progressToken) {
-      Logger.log(
-        `Setting up progress notifications for token ${progressToken} on session ${sessionId}`,
-      );
+    res.on("close", () => {
+      if (progressInterval) clearInterval(progressInterval);
+      transport.close();
+      mcpServer.close();
+    });
+
+    await mcpServer.connect(transport);
+
+    if (progressToken !== undefined) {
+      let progress = 0;
       // A protocol constant, not a design fact: one progress notification per second keeps a long
       // tool call well inside the SDK's default 60 s request timeout
       // (DEFAULT_REQUEST_TIMEOUT_MSEC in @modelcontextprotocol/sdk shared/protocol).
@@ -188,74 +120,37 @@ export async function startHttpServer(port: number, figmaApiKey?: string): Promi
             progress,
             progressToken,
           },
-        });
+        }, {relatedRequestId: req.body.id});
         progress++;
       }, 1000);
     }
 
     Logger.log("Handling StreamableHTTP request");
     await transport.handleRequest(req, res, req.body);
-
-    if (progressInterval) {
-      clearInterval(progressInterval);
-    }
     Logger.log("StreamableHTTP request handled");
   });
 
-  // Handle GET requests for SSE streams (using built-in support from StreamableHTTP)
-  const handleSessionRequest = async (req: Request, res: Response) => {
-    const sessionId = req.headers["mcp-session-id"] as string | undefined;
-    if (!sessionId || !transports.streamable[sessionId]) {
-      res.status(400).send("Invalid or missing session ID");
-      return;
-    }
-
-    console.log(`Received session termination request for session ${sessionId}`);
-
-    try {
-      const transport = transports.streamable[sessionId];
-      await transport.handleRequest(req, res);
-    } catch (error) {
-      console.error("Error handling session termination:", error);
-      if (!res.headersSent) {
-        res.status(500).send("Error processing session termination");
-      }
-    }
+  // No session and no standalone stream: GET and DELETE have nothing to open or end.
+  const methodNotAllowed = (_req: Request, res: Response) => {
+    res.status(405).set("Allow", "POST").json({
+      jsonrpc: "2.0",
+      error: {code: -32000, message: "Method not allowed."},
+      id: null,
+    });
   };
-
-  // Handle GET requests for server-to-client notifications via SSE
-  app.get("/mcp", handleSessionRequest);
-
-  // Handle DELETE requests for session termination
-  app.delete("/mcp", handleSessionRequest);
+  app.get("/mcp", methodNotAllowed);
+  app.delete("/mcp", methodNotAllowed);
 
   httpServer = app.listen(port, () => {
     Logger.log(`HTTP server listening on port ${port}`);
     Logger.log(`StreamableHTTP endpoint available at http://localhost:${port}/mcp`);
   });
 
-  process.on("SIGINT", async () => {
+  process.on("SIGINT", () => {
     Logger.log("Shutting down server...");
-
-    // Close all active transports to properly clean up resources
-    await closeTransports(transports.streamable);
-
     Logger.log("Server shutdown complete");
     process.exit(0);
   });
-}
-
-async function closeTransports(
-  transports: Record<string, StreamableHTTPServerTransport>,
-) {
-  for (const sessionId in transports) {
-    try {
-      await transports[sessionId]?.close();
-      delete transports[sessionId];
-    } catch (error) {
-      console.error(`Error closing transport for session ${sessionId}:`, error);
-    }
-  }
 }
 
 export async function stopHttpServer(): Promise<void> {
@@ -270,12 +165,7 @@ export async function stopHttpServer(): Promise<void> {
         return;
       }
       httpServer = null;
-      const closing = Object.values(transports.streamable).map((transport) => {
-        return transport.close();
-      });
-      Promise.all(closing).then(() => {
-        resolve();
-      });
+      resolve();
     });
   });
 }

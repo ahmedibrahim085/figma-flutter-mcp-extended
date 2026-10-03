@@ -9,6 +9,7 @@ import {describeFill} from "../../../../utils/paint-format.js";
 import {convertFillToColorInfo} from "../../../../extractors/components/extractor.js";
 import {validateAndConvertNodeId} from "../../../../utils/figma-url-parser.js";
 import {join} from 'path';
+import {resolveProjectPath} from '../../../../utils/project-conventions.js';
 import defaults from '../../../../defaults.json' with { type: 'json' };
 
 export function registerThemeTools(server: McpServer, figmaApiKey: string) {
@@ -24,7 +25,8 @@ export function registerThemeTools(server: McpServer, figmaApiKey: string) {
                 generateThemeData: z.boolean().optional().describe("Generate Flutter ThemeData class (defaults to false)")
             }
         },
-        figmaTool('Error extracting theme colors', async ({fileId, nodeId, projectPath = process.cwd(), generateThemeData = false}) => {
+        figmaTool('Error extracting theme colors', async ({fileId, nodeId, projectPath: givenPath, generateThemeData = false}) => {
+            const projectPath = resolveProjectPath(givenPath);
             // Initialize services
             const figmaService = new FigmaService(figmaApiKey);
             const generator = new SimpleThemeGenerator();

@@ -544,54 +544,36 @@ src/extractors/typography/types.ts	type-string	caption	LiteralType	(module)	1	K-
 src/extractors/typography/types.ts	type-string	heading	LiteralType	(module)	1	K-SCHEMA	R2 member of our own output union type, src/extractors/typography/types.ts:32
 src/extractors/typography/types.ts	type-string	label	LiteralType	(module)	1	K-SCHEMA	R2 member of our own output union type, src/extractors/typography/types.ts:32
 src/extractors/typography/types.ts	type-string	other	LiteralType	(module)	1	K-SCHEMA	R2 member of our own output union type, src/extractors/typography/types.ts:32
-src/server.ts	number	-32000	prop(code)	startHttpServer	1	K-API	hand: JSON-RPC server-error range code -32000
 src/server.ts	number	-32001	prop(code)	startHttpServer	1	K-API	hand: JSON-RPC server-error range code -32001
 src/server.ts	number	0	arg(process.exit)	startHttpServer	1	K-API	R3: process exit code
 src/server.ts	number	0	var(progress)	startHttpServer	1	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
 src/server.ts	number	1	arg(process.exit)	startMcpServer	1	K-API	R3: process exit code
 src/server.ts	number	1000	arg(setInterval)	startHttpServer	1	K-API	progress interval kept in code as a protocol constant (ticket 02, finding E10)
-src/server.ts	number	400	arg(res.status)	handleSessionRequest	1	K-API	hand: HTTP 400
-src/server.ts	number	400	arg(res.status)	startHttpServer	1	K-API	hand: HTTP 400
 src/server.ts	number	401	arg(res.status)	startHttpServer	1	K-API	hand: HTTP 401
-src/server.ts	number	500	arg(res.status)	handleSessionRequest	1	K-API	hand: HTTP 500
 src/server.ts	number	7	arg(authHeader.substring)	extractFigmaApiKey	1	K-API	hand: length of "Bearer " prefix, RFC 6750 (server.ts:39-40)
 src/server.ts	string	*	prop(origin)	startHttpServer	1	K-API	hand: CORS origin wildcard (server.ts:79)
 src/server.ts	string	/mcp	arg(app.delete)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	/mcp	arg(app.get)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	/mcp	arg(app.post)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	/mcp	arg(app.use)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/server.ts	string	2.0	prop(jsonrpc)	startHttpServer	2	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/server.ts	string	Bad Request: No valid session ID provided	prop(message)	startHttpServer	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
+src/server.ts	string	2.0	prop(jsonrpc)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	Bearer 	arg(authHeader.startsWith)	extractFigmaApiKey	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/server.ts	string	Creating new transport for existing sessionId	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
-src/server.ts	string	Error handling session termination:	arg(console.error)	handleSessionRequest	1	K-TEXT	R5: log/console text
-src/server.ts	string	Error processing session termination	arg(res.status(500).send)	handleSessionRequest	1	K-TEXT	R8: error message text
 src/server.ts	string	Failed to start MCP server:	arg(console.error)	startMcpServer	1	K-TEXT	R5: log/console text
 src/server.ts	string	Figma-to-Flutter MCP Server connected via stdio	arg(console.error)	startMcpServer	1	K-TEXT	R5: log/console text
 src/server.ts	string	HTTP server is not running	arg(Error)	stopHttpServer	1	K-TEXT	R8: error message text
 src/server.ts	string	Handling StreamableHTTP request	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
-src/server.ts	string	Invalid or missing session ID	arg(res.status(400).send)	handleSessionRequest	1	K-TEXT	R8: error message text
-src/server.ts	string	Invalid request:	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
 src/server.ts	string	Mcp-Session-Id	array(exposedHeaders)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/server.ts	string	New initialization request for StreamableHTTP	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
 src/server.ts	string	Received StreamableHTTP request	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
-src/server.ts	string	Reusing existing StreamableHTTP transport for sessionId	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
 src/server.ts	string	SIGINT	arg(process.on)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	Sending progress notification	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
 src/server.ts	string	Server shutdown complete	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
-src/server.ts	string	Session initialized with ID:	arg(Logger.log)	onsessioninitialized	1	K-TEXT	R5: log/console text
 src/server.ts	string	Shutting down server...	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
 src/server.ts	string	StreamableHTTP request handled	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
 src/server.ts	string	Unauthorized: Figma API key required. You must provide your own Figma API key via Authorization header (Bearer token), X-Figma-Api-Key header, or figmaApiKey qu	prop(message)	startHttpServer	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
 src/server.ts	string	figma-flutter	prop(name)	createServer	1	K-SCHEMA	hand: MCP server name; renaming it is a consumer-visible change (CLAUDE.md rule)
-src/server.ts	string	mcp-session-id	index	handleSessionRequest	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/server.ts	string	mcp-session-id	index	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	notifications/progress	prop(method)	startHttpServer	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/server.ts	string	x-figma-api-key	index	extractFigmaApiKey	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/server.ts	template	Error closing transport for session ${…}:	arg(console.error)	closeTransports	1	K-TEXT	R5: log/console text
 src/server.ts	template	HTTP server listening on port ${…}	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
-src/server.ts	template	Received session termination request for session ${…}	arg(console.log)	handleSessionRequest	1	K-TEXT	R5: log/console text
-src/server.ts	template	Setting up progress notifications for token ${…} on session ${…}	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
 src/server.ts	template	StreamableHTTP endpoint available at http://localhost:${…}/mcp	arg(Logger.log)	startHttpServer	1	K-TEXT	R5: log/console text
 src/services/figma.ts	number	0	binary(===)	FigmaService	1	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
 src/services/figma.ts	number	0	binary(===)	getImageExportUrls	1	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
@@ -2383,3 +2365,11 @@ src/extractors/flutter/style-library.ts	number	12	arg(st.slice(0, 15)}`).toStrin
 src/extractors/flutter/style-library.ts	string	0	arg(st.slice(0, 15)}`).toString(36).padStart)	generateId	1	K-CONV	rule R4: id formatting (radix 36, slicing, hash input)
 src/tools/flutter/components/deduplicated-helpers.ts	string	\n	arg(y).map(style => style.flutterCode)].join)	generateFlutterImplementation	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/deduplicated-helpers.ts	template	📚 Styles in this analysis:\n	binary(+=)	generateComprehensiveDeduplicatedReport	1	K-TEXT	report, label, log or error text
+src/server.ts	string	close	arg(res.on)	startHttpServer	1	K-API	Node http event name
+src/server.ts	number	405	arg(res.status)	methodNotAllowed	1	K-API	HTTP status
+src/server.ts	string	Allow	arg(res.status(405).set)	methodNotAllowed	1	K-API	HTTP header name
+src/server.ts	string	POST	arg(res.status(405).set)	methodNotAllowed	1	K-API	HTTP method
+src/server.ts	string	2.0	prop(jsonrpc)	methodNotAllowed	1	K-API	JSON-RPC version
+src/server.ts	number	-32000	prop(code)	methodNotAllowed	1	K-API	JSON-RPC error code
+src/server.ts	string	Method not allowed.	prop(message)	methodNotAllowed	1	K-TEXT	report, label, log or error text
+src/utils/project-conventions.ts	string	projectPath is required over HTTP: the server's working folder is not the client's project. Pass the Flutter project's path on the machine that runs this server	arg(Error)	resolveProjectPath	1	K-TEXT	report, label, log or error text

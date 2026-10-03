@@ -8,6 +8,8 @@ export interface FakeResponse {
     headers?: Record<string, string>;
     /** Objects are sent as JSON; Buffers as raw bytes. */
     body: unknown;
+    /** Milliseconds to wait before answering, for a slow Figma. */
+    delayMs?: number;
 }
 
 export interface RecordedRequest {
@@ -54,11 +56,13 @@ export async function startFakeFigma(routeSpec: FakeRoutes): Promise<FakeFigma> 
             return;
         }
         const isBytes = Buffer.isBuffer(route.body);
-        res.writeHead(route.status ?? 200, {
-            'Content-Type': isBytes ? 'application/octet-stream' : 'application/json',
-            ...route.headers,
-        });
-        res.end(isBytes ? route.body : JSON.stringify(route.body));
+        setTimeout(() => {
+            res.writeHead(route.status ?? 200, {
+                'Content-Type': isBytes ? 'application/octet-stream' : 'application/json',
+                ...route.headers,
+            });
+            res.end(isBytes ? route.body : JSON.stringify(route.body));
+        }, route.delayMs ?? 0);
     });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const {port} = server.address() as AddressInfo;

@@ -10,7 +10,7 @@ import {
     selectAssetNodes
 } from "./asset-manager.js";
 import {assetUsageReport} from "./asset-report.js";
-import {hasPubspec, missingPubspecMessage} from "../../../utils/project-conventions.js";
+import {hasPubspec, missingPubspecMessage, resolveProjectPath} from "../../../utils/project-conventions.js";
 import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
 
 export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string) {
@@ -29,7 +29,8 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                 devicePixelRatios: devicePixelRatiosInput
             }
         },
-        figmaTool('Error exporting assets', async ({fileId, nodeIds, projectPath = process.cwd(), format = 'png', devicePixelRatios}) => {
+        figmaTool('Error exporting assets', async ({fileId, nodeIds, projectPath: givenPath, format = 'png', devicePixelRatios}) => {
+            const projectPath = resolveProjectPath(givenPath);
             if (!hasPubspec(projectPath)) {
                 return {isError: true, content: [{type: "text", text: missingPubspecMessage(projectPath)}]};
             }

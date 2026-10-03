@@ -9,6 +9,7 @@ import {TypographyGenerator, typographyConstants} from "./typography-generator.j
 import {join} from 'path';
 import {validateAndConvertNodeId} from "../../../../utils/figma-url-parser.js";
 import {shortestFloat32} from "../../../../utils/float32.js";
+import {resolveProjectPath} from '../../../../utils/project-conventions.js';
 import defaults from '../../../../defaults.json' with { type: 'json' };
 
 export function registerTypographyTools(server: McpServer, figmaApiKey: string) {
@@ -24,7 +25,8 @@ export function registerTypographyTools(server: McpServer, figmaApiKey: string) 
                 generateTextTheme: z.boolean().optional().describe("Generate Flutter TextTheme class (defaults to false)")
             }
         },
-        figmaTool('Error extracting theme typography', async ({fileId, nodeId, projectPath = process.cwd(), generateTextTheme = false}) => {
+        figmaTool('Error extracting theme typography', async ({fileId, nodeId, projectPath: givenPath, generateTextTheme = false}) => {
+            const projectPath = resolveProjectPath(givenPath);
             // Initialize services
             const figmaService = new FigmaService(figmaApiKey);
             const generator = new TypographyGenerator();

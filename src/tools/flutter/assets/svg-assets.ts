@@ -14,7 +14,7 @@ import {
     generateSvgAssetConstants
 } from "./asset-manager.js";
 import {assetUsageReport} from "./asset-report.js";
-import {hasPubspec, missingPubspecMessage} from "../../../utils/project-conventions.js";
+import {hasPubspec, missingPubspecMessage, resolveProjectPath} from "../../../utils/project-conventions.js";
 import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
 import {isEffectivelyVisible} from "../../../utils/visibility.js";
 import defaults from '../../../defaults.json' with { type: 'json' };
@@ -32,7 +32,8 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
                 projectPath: z.string().optional().describe("Path to Flutter project (defaults to current directory)")
             }
         },
-        figmaTool('Error exporting SVG assets', async ({fileId, nodeIds, projectPath = process.cwd()}) => {
+        figmaTool('Error exporting SVG assets', async ({fileId, nodeIds, projectPath: givenPath}) => {
+            const projectPath = resolveProjectPath(givenPath);
             if (!hasPubspec(projectPath)) {
                 return {isError: true, content: [{type: "text", text: missingPubspecMessage(projectPath)}]};
             }

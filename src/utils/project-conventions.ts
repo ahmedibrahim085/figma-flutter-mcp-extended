@@ -19,6 +19,22 @@ export function missingPubspecMessage(projectPath: string): string {
     return `No pubspec.yaml in ${projectPath}. Run this in a Flutter project (flutter create), or pass projectPath. Nothing was requested or written.`;
 }
 
+let overHttp = false;
+
+/** Set once at startup, like Logger.configureMode: over HTTP the server's folder is not the client's project. */
+export function configureProjectPath(isHttpMode: boolean): void {
+    overHttp = isHttpMode;
+}
+
+/** The project a file-writing tool works in: the caller's `projectPath`, else the process folder over stdio, where client and server share it. */
+export function resolveProjectPath(projectPath: string | undefined): string {
+    if (projectPath !== undefined) return projectPath;
+    if (overHttp) {
+        throw new Error("projectPath is required over HTTP: the server's working folder is not the client's project. Pass the Flutter project's path on the machine that runs this server. Nothing was requested or written.");
+    }
+    return process.cwd();
+}
+
 export const hasPubspec = (projectPath: string): boolean => existsSync(join(projectPath, 'pubspec.yaml'));
 
 /**

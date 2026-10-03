@@ -1,16 +1,9 @@
 // Cached styles belong to the call: no state crosses a tool call, over stdio or HTTP.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {spawn} from 'node:child_process';
-import {mkdtempSync} from 'node:fs';
-import {createServer} from 'node:net';
-import {tmpdir} from 'node:os';
-import {join, dirname} from 'node:path';
-import {fileURLToPath} from 'node:url';
 import {callToolOffline, FILE_KEY, nodeRoute} from './helpers/offline-tool.ts';
-import {startFakeFigma} from './helpers/fake-figma.ts';
+import {httpClient, withHttpServer} from './helpers/mcp-http.ts';
 
-const CLI = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist', 'cli.js');
 const FRAME = {
     id: '40:1', name: 'Holder', type: 'FRAME', layoutMode: 'VERTICAL', cornerRadius: 4,
     fills: [{type: 'SOLID', color: {r: 1, g: 0, b: 0, a: 1}}], paddingLeft: 8, paddingRight: 8, paddingTop: 8, paddingBottom: 8,
@@ -50,63 +43,8 @@ test('two decorations with the same Dart code but different extra fill layers ge
     assert.notEqual(blue, green);
 });
 
-/** One `--http` server on a free port, with Figma replaced by the fake; `body` gets its MCP endpoint. */
-async function withHttpServer(body: (endpoint: string) => Promise<void>) {
-    const figma = await startFakeFigma(nodeRoute(FRAME.id, FRAME));
-    const port = await new Promise<number>((resolve) => {
-        const probe = createServer().listen(0, () => {
-            const {port} = probe.address() as {port: number};
-            probe.close(() => resolve(port));
-        });
-    });
-    const child = spawn(process.execPath, [CLI, '--http', `--port=${port}`], {
-        cwd: mkdtempSync(join(tmpdir(), 'mcp-http-')),
-        env: {PATH: process.env.PATH, FIGMA_API_KEY: 'test-key', FIGMA_API_BASE_URL: figma.baseUrl},
-        stdio: 'ignore',
-    });
-    try {
-        const endpoint = `http://127.0.0.1:${port}/mcp`;
-        for (let attempt = 0; ; attempt++) {
-            try { await fetch(endpoint, {method: 'POST'}); break; } catch (error) {
-                if (attempt >= 50) throw error;
-                await new Promise((resolve) => setTimeout(resolve, 100));
-            }
-        }
-        await body(endpoint);
-    } finally {
-        const exited = new Promise((resolve) => child.once('exit', resolve));
-        child.kill('SIGKILL');
-        await exited;
-        await figma.close();
-    }
-}
-
-/** An MCP client session over HTTP with its own Figma key; returns the text of each tool call. */
-async function httpClient(endpoint: string, key: string) {
-    let session: string | undefined;
-    let nextId = 1;
-    const post = async (message: object) => {
-        const response = await fetch(endpoint, {
-            method: 'POST',
-            headers: {'content-type': 'application/json', accept: 'application/json, text/event-stream', 'x-figma-api-key': key,
-                ...(session ? {'mcp-session-id': session} : {})},
-            body: JSON.stringify(message),
-        });
-        session ??= response.headers.get('mcp-session-id') ?? undefined;
-        const text = await response.text();
-        return text ? JSON.parse(text) : undefined;
-    };
-    await post({jsonrpc: '2.0', id: nextId++, method: 'initialize',
-        params: {protocolVersion: '2025-03-26', capabilities: {}, clientInfo: {name: 'style-library-test', version: '1.0.0'}}});
-    await post({jsonrpc: '2.0', method: 'notifications/initialized', params: {}});
-    return async (tool: string, args: object): Promise<string> => {
-        const reply = await post({jsonrpc: '2.0', id: nextId++, method: 'tools/call', params: {name: tool, arguments: args}});
-        return reply.result.content[0].text;
-    };
-}
-
 test('two HTTP clients each see only their own styles', async () => {
-    await withHttpServer(async (endpoint) => {
+    await withHttpServer(nodeRoute(FRAME.id, FRAME), async (endpoint) => {
         const a = await httpClient(endpoint, 'key-a');
         const b = await httpClient(endpoint, 'key-b');
 

@@ -602,6 +602,8 @@ src/services/figma.ts	template	Failed to fetch image fills: ${…}	arg(FigmaErro
 src/services/figma.ts	template	Failed to fetch node ${…}: ${…}	arg(FigmaError)	getNodeWithStyles	1	K-TEXT	report, label, log or error text
 src/services/figma.ts	template	Failed to fetch nodes: ${…}	arg(FigmaError)	getNodes	1	K-TEXT	R8: error message text
 src/services/figma.ts	template	Image export failed: ${…}	arg(FigmaError)	getImageExportUrls	1	K-TEXT	R8: error message text
+src/services/figma.ts	string	use_absolute_bounds	arg(params.append)	getImageExportUrls	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
+src/services/figma.ts	string	true	arg(params.append)	getImageExportUrls	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/services/figma.ts	template	Node not found: ${…}	arg(FigmaNotFoundError)	getNodeWithStyles	1	K-TEXT	R8: error message text
 src/services/figma.ts	template	Unexpected error: ${…}	arg(FigmaNetworkError)	makeRequest	1	K-TEXT	R8: error message text
 src/services/figma.ts	template	✅ Successfully fetched: ${…}	arg(Logger.diag)	makeRequest	1	K-TEXT	R5: log/console text
@@ -644,7 +646,6 @@ src/tools/figma-core/core-tools.ts	string	Image format: png, jpg, svg, or pdf (d
 src/tools/figma-core/core-tools.ts	string	Figma use_absolute_bounds (default: false): use the full dimensions of the node 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	regardless of whether or not it is cropped or the space around it is empty. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Use this to export text nodes without cropping.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
-src/tools/figma-core/core-tools.ts	string	true	prop(use_absolute_bounds)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	Maps to the Figma REST API /v1/files/:key/variables/local endpoint.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Node ID to extract (e.g. "12:3458")	arg(z.string().describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Node ID to screenshot (e.g. "12:3458")	arg(z.string().describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description

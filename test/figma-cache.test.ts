@@ -134,3 +134,29 @@ test('a render URL that fails is not cached, and the next call tries again', asy
 
     assert.deepEqual(paths(second.requests), [META, `/images/${FILE_KEY}`, '/render/1']);
 });
+
+test('a screenshot with useAbsoluteBounds and one without do not share a cache entry', async () => {
+    const env = cacheEnv();
+    const routes = (baseUrl: string): FakeRoutes => ({
+        [META]: newMeta() as any,
+        [`/images/${FILE_KEY}?ids=1:1&format=png&scale=1`]: {body: {images: {'1:1': `${baseUrl}/render/cropped`}}},
+        [`/images/${FILE_KEY}?ids=1:1&format=png&scale=1&use_absolute_bounds=true`]: {body: {images: {'1:1': `${baseUrl}/render/full`}}},
+        '/render/cropped': {body: Buffer.from('cropped-render-bounds')},
+        '/render/full': {body: Buffer.from('full-box')},
+    });
+    const plain: [string, Record<string, unknown>] = ['ff_get_screenshot', {fileKey: FILE_KEY, nodeId: '1:1'}];
+    const full: [string, Record<string, unknown>] = ['ff_get_screenshot', {fileKey: FILE_KEY, nodeId: '1:1', useAbsoluteBounds: true}];
+
+    const [plainFirst] = await callToolsOffline(routes, [plain], env);
+    const [fullFirst] = await callToolsOffline(routes, [full], env);
+    const [fullSecond] = await callToolsOffline(routes, [full], env);
+    const [plainSecond] = await callToolsOffline(routes, [plain], env);
+
+    assert.deepEqual(paths(plainFirst.requests), [META, `/images/${FILE_KEY}`, '/render/cropped']);
+    // The flag must miss the plain call's entry and fetch its own render.
+    assert.deepEqual(paths(fullFirst.requests), [META, `/images/${FILE_KEY}`, '/render/full']);
+    assert.deepEqual(fullFirst.requests[1].query.use_absolute_bounds, 'true');
+    // Each is then served from its own entry.
+    assert.deepEqual(paths(fullSecond.requests), [META]);
+    assert.deepEqual(paths(plainSecond.requests), [META]);
+});

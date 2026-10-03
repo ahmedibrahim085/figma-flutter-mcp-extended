@@ -204,13 +204,17 @@ void main() {
 // The generator is called the way generate_flutter_implementation calls it, with one addition: withNodeKeys, so each
 // child carries the id of its Figma node. The node arrives through FigmaService from a fake Figma, as in the tool.
 const fakeFigma = await startFakeFigma(nodeRoute(node.id, node));
-const previousBaseUrl = process.env.FIGMA_API_BASE_URL;
+// The Figma cache is off, as in the test harness: the fake serves the node only, not the file's /meta.
+const previous = {base: process.env.FIGMA_API_BASE_URL, cache: process.env.FIGMA_CACHE};
 process.env.FIGMA_API_BASE_URL = fakeFigma.baseUrl;
+process.env.FIGMA_CACHE = 'off';
 let document;
 try {
     ({document} = await new FigmaService('test-key').getNodeWithStyles(FILE_KEY, node.id));
 } finally {
-    if (previousBaseUrl === undefined) delete process.env.FIGMA_API_BASE_URL; else process.env.FIGMA_API_BASE_URL = previousBaseUrl;
+    for (const [name, value] of [['FIGMA_API_BASE_URL', previous.base], ['FIGMA_CACHE', previous.cache]] as const) {
+        if (value === undefined) delete process.env[name]; else process.env[name] = value;
+    }
     await fakeFigma.close();
 }
 if (document.type === 'COMPONENT_SET') {

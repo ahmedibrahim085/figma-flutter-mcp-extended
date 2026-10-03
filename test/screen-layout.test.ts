@@ -298,3 +298,11 @@ test('analyze_frame_as_screen: scaffold and child widget names are valid, distin
     assert.equal(new Set(scaffold).size, 4, scaffold.join());
     assert.deepEqual(listed, scaffold);
 });
+
+test('analyze_frame_as_screen: child widget names keep the word boundaries typeName keeps, as the component tools do', async () => {
+    const node = screenOf([frame('6:2', 'myHTTPClient', 0, 0, 100, 40), frame('6:3', 'iOS Status-Bar', 0, 50, 100, 40), frame('6:4', 'Tab bar', 0, 100, 100, 40)]);
+    const {text} = await analyzeScreen(node);
+
+    const scaffold = [...text.matchAll(/^ {8}(\w+)\(\),$/gm)].map((m) => m[1]);
+    assert.deepEqual(scaffold, ['MyHTTPClient', 'IOSStatusBar', 'TabBar'], text);
+});

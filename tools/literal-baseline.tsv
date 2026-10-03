@@ -1373,14 +1373,12 @@ src/tools/flutter/components/deduplicated-helpers.ts	type-string	vertical	Litera
 src/tools/flutter/components/deduplicated-helpers.ts	type-string	width	LiteralType	axisSize	1	K-SCHEMA	rule: TypeScript literal type of our own API
 src/tools/flutter/components/deduplicated-helpers.ts	type-string	width	LiteralType	boxConstraints	1	K-SCHEMA	rule: TypeScript literal type of our own API
 src/tools/flutter/components/helpers.ts	number	0	arg(childrenSource.slice)	generateStructureInspectionReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/helpers.ts	number	0	arg(word.charAt)	toPascalCase	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/helpers.ts	number	0	binary(===)	generateStructureInspectionReport	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/helpers.ts	number	0	binary(>)	generateComponentAnalysisReport	5	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/helpers.ts	number	0	binary(>)	generateFlutterGuidance	6	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/helpers.ts	number	0	binary(>)	generateStructureInspectionReport	4	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/helpers.ts	number	0	binary(||)	generateStructureInspectionReport	2	K-CONV	hand-reviewed ||-fallback: child count 0 when no children
 src/tools/flutter/components/helpers.ts	number	0	index	generateFlutterGuidance	2	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/tools/flutter/components/helpers.ts	number	1	arg(word.slice)	toPascalCase	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/helpers.ts	number	1	binary(!==)	generateComponentAnalysisReport	1	K-CONV	hand-reviewed: opacity 1 = opaque identity
 src/tools/flutter/components/helpers.ts	number	1	binary(+)	generateComponentAnalysisReport	3	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/helpers.ts	number	1	binary(+)	generateFlutterGuidance	3	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
@@ -1388,20 +1386,15 @@ src/tools/flutter/components/helpers.ts	number	1	binary(+)	generateStructureInsp
 src/tools/flutter/components/helpers.ts	number	100	binary(*)	generateComponentAnalysisReport	1	K-CONV	rule: percent
 src/tools/flutter/components/helpers.ts	number	15	arg(childrenSource.slice)	generateStructureInspectionReport	1	F-HEUR	analysis cap; removed by ticket 15
 src/tools/flutter/components/helpers.ts	number	2	arg(indentContinuation)	generateFlutterGuidance	1	K-DART	indent width of emitted Dart
-src/tools/flutter/components/helpers.ts	regex	/[^a-zA-Z0-9]/g	arg(str\n        .replace)	toPascalCase	1	K-DART	rule: Dart identifier / emitted-code text munging
-src/tools/flutter/components/helpers.ts	regex	/\s/g	arg(slice(1).toLowerCase())\n        .replace)	toPascalCase	1	K-DART	rule: Dart identifier / emitted-code text munging
-src/tools/flutter/components/helpers.ts	regex	/\w+/g	arg(e(/[^a-zA-Z0-9]/g, ' ')\n        .replace)	toPascalCase	1	K-DART	rule: Dart identifier / emitted-code text munging
 src/tools/flutter/components/helpers.ts	string		arg(formatFills)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string		arg(formatFills)	generateStructureInspectionReport	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string		arg(formatInteractions)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string		arg(formatPadding)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string		arg(formatStrokes)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string		arg(slice(1).toLowerCase())\n        .replace)	toPascalCase	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string		ternary	generateComponentAnalysisReport	2	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string		ternary	generateStructureInspectionReport	3	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string		ternary	side	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/helpers.ts	string	 	arg(fontParts.join)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
-src/tools/flutter/components/helpers.ts	string	 	arg(str\n        .replace)	toPascalCase	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string	   	arg(formatFills)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string	   	arg(formatFills)	generateStructureInspectionReport	1	K-TEXT	rule: separator/whitespace/padding char
 src/tools/flutter/components/helpers.ts	string	   	arg(formatInteractions)	generateComponentAnalysisReport	1	K-TEXT	rule: separator/whitespace/padding char
@@ -1567,7 +1560,6 @@ src/tools/flutter/components/helpers.ts	template	🏗️  Widget Composition Bes
 src/tools/flutter/components/helpers.ts	type-string	cross	LiteralType	mapFigmaToFlutterAlignment	1	K-SCHEMA	rule: TypeScript literal type of our own API
 src/tools/flutter/components/helpers.ts	type-string	main	LiteralType	mapFigmaToFlutterAlignment	1	K-SCHEMA	rule: TypeScript literal type of our own API
 src/tools/flutter/screens/helpers.ts	number	0	arg(sectionsSource.slice)	generateScreenStructureReport	1	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:280)
-src/tools/flutter/screens/helpers.ts	number	0	arg(word.charAt)	toPascalCase	1	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:591)
 src/tools/flutter/screens/helpers.ts	number	0	binary(===)	formatFixedOnScroll	1	K-CONV	index, count, midpoint or identity element
 src/tools/flutter/screens/helpers.ts	number	0	binary(===)	generateScreenStructureReport	1	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:268)
 src/tools/flutter/screens/helpers.ts	number	0	binary(>)	generateFlutterScreenGuidance	2	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:460)
@@ -1575,7 +1567,6 @@ src/tools/flutter/screens/helpers.ts	number	0	binary(>)	generateScreenAnalysisRe
 src/tools/flutter/screens/helpers.ts	number	0	binary(>)	generateScreenStructureReport	4	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:305)
 src/tools/flutter/screens/helpers.ts	number	0	binary(||)	generateScreenStructureReport	2	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:248)
 src/tools/flutter/screens/helpers.ts	number	0	param-default(depth)	generateChildLayoutEvidence	1	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:20)
-src/tools/flutter/screens/helpers.ts	number	1	arg(word.slice)	toPascalCase	1	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:591)
 src/tools/flutter/screens/helpers.ts	number	1	binary(+)	generateChildLayoutEvidence	1	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:57)
 src/tools/flutter/screens/helpers.ts	number	1	binary(+)	generateFlutterScreenGuidance	1	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:486)
 src/tools/flutter/screens/helpers.ts	number	1	binary(+)	generateScreenAnalysisReport	3	K-CONV	bulk: identity/halving/index/8-bit/hex radix (helpers.ts:116)
@@ -1583,17 +1574,12 @@ src/tools/flutter/screens/helpers.ts	number	1	binary(+)	generateScreenStructureR
 src/tools/flutter/screens/helpers.ts	number	2	param-default(maxDepth)	generateChildLayoutEvidence	1	F-HEUR	analysis cap; removed by ticket 15
 src/tools/flutter/screens/helpers.ts	number	2	var(count)	childWidgetNames	1	K-CONV	index, count, midpoint or identity element
 src/tools/flutter/screens/helpers.ts	number	20	arg(sectionsSource.slice)	generateScreenStructureReport	1	F-HEUR	analysis cap; removed by ticket 15
-src/tools/flutter/screens/helpers.ts	regex	/[^a-zA-Z0-9]/g	arg(str\n        .replace)	toPascalCase	1	K-DART	bulk: builds a Dart class identifier (helpers.ts:590)
-src/tools/flutter/screens/helpers.ts	regex	/\s/g	arg(slice(1).toLowerCase())\n        .replace)	toPascalCase	1	K-DART	bulk: builds a Dart class identifier (helpers.ts:592)
-src/tools/flutter/screens/helpers.ts	regex	/\w+/g	arg(e(/[^a-zA-Z0-9]/g, ' ')\n        .replace)	toPascalCase	1	K-DART	bulk: builds a Dart class identifier (helpers.ts:591)
 src/tools/flutter/screens/helpers.ts	regex	/^[A-Za-z]/	PropertyAccessExpression	childWidgetNames	1	K-SCHEMA	sanitising or parsing regex
 src/tools/flutter/screens/helpers.ts	string		arg(${child.type}, ${child.nodeId})\n`).join)	formatFixedOnScroll	1	K-TEXT	report, label, log or error text
 src/tools/flutter/screens/helpers.ts	string		arg(formatFills)	generateScreenStructureReport	1	K-CONV	bulk: empty-string identity (helpers.ts:285)
-src/tools/flutter/screens/helpers.ts	string		arg(slice(1).toLowerCase())\n        .replace)	toPascalCase	1	K-CONV	bulk: empty-string identity (helpers.ts:592)
 src/tools/flutter/screens/helpers.ts	string		return	formatFixedOnScroll	1	K-TEXT	report, label, log or error text
 src/tools/flutter/screens/helpers.ts	string		ternary	generateScreenStructureReport	2	K-CONV	bulk: empty-string identity (helpers.ts:285)
 src/tools/flutter/screens/helpers.ts	string		var(output)	generateChildLayoutEvidence	1	K-CONV	bulk: empty-string identity (helpers.ts:23)
-src/tools/flutter/screens/helpers.ts	string	 	arg(str\n        .replace)	toPascalCase	1	K-DART	bulk: identifier construction (helpers.ts:590)
 src/tools/flutter/screens/helpers.ts	string	   	arg(formatCategorizedEffects)	generateScreenAnalysisReport	1	K-TEXT	bulk: report/log text with no design fact (helpers.ts:130)
 src/tools/flutter/screens/helpers.ts	string	   	arg(formatFigmaEffects)	generateScreenStructureReport	1	K-TEXT	bulk: report/log text with no design fact (helpers.ts:327)
 src/tools/flutter/screens/helpers.ts	string	   	arg(formatFigmaNodeBoxEvidence)	generateScreenStructureReport	1	K-TEXT	bulk: report/log text with no design fact (helpers.ts:326)

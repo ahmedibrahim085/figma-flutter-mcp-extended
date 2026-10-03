@@ -11,6 +11,7 @@ import {formatCategorizedEffects} from "../../../utils/effects-format.js";
 import {filterEffectivelyVisibleChildren, isEffectivelyVisible} from "../../../utils/visibility.js";
 import {formatPadding, formatStrokes, formatSizingAlignment} from "../../../utils/style-format.js";
 import {generateFigmaUrl} from "../../../utils/figma-url-parser.js";
+import {typeName} from "../../../utils/dart-names.js";
 
 /**
  * Generate comprehensive component analysis report
@@ -284,7 +285,7 @@ export function generateFlutterGuidance(analysis: ComponentAnalysis): string {
         guidance += `Component Architecture:\n`;
         guidance += `Create separate widget classes for reusability:\n`;
         analysis.nestedComponents.forEach((comp, index) => {
-            const widgetName = toPascalCase(comp.name);
+            const widgetName = typeName(comp.name);
             guidance += `${index + 1}. ${widgetName}() - Node ID: ${comp.nodeId}\n`;
         });
         guidance += `\nAnalyze each nested component separately using the analyze_figma_component tool.\n\n`;
@@ -439,9 +440,3 @@ export function hasVisualStyling(styling: any): boolean {
         styling.cornerRadius !== undefined || styling.effects?.dropShadows?.length);
 }
 
-export function toPascalCase(str: string): string {
-    return str
-        .replace(/[^a-zA-Z0-9]/g, ' ')
-        .replace(/\w+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .replace(/\s/g, '');
-}

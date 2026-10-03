@@ -19,6 +19,7 @@ import {
     formatSizingAlignment
 } from "../../../utils/style-format.js";
 import {generateFigmaUrl} from "../../../utils/figma-url-parser.js";
+import {typeName} from "../../../utils/dart-names.js";
 
 export function generateChildLayoutEvidence(
     children: ComponentChild[],
@@ -340,17 +341,11 @@ function formatFixedOnScroll(children: Array<{name: string; type: string; nodeId
 function childWidgetNames(children: Array<{name: string}>): string[] {
     const used = new Set<string>();
     return children.map(child => {
-        const base = /^[A-Za-z]/.test(toPascalCase(child.name)) ? toPascalCase(child.name) : `W${toPascalCase(child.name)}`;
+        const typed = typeName(child.name);
+        const base = /^[A-Za-z]/.test(typed) ? typed : `W${typed}`;
         let name = base;
         for (let count = 2; used.has(name); count++) name = `${base}${count}`;
         used.add(name);
         return name;
     });
-}
-
-function toPascalCase(str: string): string {
-    return str
-        .replace(/[^a-zA-Z0-9]/g, ' ')
-        .replace(/\w+/g, (word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-        .replace(/\s/g, '');
 }

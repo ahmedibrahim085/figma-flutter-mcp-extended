@@ -103,11 +103,10 @@ export function registerSvgAssetTools(server: McpServer, figmaApiKey: string) {
                 await updatePubspecAssets(pubspecPath, downloadedAssets);
 
                 let output = `Successfully exported ${svgNodes.length} SVG assets to Flutter project!\n\n`;
-                output += `SVG Assets Directory: ${assetsDir}\n\n`;
                 output += `Downloaded SVG Assets:\n`;
 
                 downloadedAssets.forEach(asset => {
-                    output += `- ${asset.filename} (${asset.size})\n`;
+                    output += `  • ${asset.path} (${asset.size})\n`;
                 });
 
                 output += `\n${await assetUsageReport(downloadedAssets, [constants], projectPath)}`;

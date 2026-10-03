@@ -74,7 +74,7 @@ test('assets go under the top-level flutter block, not dependencies: flutter:', 
     const dir = await tempProject(t, FLUTTER_CREATE_PUBSPEC);
     const {text} = await exportImages(dir, [HERO]);
 
-    assert.match(text, /Successfully exported 1 image assets/);
+    assert.match(text, /Successfully exported 1 assets/);
     const pubspec = await readPubspec(dir);
     assert.equal(pubspec.text, `name: app
 

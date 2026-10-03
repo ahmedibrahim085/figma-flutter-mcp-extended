@@ -153,3 +153,25 @@ for (const [tool, args] of REFUSING) {
         assert.deepEqual(await readdir(dir), []);
     });
 }
+
+test('export_flutter_assets: one SVG and one PNG are listed by the project path each was written to', async (t) => {
+    const dir = await tempProject(t, PUBSPEC);
+    const logo = photo('6:1', 'My Logo');
+    const mark = vector('6:2', 'Mark', 'SVG');
+    const {text} = await callToolOffline(figma([logo, mark], [{ids: ['6:1'], format: 'png', scale: 2}, {ids: ['6:2'], format: 'svg'}]), 'export_flutter_assets',
+        {fileId: FILE_KEY, nodeIds: ['6:1', '6:2'], projectPath: dir});
+
+    assert.match(text, /^Successfully exported 2 assets/);
+    assert.match(text, /^\s*• assets\/images\/2\.0x\/my_logo\.png \(/m);
+    assert.match(text, /^\s*• assets\/svgs\/mark\.svg \(/m);
+    assert.doesNotMatch(text, /Assets Directory/);
+});
+
+test('export_svg_flutter_assets: the exported SVG is listed by its project path', async (t) => {
+    const dir = await tempProject(t, PUBSPEC);
+    const {text} = await callToolOffline(figma([vector('7:1', 'Brand Mark', 'SVG')], [{ids: ['7:1'], format: 'svg'}]), 'export_svg_flutter_assets',
+        {fileId: FILE_KEY, nodeIds: ['7:1'], projectPath: dir});
+
+    assert.match(text, /^\s*• assets\/svgs\/brand_mark\.svg \(/m);
+    assert.doesNotMatch(text, /SVG Assets Directory/);
+});

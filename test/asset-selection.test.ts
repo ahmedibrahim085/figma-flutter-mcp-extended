@@ -242,7 +242,7 @@ test('export_flutter_assets names a node Figma returned no image for and counts 
         {ids: ['5:1', '5:2', '5:3'], format: 'png', scale: 2, missing: ['5:3']},
     ]), 'export_flutter_assets', {fileId: FILE_KEY, nodeIds: ['5:1'], projectPath: dir});
 
-    assert.match(text, /Successfully exported 2 image assets/);
+    assert.match(text, /Successfully exported 2 assets/);
     assert.match(text, /Lost \(5:3\): Figma returned no image/);
     assert.equal(existsSync(join(dir, 'assets/images/2.0x/lost.png')), false);
     assert.deepEqual(await readFile(join(dir, 'assets/images/2.0x/kept.png')), PNG);
@@ -267,7 +267,7 @@ test('export_flutter_assets names a download that failed, keeps the notes of the
         {ids: ['5:1', '5:2', '5:3'], format: 'png', scale: 2, failDownload: ['5:3']},
     ]), 'export_flutter_assets', {fileId: FILE_KEY, nodeIds: ['5:1'], projectPath: dir});
 
-    assert.match(text, /Successfully exported 2 image assets/);
+    assert.match(text, /Successfully exported 2 assets/);
     assert.match(text, /Broken \(5:3\): download failed for png at \dx \(HTTP 404\); not exported/);
     assert.doesNotMatch(text, /render\/|http:\/\//);
     assert.equal(existsSync(join(dir, 'assets/images/2.0x/broken.png')), false);
@@ -299,7 +299,7 @@ test('when one ratio of a node downloads and another fails, only the failed rati
         {ids: ['5:2'], format: 'png', scale: 1.5}, {ids: ['5:2'], format: 'png', scale: 3, failDownload: ['5:2']},
     ]), 'export_flutter_assets', {fileId: FILE_KEY, nodeIds: ['5:2'], projectPath: dir, devicePixelRatios: [1.5, 3]});
 
-    assert.match(text, /Successfully exported 1 image assets/);
+    assert.match(text, /Successfully exported 1 assets/);
     assert.deepEqual(await readFile(join(dir, 'assets/images/1.5x/hero_image.png')), PNG);
     assert.equal(existsSync(join(dir, 'assets/images/3.0x/hero_image.png')), false);
     const notes = text.split('\n').filter((line) => line.includes('download failed'));

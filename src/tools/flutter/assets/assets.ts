@@ -2,18 +2,15 @@
 import {z} from "zod";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
-import {join} from 'path';
 import {
     DEVICE_PIXEL_RATIOS,
     devicePixelRatiosInput,
     exportAssetNodes,
-    groupAssetsByBaseName,
     selectAssetNodes
 } from "./asset-manager.js";
 import {assetUsageReport} from "./asset-report.js";
 import {hasPubspec, missingPubspecMessage} from "../../../utils/project-conventions.js";
 import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
-import defaults from '../../../defaults.json' with { type: 'json' };
 
 export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string) {
     // Tool: Export Flutter Assets
@@ -72,17 +69,10 @@ export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string
                     };
                 }
 
-                let output = `Successfully exported ${new Set(downloadedAssets.map(asset => asset.nodeId)).size} image assets to Flutter project!\n\n`;
-                output += `Assets Directory: ${join(projectPath, defaults.output.imagesDir)}\n\n`;
+                let output = `Successfully exported ${new Set(downloadedAssets.map(asset => asset.nodeId)).size} assets to Flutter project!\n\n`;
                 output += `Downloaded Assets:\n`;
-
-                // Group by base name for cleaner output
-                const groupedAssets = groupAssetsByBaseName(downloadedAssets);
-                Object.entries(groupedAssets).forEach(([baseName, assets]) => {
-                    output += `- ${baseName}:\n`;
-                    assets.forEach(asset => {
-                        output += `  • ${asset.filename} (${asset.size})\n`;
-                    });
+                downloadedAssets.forEach(asset => {
+                    output += `  • ${asset.path} (${asset.size})\n`;
                 });
                 if (notes.length > 0) {
                     output += `\nExport notes:\n${notes.map(note => `- ${note}\n`).join('')}`;

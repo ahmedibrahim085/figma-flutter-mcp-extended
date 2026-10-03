@@ -84,6 +84,8 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     .describe('Optional node ID to scope the tree (e.g. "12:86"). Omit for full file.'),
                 depth: z
                     .number()
+                    .int()
+                    .min(1)
                     .optional()
                     .describe(
                         'How deep into the node tree to traverse; omit for all levels. ' +
@@ -228,6 +230,8 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 nodeId: z.string().describe('Node ID to extract (e.g. "12:3458")'),
                 depth: z
                     .number()
+                    .int()
+                    .min(1)
                     .optional()
                     .describe(
                         'How deep into the node tree to traverse; omit for all levels. ' +

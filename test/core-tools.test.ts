@@ -44,3 +44,14 @@ test('a 300-character text comes back whole from both tree tools', async () => {
         'ff_get_design_context', {fileKey: FILE_KEY, nodeId: '1:1'});
     assert.equal(JSON.parse(context.text).tree.children[0].text, long);
 });
+
+for (const tool of ['ff_get_metadata', 'ff_get_design_context']) {
+    for (const depth of [0, -1, 2.5]) {
+        test(`${tool} rejects depth ${depth} before calling Figma`, async () => {
+            const {isError, text, requests} = await callToolOffline({}, tool, {fileKey: FILE_KEY, nodeId: '1:1', depth});
+            assert.equal(isError, true, text);
+            assert.match(text, /depth/);
+            assert.deepEqual(requests, []);
+        });
+    }
+}

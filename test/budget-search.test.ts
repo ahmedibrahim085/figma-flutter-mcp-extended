@@ -1,4 +1,6 @@
 // The budget cut finds the most items that fit without rendering the whole tree first.
+// The first three tests import renderWithinBudget directly: they need render functions with chosen sizes, which no tool call
+// can supply through the stdio seam, and they count the renders. The five reply pins below stay at the stdio seam.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';

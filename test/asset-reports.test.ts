@@ -148,7 +148,7 @@ for (const [tool, args] of REFUSING) {
         const result: OfflineToolResult = await callToolOffline(figma([photo('6:1', 'My Logo')], [{ids: ['6:1'], format: 'png', scale: 2}]), tool, {...args, projectPath: dir});
 
         assert.equal(result.isError, true);
-        assert.match(result.text, /pubspec\.yaml/);
+        assert.match(result.text, /^No pubspec\.yaml in /);
         assert.deepEqual(result.requests, []);
         assert.deepEqual(await readdir(dir), []);
     });
@@ -174,4 +174,15 @@ test('export_svg_flutter_assets: the exported SVG is listed by its project path'
 
     assert.match(text, /^\s*• assets\/svgs\/brand_mark\.svg \(/m);
     assert.doesNotMatch(text, /SVG Assets Directory/);
+});
+
+test('generate_golden_file_test: a pubspec.yaml without name: errors saying so and writes nothing else', async (t) => {
+    const dir = await tempProject(t, 'flutter:\n  uses-material-design: true\n', false);
+    const {text, isError, requests} = await callToolOffline({}, 'generate_golden_file_test',
+        {widgetName: 'ContinueButton', widgetImportPath: 'widgets/continue_button.dart', projectPath: dir});
+
+    assert.equal(isError, true);
+    assert.match(text, /^pubspec\.yaml in .* has no name: line/);
+    assert.deepEqual(requests, []);
+    assert.deepEqual(await readdir(dir), ['pubspec.yaml']);
 });

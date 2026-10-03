@@ -23,7 +23,7 @@ const themeMode = args[0] === '--theme';
 const typographyMode = args[0] === '--typography';
 const [fixture, nodeId] = themeMode || typographyMode || assetsMode ? args.slice(1) : args;
 if (assetsMode ? !fixture : !fixture || !nodeId) {
-    console.error('usage: generate.mts [--theme | --typography] <fixture name or path> <nodeId>');
+    console.error('usage: generate.mts [--theme | --typography] <fixture name or path> <nodeId> | --assets <Flutter project dir>');
     process.exit(2);
 }
 const HOSTS = `<String, Widget Function(Widget)>{

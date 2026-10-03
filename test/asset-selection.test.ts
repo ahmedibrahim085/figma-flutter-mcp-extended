@@ -268,7 +268,7 @@ test('export_flutter_assets names a download that failed, keeps the notes of the
     ]), 'export_flutter_assets', {fileId: FILE_KEY, nodeIds: ['5:1'], projectPath: dir});
 
     assert.match(text, /Successfully exported 2 image assets/);
-    assert.match(text, /Broken \(5:3\): download failed \(HTTP 404\); not exported/);
+    assert.match(text, /Broken \(5:3\): download failed for png at \dx \(HTTP 404\); not exported/);
     assert.doesNotMatch(text, /render\/|http:\/\//);
     assert.equal(existsSync(join(dir, 'assets/images/2.0x/broken.png')), false);
     assert.deepEqual(await readFile(join(dir, 'assets/images/2.0x/kept.png')), PNG);
@@ -281,13 +281,27 @@ test('the analyse tools name a download that failed too, and a run where every d
         'analyze_frame_as_screen', {input: FILE_KEY, nodeId: '5:1', extractAssets: true, projectPath: dir});
 
     assert.match(some.text, /Found and exported 1 screen asset/);
-    assert.match(some.text, /Broken \(5:3\): download failed \(HTTP 404\); not exported/);
+    assert.match(some.text, /Broken \(5:3\): download failed for png at \dx \(HTTP 404\); not exported/);
     assert.match(some.text, /suffix "@big" is reported/);
 
     const none = await tempProject(t);
     const all = await callToolOffline(figma(screen([photo('5:2', 'Only')]), [{ids: ['5:2'], format: 'png', scale: 2, failDownload: ['5:2']}]),
         'analyze_figma_component', {input: FILE_KEY, nodeId: '5:1', userDefinedComponent: true, exportAssets: true, projectPath: none, useDeduplication: false});
 
-    assert.match(all.text, /Only \(5:2\): download failed \(HTTP 404\); not exported/);
+    assert.match(all.text, /Only \(5:2\): download failed for png at 2x \(HTTP 404\); not exported/);
     assert.equal(existsSync(join(none, 'assets/images/2.0x/only.png')), false);
+});
+
+test('when one ratio of a node downloads and another fails, only the failed ratio is named', async (t) => {
+    const dir = await tempProject(t);
+    const hero = photo('5:2', 'Hero Image');
+    const {text} = await callToolOffline(figma(hero, [
+        {ids: ['5:2'], format: 'png', scale: 1.5}, {ids: ['5:2'], format: 'png', scale: 3, failDownload: ['5:2']},
+    ]), 'export_flutter_assets', {fileId: FILE_KEY, nodeIds: ['5:2'], projectPath: dir, devicePixelRatios: [1.5, 3]});
+
+    assert.match(text, /Successfully exported 1 image assets/);
+    assert.deepEqual(await readFile(join(dir, 'assets/images/1.5x/hero_image.png')), PNG);
+    assert.equal(existsSync(join(dir, 'assets/images/3.0x/hero_image.png')), false);
+    const notes = text.split('\n').filter((line) => line.includes('download failed'));
+    assert.deepEqual(notes.map((line) => line.trim()), ['- Hero Image (5:2): download failed for png at 3x (HTTP 404); not exported']);
 });

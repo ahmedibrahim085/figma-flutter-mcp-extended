@@ -513,7 +513,7 @@ export async function exportAssetNodes(options: {
                     await downloadImage(url, filepath);
                 } catch (error) {
                     // The agent sees only the tool's text, so the failure goes there; the URL carries a signed token and stays out.
-                    notes.push(`${node.name} (${node.id}): download failed (${shortReason(error)}); not exported`);
+                    notes.push(`${node.name} (${node.id}): download failed for ${format}${vector ? '' : ` at ${scale}x`} (${shortReason(error)}); not exported`);
                     continue;
                 }
                 assets.push({

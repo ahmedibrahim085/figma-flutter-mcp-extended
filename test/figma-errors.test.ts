@@ -94,5 +94,6 @@ test('429 whose Retry-After is not a number keeps the default backoff', async ()
     const {requests} = await analyzeComponent({...rateLimited(1), headers: {'Retry-After': 'Wed, 21 Oct 2026 07:28:00 GMT'}});
 
     assert.equal(requests.length, 3);
+    // The first default backoff is retry.initialDelayMs in src/defaults.json (1000 ms); 900 leaves room for timer jitter. Change one with the other.
     assert.ok(requests[1].at - requests[0].at >= 900, `wait before the second attempt: ${requests[1].at - requests[0].at} ms`);
 });

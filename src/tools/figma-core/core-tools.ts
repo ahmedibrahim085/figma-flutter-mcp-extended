@@ -76,7 +76,7 @@ function renderTree(root: any, build: (tree: any, frames: any[]) => any): string
             result.truncated = true;
             result.omittedNodeIds = cut.omitted;
         }
-        return JSON.stringify(result, null, 2);
+        return JSON.stringify(result);
     };
     return renderWithinBudget(countNodes([root]), render);
 }
@@ -337,7 +337,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     structured.truncated = true;
                     structured.omittedVariableIds = entries.slice(count).map(([varId]) => varId);
                 }
-                return JSON.stringify(structured, null, 2);
+                return JSON.stringify(structured);
             };
 
             return {content: [{type: 'text' as const, text: renderWithinBudget(entries.length, render)}]};
@@ -360,11 +360,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 content: [
                     {
                         type: 'text' as const,
-                        text: JSON.stringify(
-                            {id: data.id, handle: data.handle, email: data.email, img_url: data.img_url},
-                            null,
-                            2,
-                        ),
+                        text: JSON.stringify({id: data.id, handle: data.handle, email: data.email, img_url: data.img_url}),
                     },
                 ],
             };

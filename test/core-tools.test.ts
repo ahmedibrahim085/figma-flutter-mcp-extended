@@ -269,14 +269,15 @@ test('the four JSON tools reply in compact JSON, without indentation or line bre
 });
 
 for (const {tool, query, treeKey} of TREE_TOOLS) {
-    test(`${tool}: compact JSON keeps more than 600 of 1500 children inside the budget (pretty JSON kept fewer than half that)`, async () => {
-        // One compact child is about 130 characters and one omitted id about 9: (100000 - 13500) / 121 is about 700 children.
+    test(`${tool}: compact JSON keeps more than 400 of 1500 children inside the budget (pretty JSON kept 215)`, async () => {
+        // A kept child costs about 120 characters in the tree plus about 75 in the frames list, an omitted id about 9:
+        // (100000 - 13500) / (195 - 9) is about 465 children.
         const children = Array.from({length: 1500}, (_, i) => wideNode(`2:${i}`));
         const {text} = await callToolOffline(nodesRoute(query, wideNode('1:1', {children})), tool, {fileKey: FILE_KEY, nodeId: '1:1'});
 
         const out = JSON.parse(text);
         assert.ok(text.length <= BUDGET, `response is ${text.length} characters`);
-        assert.ok(out[treeKey].children.length > 600, `kept ${out[treeKey].children.length}`);
+        assert.ok(out[treeKey].children.length > 400, `kept ${out[treeKey].children.length}`);
         assert.deepEqual([...out[treeKey].children.map((c: any) => c.id), ...out.omittedNodeIds], children.map((c) => c.id));
     });
 }

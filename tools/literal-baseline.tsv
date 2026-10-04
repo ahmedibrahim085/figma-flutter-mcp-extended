@@ -591,8 +591,6 @@ src/tools/figma-core/core-tools.ts	number	0	binary(>)	render	1	K-CONV	index, cou
 src/tools/figma-core/core-tools.ts	number	0	prop(included)	render	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	0.01	arg(Math.max)	registerCoreTools	1	K-API	hand: Figma images scale range min 0.01 (file-endpoints page: "A number between 0.01 and 4")
 src/tools/figma-core/core-tools.ts	number	1	arg(         .int()\n                    .min)	registerCoreTools	2	K-API	hand: Figma depth must be a positive integer (min 1), developers.figma.com/docs/rest-api/file-endpoints/
-src/tools/figma-core/core-tools.ts	number	2	arg(JSON.stringify)	registerCoreTools	1	K-TEXT	hand: JSON indent 2
-src/tools/figma-core/core-tools.ts	number	2	arg(JSON.stringify)	render	2	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	4	arg(Math.min)	registerCoreTools	1	K-API	hand: Figma images scale range max 4
 src/tools/figma-core/core-tools.ts	number	403	arg(FigmaError)	registerCoreTools	1	K-API	R7: HTTP status
 src/tools/figma-core/core-tools.ts	number	403	binary(===)	registerCoreTools	1	K-API	hand: HTTP 403

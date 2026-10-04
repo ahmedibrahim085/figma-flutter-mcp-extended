@@ -48,16 +48,18 @@ test('ff_get_design_context asks Figma for the node only: no geometry, no plugin
 });
 
 // Pinned from the request that asked for paths and plugin data (commit 8222242): the reply is byte for byte the same without them.
+// Re-pinned for compact JSON (B3.81). The four fixture pins equal the old pretty reply parsed and printed compact (length and hash
+// computed from the build before the change); the 3,000-node pin moved because more nodes now fit the budget.
 const fixture = (name: string) => {
     const [id, value] = Object.entries<any>(JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf-8')).nodes)[0];
     return {id, document: value.document};
 };
 const PINNED: Array<[name: string, count: number | string, length: number, sha: string]> = [
-    ['3,000-node tree', 3000, 99732, '6bbe37c3a6fb42e0'],
-    ['text-frame.json', 'text-frame.json', 4136, '7803c286a625eb1c'],
-    ['layout-frame.json', 'layout-frame.json', 9774, '55852603d628e50f'],
-    ['paints-frame.json', 'paints-frame.json', 4002, '405912ce6a2529e5'],
-    ['component-button-set.json', 'component-button-set.json', 14227, 'c4cd2ebab1d12557'],
+    ['3,000-node tree', 3000, 99911, '9fecf11138c7a681'],
+    ['text-frame.json', 'text-frame.json', 2372, '5737881b27da3f5e'],
+    ['layout-frame.json', 'layout-frame.json', 4566, 'ae361ad97e74b40e'],
+    ['paints-frame.json', 'paints-frame.json', 2126, '72ea29d02d173e5a'],
+    ['component-button-set.json', 'component-button-set.json', 5760, '88b40fa29348c2c9'],
 ];
 for (const [name, source, length, hash] of PINNED) {
     test(`${name}: the reply is the same whether or not Figma sent vector paths and plugin data`, async () => {

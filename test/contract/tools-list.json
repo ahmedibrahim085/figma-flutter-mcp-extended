@@ -36,7 +36,7 @@
   {
     "name": "ff_get_screenshot",
     "title": "Get Figma Node Screenshot",
-    "description": "Capture a PNG/JPG/SVG screenshot of a specific Figma node. Returns the image as a base64-encoded image content block or a URL. Target individual top-level frames, not sections or pages.",
+    "description": "Capture a PNG/JPG/SVG/PDF screenshot of a specific Figma node. Returns the image as a base64-encoded image content block (a PDF as an embedded resource) or a URL. Target individual top-level frames, not sections or pages.",
     "inputSchema": {
       "type": "object",
       "properties": {
@@ -50,7 +50,13 @@
         },
         "format": {
           "type": "string",
-          "description": "Image format: png, jpg, svg, or pdf (default: png)"
+          "enum": [
+            "png",
+            "jpg",
+            "svg",
+            "pdf"
+          ],
+          "description": "Image format (default: png)"
         },
         "scale": {
           "type": "number",

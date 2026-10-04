@@ -87,10 +87,44 @@ function find(root: any, id: string): any {
     return undefined;
 }
 
+/** The node `id` as the file holds it: inside a frame, a page or the document (the last two put together from their frames). Undefined for an id the file lacks. */
+async function nodeOf(index: Index, id: string, frame: (number: number) => Promise<any>): Promise<any> {
+    if (!index.shells[id]) return index.owner[id] === undefined ? undefined : find(await frame(index.owner[id]), id);
+    const page = async (pageId: string) => ({...index.shells[pageId], children: await Promise.all(index.pages[pageId].map(frame))});
+    if (id !== index.documentId) return page(id);
+    return {...index.shells[id], children: await Promise.all(Object.keys(index.pages).map(page))};
+}
+
+/**
+ * The maps of one `/nodes` entry: the part of the file-wide maps that the subtree uses. Figma lists them in the order the
+ * subtree first refers to each item, children before their parent (checked on 7 real entries of two files). Its componentSets
+ * entries carry other metadata fields than the file-wide map in some files (`remote` for `documentationLinks`); the tools
+ * read only their `name`.
+ */
+function entryMaps(index: Index, document: any) {
+    const members = postOrder(document);
+    const componentKeys = new Set<string>();
+    const styleKeys = new Set<string>();
+    for (const node of members) {
+        if (node.id in index.components) componentKeys.add(node.id);
+        if (typeof node.componentId === 'string' && node.componentId in index.components) componentKeys.add(node.componentId);
+        for (const [key, value] of Object.entries(node)) {
+            if (key.endsWith('StyleId') && typeof value === 'string') styleKeys.add(value);
+            else if (key === 'styles' && value && typeof value === 'object') Object.values(value).forEach((style) => typeof style === 'string' && styleKeys.add(style));
+        }
+    }
+    const pick = (map: Record<string, any>, keys: Iterable<string>) => Object.fromEntries([...keys].filter((key) => key in map).map((key) => [key, map[key]]));
+    const components = pick(index.components, componentKeys);
+    const setKeys = new Set<string>(Object.values(components).flatMap((component: any) => (component.componentSetId ? [component.componentSetId] : [])));
+    for (const node of members) if (node.id in index.componentSets) setKeys.add(node.id);
+    return {components, componentSets: pick(index.componentSets, setKeys), styles: pick(index.styles, styleKeys)};
+}
+
 /**
  * The reply of `GET /files/:key/nodes?ids=` for `ids`, cut from the stored snapshot: each entry holds the node and the
  * part of the file-wide maps that its subtree uses, which is what Figma sends. An id the file does not hold is `null`,
- * as in Figma's reply. Undefined when there is no snapshot.
+ * as in Figma's reply. Undefined when there is no snapshot; throws when the frames entry is gone, and the caller then
+ * reads the node from Figma.
  */
 export async function readSnapshotNodes(cache: FileCache, ids: string[]): Promise<any | undefined> {
     const stored = await cache.read(INDEX);
@@ -104,39 +138,13 @@ export async function readSnapshotNodes(cache: FileCache, ids: string[]): Promis
     };
     const nodes: Record<string, any> = {};
     for (const id of ids) {
-        let document: any;
-        if (index.shells[id]) {
-            document = index.shells[id];
-            if (id === index.documentId) {
-                document.children = await Promise.all(Object.keys(index.pages).map(async (page) => ({...index.shells[page], children: await Promise.all(index.pages[page].map(frame))})));
-            } else {
-                document.children = await Promise.all(index.pages[id].map(frame));
-            }
-        } else if (index.owner[id] !== undefined) {
-            document = find(await frame(index.owner[id]), id);
-        }
+        const document = await nodeOf(index, id, frame);
         if (!document) {
             nodes[id] = null;
             continue;
         }
-        // Figma lists the maps of an entry in the order the subtree first refers to each item, children before their
-        // parent (checked on 7 real entries of two files). Its componentSets entries carry other metadata fields than the
-        // file-wide map in some files (`remote` for `documentationLinks`); the tools read only their `name`.
-        const componentKeys = new Set<string>();
-        const styleKeys = new Set<string>();
-        for (const node of postOrder(document)) {
-            if (node.id in index.components) componentKeys.add(node.id);
-            if (typeof node.componentId === 'string' && node.componentId in index.components) componentKeys.add(node.componentId);
-            for (const [key, value] of Object.entries(node)) {
-                if (key.endsWith('StyleId') && typeof value === 'string') styleKeys.add(value);
-                else if (key === 'styles' && value && typeof value === 'object') Object.values(value).forEach((style) => typeof style === 'string' && styleKeys.add(style));
-            }
-        }
-        const pick = (map: Record<string, any>, keys: Iterable<string>) => Object.fromEntries([...keys].filter((key) => key in map).map((key) => [key, map[key]]));
-        const components = pick(index.components, componentKeys);
-        const setKeys = new Set<string>(Object.values(components).flatMap((component: any) => (component.componentSetId ? [component.componentSetId] : [])));
-        for (const node of postOrder(document)) if (node.id in index.componentSets) setKeys.add(node.id);
-        nodes[id] = {document, components, componentSets: pick(index.componentSets, setKeys), schemaVersion: index.schemaVersion, styles: pick(index.styles, styleKeys)};
+        const {components, componentSets, styles} = entryMaps(index, document);
+        nodes[id] = {document, components, componentSets, schemaVersion: index.schemaVersion, styles};
     }
     return {...index.top, nodes};
 }

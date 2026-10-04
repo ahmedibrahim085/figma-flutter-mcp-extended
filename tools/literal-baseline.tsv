@@ -2369,7 +2369,6 @@ src/utils/budget.ts	number	0	arg(nodes.reduce)	countNodes	1	K-CONV	rule: 0/1/-1/
 src/utils/budget.ts	number	1	param-default(least)	renderWithinBudget	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/utils/budget.ts	number	1	binary(>)	renderWithinBudget	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/utils/budget.ts	number	2	binary(/)	renderWithinBudget	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
-src/utils/budget.ts	number	1	binary(+)	renderWithinBudget	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/utils/budget.ts	number	1	binary(+)	renderWithinBudget	2	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/utils/budget.ts	number	16	binary(*)	renderWithinBudget	1	K-CONV	search step cap: the next render is at most 16x the last, so a wrong length estimate cannot render far over the budget; not a design fact
 src/utils/budget.ts	number	2	binary(*)	renderWithinBudget	1	K-CONV	search step floor: the next render is at least 2x the last, so the search always advances
@@ -2413,13 +2412,11 @@ src/services/figma-snapshot.ts	string	editorType	array(TOP_FIELDS)	TOP_FIELDS	1	
 src/services/figma-snapshot.ts	string	linkAccess	array(TOP_FIELDS)	TOP_FIELDS	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
 src/services/figma-snapshot.ts	number	0	var(offset)	storeSnapshot	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/services/figma-snapshot.ts	string	snapshot frames are missing	arg(Error)	frame	1	K-TEXT	internal error text, never shown as a tool reply (the read falls back to Figma)
-src/services/figma-snapshot.ts	string	string	binary(===)	readSnapshotNodes	1	K-API	typeof tag
-src/services/figma-snapshot.ts	string	StyleId	arg(key.endsWith)	readSnapshotNodes	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
-src/services/figma-snapshot.ts	string	string	binary(===)	readSnapshotNodes	2	K-API	typeof tag
-src/services/figma-snapshot.ts	string	styles	binary(===)	readSnapshotNodes	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
-src/services/figma-snapshot.ts	string	object	binary(===)	readSnapshotNodes	1	K-API	typeof tag
-src/services/figma-snapshot.ts	string	string	binary(===)	readSnapshotNodes	3	K-API	typeof tag
 src/services/figma.ts	string	ids	arg(params.get)	snapshotIds	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
 src/services/figma.ts	string	ids	binary(===)	snapshotIds	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
 src/services/figma.ts	string	,	arg(ids.split)	snapshotIds	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
 src/services/figma.ts	template	/files/${…}	arg(this.makeRequest)	ensureSnapshot	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma-snapshot.ts	string	string	binary(===)	entryMaps	3	K-API	typeof tag
+src/services/figma-snapshot.ts	string	StyleId	arg(key.endsWith)	entryMaps	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma-snapshot.ts	string	styles	binary(===)	entryMaps	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma-snapshot.ts	string	object	binary(===)	entryMaps	1	K-API	typeof tag

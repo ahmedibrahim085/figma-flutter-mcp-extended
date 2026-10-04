@@ -66,7 +66,7 @@ export class FileCache {
                 await handle.close();
             }
         } catch {
-            return undefined;
+            return undefined; // a missing or unreadable entry reads as absent; the snapshot read then throws and the node is read from Figma
         }
     }
 

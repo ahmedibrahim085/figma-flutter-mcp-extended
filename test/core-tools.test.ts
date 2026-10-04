@@ -96,18 +96,20 @@ test('ff_get_variable_defs keeps every documented variable and collection field 
 });
 
 // A collection's id lists repeat the ids that `variables` already holds and do not shrink when the budget cuts the variables,
-// so over the budget they are left out: the listed variables plus omittedVariableIds say the same.
-test('ff_get_variable_defs: the id lists of a collection do not push a cut reply over the budget', async () => {
-    const variables = Array.from({length: 4000}, (_, i) => variable(`V:${i}`, 'VC:a'));
-    const big = {...collection('VC:a', 'Big'), variableIds: variables.map((v) => v.id)};
-    const {text} = await callToolOffline(variablesRoute(variables, [big]), 'ff_get_variable_defs', {fileKey: FILE_KEY});
+// so over the budget they are left out: the listed variables plus omittedVariableIds (or omittedVariableCount past the id cap) say the same.
+for (const count of [4000, 20000]) {
+    test(`ff_get_variable_defs: the id lists of a ${count}-variable collection do not push a cut reply over the budget`, async () => {
+        const variables = Array.from({length: count}, (_, i) => variable(`V:${i}`, 'VC:a'));
+        const big = {...collection('VC:a', 'Big'), variableIds: variables.map((v) => v.id)};
+        const {text} = await callToolOffline(variablesRoute(variables, [big]), 'ff_get_variable_defs', {fileKey: FILE_KEY});
 
-    const out = JSON.parse(text);
-    assert.ok(text.length <= 100000, `response is ${text.length} characters`);
-    assert.equal(out.truncated, true);
-    assert.equal('variableIds' in out.collections['VC:a'], false);
-    assert.equal(out.variableCount + out.omittedVariableIds.length, 4000);
-});
+        const out = JSON.parse(text);
+        assert.ok(text.length <= 100000, `response is ${text.length} characters`);
+        assert.equal(out.truncated, true);
+        assert.equal('variableIds' in out.collections['VC:a'], false);
+        assert.equal(out.variableCount + (out.omittedVariableCount ?? out.omittedVariableIds.length), count);
+    });
+}
 
 test('a variable whose collection is not in the response is still listed', async () => {
     const {text} = await callToolOffline(

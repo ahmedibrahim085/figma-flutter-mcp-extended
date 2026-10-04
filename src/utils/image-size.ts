@@ -2,7 +2,8 @@ const PNG_SIGNATURE = Buffer.from('89504e470d0a1a0a', 'hex');
 
 /** The pixel size a PNG or JPEG file declares (PNG: the IHDR chunk; JPEG: its start-of-frame marker); undefined for any other bytes. */
 export function imageSize(bytes: Buffer): {width: number; height: number} | undefined {
-    if (bytes.subarray(0, 8).equals(PNG_SIGNATURE)) return {width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20)};
+    // The IHDR chunk ends at byte 24; a shorter file has no size to read.
+    if (bytes.subarray(0, 8).equals(PNG_SIGNATURE)) return bytes.length >= 24 ? {width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20)} : undefined;
     if (bytes[0] !== 0xff || bytes[1] !== 0xd8) return undefined;
     for (let at = 2; at + 9 < bytes.length; ) {
         if (bytes[at] !== 0xff) return undefined;

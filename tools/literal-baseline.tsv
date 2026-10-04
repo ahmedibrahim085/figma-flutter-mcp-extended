@@ -2315,3 +2315,4 @@ src/utils/image-size.ts	number	7	binary(+)	imageSize	1	K-API	byte layout of PNG 
 src/utils/image-size.ts	number	5	binary(+)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
 src/utils/image-size.ts	number	2	binary(+)	imageSize	1	K-CONV	index, count, midpoint or identity element
 src/utils/image-size.ts	number	2	binary(+)	imageSize	2	K-CONV	index, count, midpoint or identity element
+src/utils/image-size.ts	number	24	binary(>=)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants

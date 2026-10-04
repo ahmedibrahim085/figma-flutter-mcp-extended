@@ -1,6 +1,7 @@
 // What a client sees in tools/list is the consumer contract: names, descriptions and input schemas. test/contract/tools-list.json is that
 // list as the server sent it on 2026-10-04 (commit 73ca458). A change to any tool's schema or description changes this file in the
-// same commit, and decision 38 asks for a consumer notice with it.
+// same commit, and decision 38 asks for a consumer notice with it. It starts the built server, so it runs through tools/test-run.mjs
+// (`npm test`), which builds first; run alone with `node --test` it reads whatever dist/ holds.
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';

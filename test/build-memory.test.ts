@@ -29,10 +29,22 @@ test('tsc --noEmit uses at most half of the default Node heap limit and under 20
     assert.ok(usedKb * 1024 <= limit / 2, `tsc used ${(usedKb / 1024).toFixed(0)} MB; the target is ${(limit / 2 / 1048576).toFixed(0)} MB (half of the ${(limit / 1048576).toFixed(0)} MB heap limit)`);
 });
 
+/** True when `source` loads zod's root entry: import, export ... from, a bare import, require() or a dynamic import(). */
+const importsZodRoot = (source: string) => /(\bfrom\s+|\bimport\s+|\brequire\(\s*|\bimport\(\s*)['"]zod['"]/.test(source);
+
+test('the root-import check sees every way to load zod from its root entry', () => {
+    for (const source of [`import {z} from 'zod';`, `import {z} from "zod"`, `export {z} from 'zod';`, `export * from "zod";`, `import 'zod';`, `const {z} = require('zod');`, `const z = await import("zod");`]) {
+        assert.equal(importsZodRoot(source), true, source);
+    }
+    for (const source of [`import {z} from 'zod/v3';`, `export {z} from "zod/v4";`, `const {z} = require('zod/v3');`, `// zod is imported from zod/v3`]) {
+        assert.equal(importsZodRoot(source), false, source);
+    }
+});
+
 test('no source file imports zod from its root entry: the MCP SDK types use zod/v3', () => {
     const files = (dir: string): string[] => readdirSync(dir, {withFileTypes: true}).flatMap((entry) =>
         entry.isDirectory() ? files(join(dir, entry.name)) : entry.name.endsWith('.ts') ? [join(dir, entry.name)] : []);
-    const offenders = files(join(ROOT, 'src')).filter((file) => /from\s+['"]zod['"]/.test(readFileSync(file, 'utf-8')));
+    const offenders = files(join(ROOT, 'src')).filter((file) => importsZodRoot(readFileSync(file, 'utf-8')));
 
     assert.deepEqual(offenders, [], 'import {z} from "zod/v3" instead: see test/build-memory.test.ts');
 });

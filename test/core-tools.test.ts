@@ -250,3 +250,33 @@ for (const {tool, query, treeKey} of TREE_TOOLS) {
         assert.equal('truncated' in out, false);
     });
 }
+
+// ── compact JSON (register B3.81) ────────────────────────────
+
+/** A JSON text with no whitespace outside strings: parsing and printing it again gives the same characters. */
+const isCompact = (text: string) => text === JSON.stringify(JSON.parse(text));
+
+test('the four JSON tools reply in compact JSON, without indentation or line breaks', async () => {
+    const tree = frame('1:1', {absoluteBoundingBox: {x: 0, y: 0, width: 390, height: 44}, children: [frame('1:2')]});
+    const metadata = await callToolOffline(nodesRoute('ids=1:1', tree), 'ff_get_metadata', {fileKey: FILE_KEY, nodeId: '1:1'});
+    const context = await callToolOffline(nodesRoute(DESIGN_CONTEXT_QUERY, tree), 'ff_get_design_context', {fileKey: FILE_KEY, nodeId: '1:1'});
+    const variables = await callToolOffline(variablesRoute([variable('V:1', 'VC:a')], [collection('VC:a', 'Colours')]), 'ff_get_variable_defs', {fileKey: FILE_KEY});
+    const whoami = await callToolOffline({'/me': {body: {id: '1', handle: 'h', email: 'e@x', img_url: 'u'}}}, 'ff_whoami', {});
+
+    for (const [tool, {text}] of Object.entries({ff_get_metadata: metadata, ff_get_design_context: context, ff_get_variable_defs: variables, ff_whoami: whoami})) {
+        assert.ok(isCompact(text), `${tool} replied with whitespace: ${text.slice(0, 80)}`);
+    }
+});
+
+for (const {tool, query, treeKey} of TREE_TOOLS) {
+    test(`${tool}: compact JSON keeps more than 600 of 1500 children inside the budget (pretty JSON kept fewer than half that)`, async () => {
+        // One compact child is about 130 characters and one omitted id about 9: (100000 - 13500) / 121 is about 700 children.
+        const children = Array.from({length: 1500}, (_, i) => wideNode(`2:${i}`));
+        const {text} = await callToolOffline(nodesRoute(query, wideNode('1:1', {children})), tool, {fileKey: FILE_KEY, nodeId: '1:1'});
+
+        const out = JSON.parse(text);
+        assert.ok(text.length <= BUDGET, `response is ${text.length} characters`);
+        assert.ok(out[treeKey].children.length > 600, `kept ${out[treeKey].children.length}`);
+        assert.deepEqual([...out[treeKey].children.map((c: any) => c.id), ...out.omittedNodeIds], children.map((c) => c.id));
+    });
+}

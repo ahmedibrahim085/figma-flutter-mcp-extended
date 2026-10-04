@@ -13,6 +13,8 @@ export interface FakeResponse {
 }
 
 export interface RecordedRequest {
+    /** When the fake received it, in ms since the epoch: the gap between two requests is the retry wait. */
+    at: number;
     method: string;
     /** Path without the `/v1` prefix, e.g. `/files/KEY/nodes`. */
     path: string;
@@ -44,6 +46,7 @@ export async function startFakeFigma(routeSpec: FakeRoutes): Promise<FakeFigma> 
         const url = new URL(req.url ?? '/', 'http://localhost');
         const path = url.pathname.replace(/^\/v1/, '');
         requests.push({
+            at: Date.now(),
             method: req.method ?? 'GET',
             path,
             query: Object.fromEntries(url.searchParams),

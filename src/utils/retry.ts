@@ -53,8 +53,9 @@ export async function withRetry<T>(
             let delay = opts.initialDelayMs * Math.pow(opts.backoffMultiplier, attempt - 1);
 
             // Handle rate limit specific delay
-            if (lastError instanceof FigmaRateLimitError && lastError.retryAfter) {
-                delay = lastError.retryAfter * 1000; // Convert to ms
+            // 0 seconds is a valid Retry-After ("retry now"); a header that is not a number (an HTTP date) leaves the default backoff.
+            if (lastError instanceof FigmaRateLimitError && Number.isFinite(lastError.retryAfter)) {
+                delay = lastError.retryAfter! * 1000; // Convert to ms
                 // Retrying before Retry-After only earns another 429 (a real Starter-plan
                 // 429 sent Retry-After: 354850, about 4 days), so fail now and surface the wait.
                 if (delay > opts.maxDelayMs) {

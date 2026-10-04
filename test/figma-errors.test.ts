@@ -79,3 +79,20 @@ test('429 with a Retry-After beyond the retry budget fails at once instead of re
         '(Retry after 354850 seconds, x-figma-plan-tier: starter, x-figma-rate-limit-type: high)');
     assert.deepEqual(sent(requests), [{path: NODES_PATH, query: {ids: '1:1'}}]);
 });
+
+test('429 with Retry-After: 0 is retried at once: 0 seconds is "retry now", not "no header"', async () => {
+    const {text, requests} = await analyzeComponent(rateLimited(0));
+
+    assert.equal(text, 'Error analyzing component: Figma 429: Rate limit exceeded ' +
+        '(Retry after 0 seconds, x-figma-plan-tier: starter, x-figma-rate-limit-type: high)');
+    assert.equal(requests.length, 3);
+    const gaps = requests.slice(1).map((request, i) => request.at - requests[i].at);
+    assert.ok(gaps.every((gap) => gap < 500), `waits between attempts: ${gaps.join(', ')} ms`);
+});
+
+test('429 whose Retry-After is not a number keeps the default backoff', async () => {
+    const {requests} = await analyzeComponent({...rateLimited(1), headers: {'Retry-After': 'Wed, 21 Oct 2026 07:28:00 GMT'}});
+
+    assert.equal(requests.length, 3);
+    assert.ok(requests[1].at - requests[0].at >= 900, `wait before the second attempt: ${requests[1].at - requests[0].at} ms`);
+});

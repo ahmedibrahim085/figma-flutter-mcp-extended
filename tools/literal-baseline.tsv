@@ -627,7 +627,7 @@ src/tools/figma-core/core-tools.ts	string	Returns the current authenticated user
 src/tools/figma-core/core-tools.ts	string	Returns the image as a base64-encoded image content block or a URL. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Target individual top-level frames, not sections or pages.	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	The Variables REST API requires an Enterprise plan (other plans get 403 "Limited by Figma plan").	binary(+)	registerCoreTools	1	K-TEXT	hand: Figma plan fact, verified: research/02-figma-variables-access.md:7,24-26
-src/tools/figma-core/core-tools.ts	string	This tool is exempt from rate limits — always safe to call.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	Figma rate-limits it like any call (Tier 3, the least limited tier), so it can return a 429.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Use this to discover all top-level frames before extracting individual ones.	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	ff_get_design_context	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
 src/tools/figma-core/core-tools.ts	string	ff_get_design_context error	arg(figmaTool)	registerCoreTools	1	K-TEXT	R8: error message text

@@ -73,6 +73,18 @@ test('stdio: the initialize instructions name the place to report a problem, fro
     assert.ok(init.result.instructions.includes(defaults.issuesUrl), init.result.instructions);
 });
 
+test('stdio: ff_whoami does not call itself exempt from rate limits: Figma puts GET /v1/me in Tier 3', async () => {
+    let tools: any[] = [];
+    await withServer(async (s) => {
+        await s.initialize();
+        tools = ((await s.request('tools/list')).result as any).tools;
+    });
+    const description: string = tools.find((tool) => tool.name === 'ff_whoami').description;
+
+    assert.doesNotMatch(description, /exempt/i);
+    assert.match(description, /Tier 3/);
+});
+
 test('stdio: generate_golden_file_test reports "Golden file test written to" the file it wrote, importing the pubspec package', async (t) => {
     const dir = mkdtempSync(join(tmpdir(), 'golden-'));
     t.after(() => rm(dir, {recursive: true, force: true}));

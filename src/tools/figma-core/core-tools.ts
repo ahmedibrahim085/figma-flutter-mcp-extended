@@ -351,7 +351,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
             title: 'Figma Who Am I',
             description:
                 'Returns the current authenticated user. Use this to verify the Figma MCP is working. ' +
-                'This tool is exempt from rate limits — always safe to call.',
+                'Figma rate-limits it like any call (Tier 3, the least limited tier), so it can return a 429.',
             inputSchema: {},
         },
         figmaTool('ff_whoami error', async () => {

@@ -72,11 +72,12 @@ for (const [tool, query] of [['ff_get_metadata', 'ids=1:1'], ['ff_get_design_con
 
 // ── B3.142: the cut keeps the most nodes that fit ────────────
 
-let seed = 20261004;
-const random = (below: number) => (seed = (seed * 1103515245 + 12345) % 2147483648) % below;
+const ID_LIST_CHARS = 20000;
+/** A seeded generator, made per test so results do not depend on the order the tests run in. */
+const seeded = (seed: number) => (below: number) => (seed = (seed * 1103515245 + 12345) % 2147483648) % below;
 
-/** A random tree of `count` nodes, depth at most 4, with ids of 3 to 60 characters, names of 20 to 60 and a mix of types. */
-function randomTree(count: number): any {
+/** A random tree of `count` nodes (all children of the root when `flat`, so many ids are omitted), depth at most 4, with ids of 2 to 60 characters, names of 20 to 60 and a mix of types. */
+function randomTree(count: number, random: (below: number) => number, flat = false): any {
     let made = 0;
     const node = (depth: number): any => {
         const id = `${made++}:${'x'.repeat(random(58))}`;
@@ -90,8 +91,8 @@ function randomTree(count: number): any {
     const root = {...node(0), type: 'FRAME', children: [] as any[]};
     const open = [root];
     while (made < count) {
-        const parent = open[random(open.length)];
-        const child = node(open.length > 1 ? 1 : 1);
+        const parent = flat ? root : open[random(open.length)];
+        const child = node(1);
         parent.children.push(child);
         if (child.children) open.push(child);
     }
@@ -99,7 +100,7 @@ function randomTree(count: number): any {
 }
 
 /** The documented ff_get_metadata reply for the first `limit` nodes in document order, written independently of the tool. */
-function reference(root: any, limit: number, indent: number): string {
+function reference(root: any, limit: number, indent: number): {text: string; omitted: number; listed: number} {
     let included = 0;
     const omitted: string[] = [];
     const frames: any[] = [];
@@ -121,30 +122,42 @@ function reference(root: any, limit: number, indent: number): string {
     };
     const nodeTree = summary(root);
     const reply: any = {fileName: FILE_KEY, nodeTree, topLevelFrames: frames, frameCount: frames.length};
+    let listed = 0;
     if (omitted.length > 0) {
+        // The id list is the longest prefix whose ids, joined with ", ", fit the cap; the true number is then given.
+        while (listed < omitted.length && omitted.slice(0, listed + 1).join(', ').length <= ID_LIST_CHARS) listed++;
         reply.truncated = true;
-        reply.omittedNodeIds = omitted;
+        reply.omittedNodeIds = omitted.slice(0, listed);
+        if (listed < omitted.length) reply.omittedNodeCount = omitted.length;
     }
-    return JSON.stringify(reply, null, indent || undefined);
+    return {text: JSON.stringify(reply, null, indent || undefined), omitted: omitted.length, listed};
 }
 
 const countNodes = (n: any): number => 1 + (n.children ?? []).reduce((total: number, c: any) => total + countNodes(c), 0);
 
-test('B3.142 pin: reply length never falls as more nodes are kept, and the tool keeps the most nodes that fit (15 random trees)', async () => {
-    for (let round = 0; round < 15; round++) {
-        const tree = randomTree(450 + random(150));
-        const {text} = await callToolOffline(nodesRoute('ids=' + tree.id, tree), 'ff_get_metadata', {fileKey: FILE_KEY, nodeId: tree.id});
-        const indent = text.includes('\n') ? 2 : 0;
-        const total = countNodes(tree);
-        let previous = 0;
-        let mostThatFit = 0;
-        for (let k = 1; k <= total; k++) {
-            const length = reference(tree, k, indent).length;
-            assert.ok(length >= previous, `round ${round}: ${k} nodes are ${length} characters, ${k - 1} were ${previous}`);
-            previous = length;
-            if (length <= BUDGET) mostThatFit = k;
-        }
-        assert.ok(mostThatFit >= 1, `round ${round}: not even the root fits`);
-        assert.equal(text, reference(tree, mostThatFit, indent), `round ${round}: ${total} nodes, the most that fit is ${mostThatFit}`);
+/** Walks k = 1..total: the reply length never falls as k grows, and the tool's reply equals the reference at the most k that fit. */
+async function checkTree(tree: any, label: string): Promise<{omitted: number; listed: number}> {
+    const {text} = await callToolOffline(nodesRoute('ids=' + tree.id, tree), 'ff_get_metadata', {fileKey: FILE_KEY, nodeId: tree.id});
+    const indent = text.includes('\n') ? 2 : 0;
+    let previous = 0;
+    let best: ReturnType<typeof reference> | undefined;
+    for (let k = 1; k <= countNodes(tree); k++) {
+        const r = reference(tree, k, indent);
+        assert.ok(r.text.length >= previous, `${label}: ${k} nodes are ${r.text.length} characters, ${k - 1} were ${previous}`);
+        previous = r.text.length;
+        if (r.text.length <= BUDGET) best = r;
     }
+    assert.ok(best, `${label}: not even the root fits`);
+    assert.equal(text, best.text, `${label}: the tool does not keep the most nodes that fit`);
+    return best;
+}
+
+test('B3.142 pin: reply length never falls as more nodes are kept, and the tool keeps the most nodes that fit (15 random trees)', async () => {
+    const random = seeded(20261004);
+    for (let round = 0; round < 15; round++) await checkTree(randomTree(450 + random(150), random), `round ${round}`);
+});
+
+test('B3.142 + B3.137 pin: a random tree whose omitted ids exceed the id cap lists a prefix and gives the true count', async () => {
+    const best = await checkTree(randomTree(1500, seeded(7), true), 'capped tree');
+    assert.ok(best.listed > 0 && best.listed < best.omitted, `the tree must exceed the cap to prove anything: ${best.listed} of ${best.omitted} ids listed`);
 });

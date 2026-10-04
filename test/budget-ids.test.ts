@@ -21,10 +21,12 @@ for (const [tool, query] of [['ff_get_metadata', 'ids=1:1'], ['ff_get_design_con
         const out = JSON.parse(text);
         assert.ok(text.length <= BUDGET, `response is ${text.length} characters`);
         assert.equal(out.truncated, true);
-        assert.equal(out.omittedNodeCount, MANY);
-        assert.ok(out.omittedNodeIds.length > 0 && out.omittedNodeIds.length < MANY, `${out.omittedNodeIds.length} ids listed`);
+        const kept = (out.nodeTree ?? out.tree).children.length;
+        assert.ok(kept > 0, 'some children are kept');
+        assert.equal(out.omittedNodeCount, MANY - kept);
+        assert.ok(out.omittedNodeIds.length > 0 && out.omittedNodeIds.length < out.omittedNodeCount, `${out.omittedNodeIds.length} ids listed`);
         // The ids listed are the first omitted ones, in document order.
-        assert.deepEqual(out.omittedNodeIds, children.slice(0, out.omittedNodeIds.length).map((c) => c.id));
+        assert.deepEqual(out.omittedNodeIds, children.slice(kept, kept + out.omittedNodeIds.length).map((c) => c.id));
     });
 }
 
@@ -47,10 +49,12 @@ test('inspect_frame_structure: the text report holds the budget when the omitted
     const {text} = await callToolOffline(nodeRoute('1:1', frame('1:1', {children: manyChildren()})), 'inspect_frame_structure', {input: FILE_KEY, nodeId: '1:1'});
 
     assert.ok(text.length <= BUDGET, `response is ${text.length} characters`);
-    assert.match(text, /\ntruncated: true\nomittedNodeIds: 2:0, 2:1, 2:2,/);
-    assert.match(text, /\nomittedNodeCount: 20000\n$/);
+    const kept = text.match(/\n\d+\. Frame /g)!.length;
+    assert.ok(kept > 0 && kept < MANY, `${kept} children kept`);
+    assert.match(text, new RegExp(`\\ntruncated: true\\nomittedNodeIds: 2:${kept}, 2:${kept + 1}, 2:${kept + 2},`));
+    assert.ok(text.endsWith(`\nomittedNodeCount: ${MANY - kept}\n`), text.slice(-80));
     const listed = text.match(/\nomittedNodeIds: ([^\n]*)\n/)![1].split(', ');
-    assert.ok(listed.length > 0 && listed.length < MANY, `${listed.length} ids listed`);
+    assert.ok(listed.length > 0 && listed.length < MANY - kept, `${listed.length} ids listed`);
 });
 
 // Pin: a cut whose ids fit lists them all and carries no count, so every existing reply keeps its shape.

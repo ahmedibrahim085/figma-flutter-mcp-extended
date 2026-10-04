@@ -63,6 +63,17 @@ export function cutTree<T extends {nodeId: string; children?: T[]; omitted?: boo
     });
 }
 
-/** The two lines that say a report was cut, in the words of the `ff_*` JSON tools; '' when nothing was. */
-export const budgetNote = (omitted: string[]): string =>
-    omitted.length === 0 ? '' : `\ntruncated: true\nomittedNodeIds: ${omitted.join(', ')}\n`;
+/** The first of `ids` that fit defaults.omittedIdListChars (as listed, with a ", " between), so the id list cannot overrun the budget. */
+export function capIds(ids: string[]): string[] {
+    let used = 0;
+    const end = ids.findIndex((id) => (used += id.length + 2) - 2 > defaults.omittedIdListChars);
+    return end < 0 ? ids : ids.slice(0, end);
+}
+
+/** The lines that say a report was cut, in the words of the `ff_*` JSON tools; '' when nothing was. The count is added only when the id list was capped. */
+export function budgetNote(omitted: string[]): string {
+    if (omitted.length === 0) return '';
+    const listed = capIds(omitted);
+    const count = listed.length < omitted.length ? `omittedNodeCount: ${omitted.length}\n` : '';
+    return `\ntruncated: true\nomittedNodeIds: ${listed.join(', ')}\n${count}`;
+}

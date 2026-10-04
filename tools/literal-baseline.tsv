@@ -614,18 +614,15 @@ src/tools/figma-core/core-tools.ts	string	How deep into the node tree to travers
 src/tools/figma-core/core-tools.ts	string	Figma use_absolute_bounds (default: false): use the full dimensions of the node 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	regardless of whether or not it is cropped or the space around it is empty. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Use this to export text nodes without cropping.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
-src/tools/figma-core/core-tools.ts	string	Maps to the Figma REST API /v1/files/:key/variables/local endpoint.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Node ID to extract (e.g. "12:3458")	arg(z.string().describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Node ID to screenshot (e.g. "12:3458")	arg(z.string().describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Optional node ID to scope the tree (e.g. "12:86"). Omit for full file.	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
-src/tools/figma-core/core-tools.ts	string	Prefer this over separate ff_get_screenshot + ff_get_variable_defs calls (1 call vs 2).	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Read the variables of a Figma file: colors, spacing, typography, 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	Returns page/frame hierarchy with IDs, names, types, and bounding boxes. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Returns the current authenticated user. Use this to verify the Figma MCP is working. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Target individual top-level frames, not sections or pages.	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	The Variables REST API requires an Enterprise plan (other plans get 403 "Limited by Figma plan").	binary(+)	registerCoreTools	1	K-TEXT	hand: Figma plan fact, verified: research/02-figma-variables-access.md:7,24-26
 src/tools/figma-core/core-tools.ts	string	Figma rate-limits it like any call (Tier 3, the least limited tier), so it can return a 429.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
-src/tools/figma-core/core-tools.ts	string	Use this to discover all top-level frames before extracting individual ones.	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	ff_get_design_context	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
 src/tools/figma-core/core-tools.ts	string	ff_get_design_context error	arg(figmaTool)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	ff_get_metadata	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
@@ -2204,8 +2201,6 @@ src/utils/budget.ts	number	16	binary(*)	renderWithinBudget	1	K-CONV	search step 
 src/utils/budget.ts	number	2	binary(*)	renderWithinBudget	1	K-CONV	search step floor: the next render is at least 2x the last, so the search always advances
 src/utils/budget.ts	number	0	binary(===)	budgetNote	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/utils/budget.ts	string		ternary	budgetNote	1	K-TEXT	empty text: nothing to print
-src/utils/budget.ts	template	\ntruncated: true\nomittedNodeIds: ${…}\n	ternary	budgetNote	1	K-TEXT	report, label, log or error text
-src/utils/budget.ts	string	, 	arg(omitted.join)	budgetNote	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	number	0	var(analysedNodes)	registerComponentTools	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/tools/flutter/components/component-tool.ts	string	\n\n	arg(reports.map(report => report(cut)).join)	render	1	K-TEXT	report, label, log or error text
 src/tools/flutter/components/component-tool.ts	string	url	binary(===)	render	1	K-TEXT	report, label, log or error text
@@ -2261,3 +2256,15 @@ src/tools/figma-core/core-tools.ts	string	pdf	binary(===)	registerCoreTools	1	K-
 src/tools/figma-core/core-tools.ts	string	resource	AsExpression	registerCoreTools	1	K-API	MCP content type or media type (spec 2025-11-25, tools)
 src/tools/figma-core/core-tools.ts	string	application/pdf	prop(mimeType)	registerCoreTools	1	K-API	MCP content type or media type (spec 2025-11-25, tools)
 src/tools/figma-core/core-tools.ts	string	image/png	ternary	registerCoreTools	1	K-API	MCP content type or media type (spec 2025-11-25, tools)
+src/tools/figma-core/core-tools.ts	string	Maps to the Figma REST API /v1/files/:key/variables/local endpoint. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	Prefer this over separate ff_get_screenshot + ff_get_variable_defs calls (1 call vs 2). 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	Use this to discover all top-level frames before extracting individual ones. 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
+src/utils/budget.ts	number	0	var(used)	capIds	1	K-CONV	index, count, midpoint or identity element
+src/utils/budget.ts	number	2	binary(+)	capIds	1	K-CONV	index, count, midpoint or identity element
+src/utils/budget.ts	number	2	binary(-)	capIds	1	K-CONV	index, count, midpoint or identity element
+src/utils/budget.ts	number	0	binary(<)	capIds	1	K-CONV	index, count, midpoint or identity element
+src/utils/budget.ts	number	0	arg(ids.slice)	capIds	1	K-CONV	index, count, midpoint or identity element
+src/utils/budget.ts	string		return	budgetNote	1	K-TEXT	report, label, log or error text
+src/utils/budget.ts	template	omittedNodeCount: ${…}\n	ternary	budgetNote	1	K-TEXT	report, label, log or error text
+src/utils/budget.ts	template	\ntruncated: true\nomittedNodeIds: ${…}\n${…}	return	budgetNote	1	K-TEXT	report, label, log or error text
+src/utils/budget.ts	string	, 	arg(listed.join)	budgetNote	1	K-TEXT	report, label, log or error text

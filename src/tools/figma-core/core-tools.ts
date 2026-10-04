@@ -10,7 +10,7 @@ import {FigmaError, FigmaNotFoundError} from '../../types/errors.js';
 import {figmaTool} from '../figma-tool.js';
 import {Logger} from '../../utils/logger.js';
 import defaults from '../../defaults.json' with { type: 'json' };
-import {BUDGET_META, countNodes, renderWithinBudget} from '../../utils/budget.js';
+import {BUDGET_META, capIds, countNodes, renderWithinBudget} from '../../utils/budget.js';
 import {label} from '../../utils/labels.js';
 import {generateFigmaUrl} from '../../utils/figma-url-parser.js';
 
@@ -68,7 +68,7 @@ function summariseNode(node: any, cut: Cut): any {
 /**
  * Serialises `build(tree, frames)` for `root`. Over the budget, it keeps the
  * most nodes (in document order) that fit and adds `truncated` and
- * `omittedNodeIds`, so the text stays valid JSON.
+ * `omittedNodeIds` (capped, with `omittedNodeCount`, when the ids alone would overrun), so the text stays valid JSON.
  */
 function renderTree(root: any, build: (tree: any, frames: any[]) => any): string {
     const render = (limit: number) => {
@@ -76,7 +76,8 @@ function renderTree(root: any, build: (tree: any, frames: any[]) => any): string
         const result = build(summariseNode(root, cut), cut.frames);
         if (cut.omitted.length > 0) {
             result.truncated = true;
-            result.omittedNodeIds = cut.omitted;
+            result.omittedNodeIds = capIds(cut.omitted);
+            if (result.omittedNodeIds.length < cut.omitted.length) result.omittedNodeCount = cut.omitted.length;
         }
         return JSON.stringify(result);
     };
@@ -99,7 +100,8 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
             description:
                 'Get the node tree structure of a Figma file or a specific node. ' +
                 'Returns page/frame hierarchy with IDs, names, types, and bounding boxes. ' +
-                'Use this to discover all top-level frames before extracting individual ones.',
+                'Use this to discover all top-level frames before extracting individual ones. ' +
+                label('budget', 'cutNote'),
             inputSchema: {
                 fileKey: z.string().describe('Figma file key (from the URL)'),
                 nodeId: z
@@ -225,7 +227,8 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 'Extract the design context for a Figma node: layout tree, component structure, ' +
                 'styles, text content, and design properties. This is the primary tool for understanding ' +
                 'what a screen or component looks like and how it is structured. ' +
-                'Prefer this over separate ff_get_screenshot + ff_get_variable_defs calls (1 call vs 2).',
+                'Prefer this over separate ff_get_screenshot + ff_get_variable_defs calls (1 call vs 2). ' +
+                label('budget', 'cutNote'),
             inputSchema: {
                 fileKey: z.string().describe('Figma file key'),
                 nodeId: z.string().describe('Node ID to extract (e.g. "12:3458")'),
@@ -291,7 +294,8 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
             description:
                 'Read the variables of a Figma file: colors, spacing, typography, ' +
                 'radii, and other values defined in the Variables panel. ' +
-                'Maps to the Figma REST API /v1/files/:key/variables/local endpoint.',
+                'Maps to the Figma REST API /v1/files/:key/variables/local endpoint. ' +
+                label('budget', 'cutNote'),
             inputSchema: {
                 fileKey: z.string().describe('Figma file key'),
             },
@@ -338,11 +342,13 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
 
                     (byId[v.variableCollectionId] ??= {variables: []}).variables.push(entry);
                 }
-                // variableCount is the variables listed; the file's total is variableCount + omittedVariableIds.length.
+                // variableCount is the variables listed; the file's total is variableCount + omittedVariableCount (or omittedVariableIds.length when no count).
                 const structured: any = {collectionCount: Object.keys(byId).length, variableCount: count, collections: byId};
                 if (count < entries.length) {
                     structured.truncated = true;
-                    structured.omittedVariableIds = entries.slice(count).map(([varId]) => varId);
+                    const omitted = entries.slice(count).map(([varId]) => varId);
+                    structured.omittedVariableIds = capIds(omitted);
+                    if (structured.omittedVariableIds.length < omitted.length) structured.omittedVariableCount = omitted.length;
                 }
                 return JSON.stringify(structured);
             };

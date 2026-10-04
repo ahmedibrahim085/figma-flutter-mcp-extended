@@ -8,6 +8,8 @@
   "trustedOriginHostsReason": "A browser page on this machine (an MCP inspector, a local tool) sends one of these as its Origin hostname, on any port. Any other Origin is refused with 403, as the MCP spec requires (DNS rebinding); --allowed-origin adds one.",
   "screenshotScale": 1,
   "maxResultSizeChars": 100000,
+  "omittedIdListChars": 20000,
+  "omittedIdListCharsReason": "A cut reply lists the ids it left out so the client can fetch them; the list is cut off here, one fifth of maxResultSizeChars, with omittedNodeCount (or omittedVariableCount) giving the true number, so a huge frame still fits the budget (B3.137).",
   "installCommand": "npx -y github:ahmedibrahim085/figma-flutter-mcp-extended",
   "issuesUrl": "https://github.com/ahmedibrahim085/figma-flutter-mcp-extended/issues",
   "issuesUrlReason": "Where a user or an agent reports a problem with this server. The MCP instructions and the README name it; the issue template lives in .github/ISSUE_TEMPLATE.",

@@ -12,7 +12,8 @@ import {
 import {withRetry} from '../utils/retry.js';
 import defaults from '../defaults.json' with { type: 'json' };
 import {Logger} from '../utils/logger.js';
-import {FileCache, entryName, figmaCacheDir, isCacheableFileKey} from './figma-cache.js';
+import {FileCache, entryName, figmaCacheDir, figmaSnapshotEnabled, isCacheableFileKey} from './figma-cache.js';
+import {hasSnapshot, readSnapshotNodes, storeSnapshot} from './figma-snapshot.js';
 
 /**
  * Figma REST base URL. `FIGMA_API_BASE_URL` overrides it (the test suite points
@@ -120,11 +121,47 @@ export class FigmaService {
         return new FileCache(dir, fileId, [file.version, file.last_touched_at]);
     }
 
+    /** The node ids of a `/nodes` query that a snapshot answers: `ids` alone. A depth (or anything else) is read from Figma, whose cut at the boundary is not known offline. */
+    private snapshotIds(query: string | undefined): string[] | undefined {
+        const params = new URLSearchParams(query);
+        const ids = params.get('ids');
+        return figmaSnapshotEnabled() && ids && [...params.keys()].every((key) => key === 'ids') ? ids.split(',') : undefined;
+    }
+
+    /** Folders whose whole-file download failed in this process; they are read node by node from then on. */
+    private failedSnapshots = new Set<string>();
+    private downloads = new Map<string, Promise<boolean>>();
+
+    /** True when a snapshot of this file version is stored, downloading it once (shared by concurrent reads) if it is not. */
+    private ensureSnapshot(fileId: string, cache: FileCache): Promise<boolean> {
+        if (this.failedSnapshots.has(cache.folder)) return Promise.resolve(false);
+        let download = this.downloads.get(cache.folder);
+        if (!download) {
+            download = (async () => {
+                try {
+                    if (await hasSnapshot(cache)) return true;
+                    if (await storeSnapshot(cache, await this.makeRequest<any>(`/files/${fileId}`))) return true;
+                } catch {
+                    // Figma refused or timed out (a file too large for one read): fall through to the node read.
+                }
+                this.failedSnapshots.add(cache.folder);
+                return false;
+            })().finally(() => this.downloads.delete(cache.folder));
+            this.downloads.set(cache.folder, download);
+        }
+        return download;
+    }
+
     /** `makeRequest` for the file and node reads, served from the cache while the file is unchanged. */
     private async cachedRequest<T>(endpoint: string): Promise<T> {
         const [, fileId, nodes, query] = endpoint.match(/^\/files\/([^/?]+)(\/nodes)?(?:\?(.*))?$/) ?? [];
         const cache = fileId ? await this.fileCache(fileId) : undefined;
         if (!cache) return this.makeRequest<T>(endpoint);
+        const ids = nodes ? this.snapshotIds(query) : undefined;
+        if (ids && (await this.ensureSnapshot(fileId, cache))) {
+            const cut = await readSnapshotNodes(cache, ids).catch(() => undefined);
+            if (cut) return cut as T;
+        }
         const name = entryName(nodes ? 'nodes' : 'file', new URLSearchParams(query));
         const stored = await cache.read(name);
         if (stored) return JSON.parse(stored.toString()) as T;

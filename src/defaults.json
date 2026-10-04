@@ -12,6 +12,10 @@
   "issuesUrl": "https://github.com/ahmedibrahim085/figma-flutter-mcp-extended/issues",
   "issuesUrlReason": "Where a user or an agent reports a problem with this server. The MCP instructions and the README name it; the issue template lives in .github/ISSUE_TEMPLATE.",
   "figmaWebUrl": "https://www.figma.com",
+  "snapshot": {
+    "enabled": true,
+    "enabledReason": "A node read is cut from one stored copy of the whole file, so a free plan's few Tier 1 reads a month buy a whole file, not one node (decision 45). FIGMA_SNAPSHOT=off reads each node from Figma, as before."
+  },
   "cache": {
     "dirName": "figma-flutter-mcp-extended",
     "dirNameReason": "One folder per tool under the OS cache folder, as gh and env-paths do."

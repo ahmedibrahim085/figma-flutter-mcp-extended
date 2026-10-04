@@ -2399,3 +2399,27 @@ src/utils/labels.ts	template	Label ${…}.${…} needs a value for {${…}}	arg(
 src/utils/labels.ts	number	0	binary(>)	label	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
 src/utils/labels.ts	template	Label ${…}.${…} got a value for ${…} that its text does not use	arg(Error)	label	1	K-TEXT	developer error: names the value a call gave that the label text does not use
 src/utils/labels.ts	string	, 	arg(unused.join)	label	1	K-TEXT	separator in a developer error list
+src/services/figma-cache.ts	string	off	binary(===)	figmaSnapshotEnabled	1	K-API	FIGMA_SNAPSHOT value that turns the snapshot off; the default is in defaults.json
+src/services/figma-cache.ts	string	r	arg(open)	readRange	1	K-API	file open flag: read
+src/services/figma-cache.ts	number	0	arg(handle.read)	readRange	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/services/figma-snapshot.ts	string	snapshot-frames	var(FRAMES)	FRAMES	1	K-CONV	name of a cache entry, not a design fact
+src/services/figma-snapshot.ts	string	snapshot-index	var(INDEX)	INDEX	1	K-CONV	name of a cache entry, not a design fact
+src/services/figma-snapshot.ts	string	name	array(TOP_FIELDS)	TOP_FIELDS	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma-snapshot.ts	string	lastModified	array(TOP_FIELDS)	TOP_FIELDS	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma-snapshot.ts	string	thumbnailUrl	array(TOP_FIELDS)	TOP_FIELDS	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma-snapshot.ts	string	version	array(TOP_FIELDS)	TOP_FIELDS	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma-snapshot.ts	string	role	array(TOP_FIELDS)	TOP_FIELDS	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma-snapshot.ts	string	editorType	array(TOP_FIELDS)	TOP_FIELDS	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma-snapshot.ts	string	linkAccess	array(TOP_FIELDS)	TOP_FIELDS	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma-snapshot.ts	number	0	var(offset)	storeSnapshot	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/services/figma-snapshot.ts	string	snapshot frames are missing	arg(Error)	frame	1	K-TEXT	internal error text, never shown as a tool reply (the read falls back to Figma)
+src/services/figma-snapshot.ts	string	string	binary(===)	readSnapshotNodes	1	K-API	typeof tag
+src/services/figma-snapshot.ts	string	StyleId	arg(key.endsWith)	readSnapshotNodes	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma-snapshot.ts	string	string	binary(===)	readSnapshotNodes	2	K-API	typeof tag
+src/services/figma-snapshot.ts	string	styles	binary(===)	readSnapshotNodes	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma-snapshot.ts	string	object	binary(===)	readSnapshotNodes	1	K-API	typeof tag
+src/services/figma-snapshot.ts	string	string	binary(===)	readSnapshotNodes	3	K-API	typeof tag
+src/services/figma.ts	string	ids	arg(params.get)	snapshotIds	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma.ts	string	ids	binary(===)	snapshotIds	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma.ts	string	,	arg(ids.split)	snapshotIds	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
+src/services/figma.ts	template	/files/${…}	arg(this.makeRequest)	ensureSnapshot	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token

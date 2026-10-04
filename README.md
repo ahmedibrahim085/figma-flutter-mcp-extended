@@ -144,6 +144,7 @@ Reads of a file and its nodes, and rendered image bytes, are kept on disk while 
 
 - Folder: `figma-flutter-mcp-extended` under the OS cache folder (`~/Library/Caches` on macOS, `%LOCALAPPDATA%` on Windows, `$XDG_CACHE_HOME` or `~/.cache` elsewhere). `FIGMA_CACHE_DIR` replaces the whole path. Over HTTP the folder is on the server's disk.
 - `FIGMA_CACHE=off` turns the cache off.
+- **Snapshot.** With the cache on, the first node read of a file downloads the whole file once (`GET /files/:key`, one Tier 1 read) and keeps it on disk. Every later node read of the same file version is cut out of that copy and asks Figma only for `/meta`. A node read with `depth` still goes to Figma. A download that Figma refuses or times out falls back to reading each node from Figma. `FIGMA_SNAPSHOT=off` reads each node from Figma, as before. Rendered images and variables are separate reads and are not in the snapshot.
 - The cache keeps the current version of each file and deletes older ones. It has no age or size limit. To clear it, delete the folder.
 
 ## Report a problem

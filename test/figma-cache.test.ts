@@ -19,7 +19,7 @@ const nodeRoutes = (meta: object): FakeRoutes => ({
     [META]: meta as any,
     [`${NODES}?ids=1:1`]: {body: {nodes: {'1:1': {document: NODE}}}},
 });
-const cacheEnv = () => ({FIGMA_CACHE: 'on', FIGMA_CACHE_DIR: mkdtempSync(join(tmpdir(), 'figma-cache-'))});
+const cacheEnv = () => ({FIGMA_CACHE: 'on', FIGMA_SNAPSHOT: 'off', FIGMA_CACHE_DIR: mkdtempSync(join(tmpdir(), 'figma-cache-'))});
 const paths = (requests: Array<{path: string}>) => requests.map((request) => request.path);
 
 test('a second identical call asks /meta only; a changed last_touched_at alone refetches', async () => {

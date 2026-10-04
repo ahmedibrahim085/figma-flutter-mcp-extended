@@ -29,7 +29,6 @@ import {join} from 'path';
 export function registerScreenTools(server: McpServer, figmaApiKey: string) {
 
     // Main screen analysis tool
-    // @ts-ignore TS2589: Known TypeScript limitation with complex Zod schemas in registerTool generics
     server.registerTool(
         "analyze_frame_as_screen",
         {

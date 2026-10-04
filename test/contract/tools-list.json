@@ -1,0 +1,630 @@
+[
+  {
+    "name": "ff_get_metadata",
+    "title": "Get Figma File Metadata",
+    "description": "Get the node tree structure of a Figma file or a specific node. Returns page/frame hierarchy with IDs, names, types, and bounding boxes. Use this to discover all top-level frames before extracting individual ones.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fileKey": {
+          "type": "string",
+          "description": "Figma file key (from the URL)"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Optional node ID to scope the tree (e.g. \"12:86\"). Omit for full file."
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How deep into the node tree to traverse; omit for all levels. Figma sends `children: []` for nodes at the requested depth, whatever they hold."
+        }
+      },
+      "required": [
+        "fileKey"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    },
+    "_meta": {
+      "anthropic/maxResultSizeChars": 100000
+    }
+  },
+  {
+    "name": "ff_get_screenshot",
+    "title": "Get Figma Node Screenshot",
+    "description": "Capture a PNG/JPG/SVG screenshot of a specific Figma node. Returns the image as a base64-encoded image content block or a URL. Target individual top-level frames, not sections or pages.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fileKey": {
+          "type": "string",
+          "description": "Figma file key"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Node ID to screenshot (e.g. \"12:3458\")"
+        },
+        "format": {
+          "type": "string",
+          "description": "Image format: png, jpg, svg, or pdf (default: png)"
+        },
+        "scale": {
+          "type": "number",
+          "description": "Scale factor 0.01-4 (default: 1). Higher = more detail."
+        },
+        "useAbsoluteBounds": {
+          "type": "boolean",
+          "description": "Figma use_absolute_bounds (default: false): use the full dimensions of the node regardless of whether or not it is cropped or the space around it is empty. Use this to export text nodes without cropping."
+        }
+      },
+      "required": [
+        "fileKey",
+        "nodeId"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "ff_get_design_context",
+    "title": "Get Figma Design Context",
+    "description": "Extract the design context for a Figma node: layout tree, component structure, styles, text content, and design properties. This is the primary tool for understanding what a screen or component looks like and how it is structured. Prefer this over separate ff_get_screenshot + ff_get_variable_defs calls (1 call vs 2).",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fileKey": {
+          "type": "string",
+          "description": "Figma file key"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Node ID to extract (e.g. \"12:3458\")"
+        },
+        "depth": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "How deep into the node tree to traverse; omit for all levels. Figma sends `children: []` for nodes at the requested depth, whatever they hold."
+        }
+      },
+      "required": [
+        "fileKey",
+        "nodeId"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    },
+    "_meta": {
+      "anthropic/maxResultSizeChars": 100000
+    }
+  },
+  {
+    "name": "ff_get_variable_defs",
+    "title": "Get Figma Variable Definitions",
+    "description": "Read the variables of a Figma file: colors, spacing, typography, radii, and other values defined in the Variables panel. Maps to the Figma REST API /v1/files/:key/variables/local endpoint.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fileKey": {
+          "type": "string",
+          "description": "Figma file key"
+        }
+      },
+      "required": [
+        "fileKey"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    },
+    "_meta": {
+      "anthropic/maxResultSizeChars": 100000
+    }
+  },
+  {
+    "name": "ff_whoami",
+    "title": "Figma Who Am I",
+    "description": "Returns the current authenticated user. Use this to verify the Figma MCP is working. Figma rate-limits it like any call (Tier 3, the least limited tier), so it can return a 429.",
+    "inputSchema": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "type": "object",
+      "properties": {}
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "export_flutter_assets",
+    "title": "Export Flutter Assets",
+    "description": "Export the given Figma nodes, plus descendants that have exportSettings or a visible IMAGE fill, into the Flutter assets folders and pubspec.yaml. A node's exportSettings give its format and scale (SVG and PDF at 1x; WIDTH/HEIGHT are converted to the nearest ratio of 1, 1.5, 2, 3, 4); a node without them is exported in `format` at each of devicePixelRatios.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fileId": {
+          "type": "string",
+          "description": "Figma file ID"
+        },
+        "nodeIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of node IDs to export; each is exported, and so are its descendants with exportSettings or a visible IMAGE fill"
+        },
+        "projectPath": {
+          "type": "string",
+          "description": "Path to Flutter project (stdio: defaults to the current directory; HTTP: required)"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "png",
+            "jpg",
+            "svg"
+          ],
+          "description": "Export format for nodes without exportSettings (default: png)"
+        },
+        "devicePixelRatios": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 1,
+          "description": "Device pixel ratios (1, 1.5, 2, 3, 4) to export PNG at for nodes without exportSettings (default: [2])"
+        }
+      },
+      "required": [
+        "fileId",
+        "nodeIds"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "export_svg_flutter_assets",
+    "title": "Export SVG Flutter Assets",
+    "description": "Export Figma nodes as SVG: exactly the node IDs given, plus descendants whose exportSettings include SVG. Nothing is guessed from a node's contents; hidden nodes are skipped.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fileId": {
+          "type": "string",
+          "description": "Figma file ID"
+        },
+        "nodeIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Array of node IDs to export as SVG; descendants with an SVG export setting are exported too"
+        },
+        "projectPath": {
+          "type": "string",
+          "description": "Path to Flutter project (stdio: defaults to the current directory; HTTP: required)"
+        }
+      },
+      "required": [
+        "fileId",
+        "nodeIds"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "analyze_figma_component",
+    "title": "Analyze Figma Component",
+    "description": "Analyze a Figma component or component set to extract layout, styling, and structure information for Flutter widget creation. Use analyze_frame_as_screen for top-level frames.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string",
+          "description": "Figma component URL or file ID"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Node ID (if providing file ID separately)"
+        },
+        "userDefinedComponent": {
+          "type": "boolean",
+          "description": "Treat a FRAME as a component (when designer hasn't converted to actual component yet) (default: false)"
+        },
+        "includeVariants": {
+          "type": "boolean",
+          "description": "Include variant analysis for component sets (default: true)"
+        },
+        "variantSelection": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Variant names to analyze instead of every variant of a component set"
+        },
+        "projectPath": {
+          "type": "string",
+          "description": "Path to Flutter project for asset export (defaults to current directory)"
+        },
+        "exportAssets": {
+          "type": "boolean",
+          "description": "Export descendants that have exportSettings or a visible IMAGE fill (default: true)"
+        },
+        "generateFlutterCode": {
+          "type": "boolean",
+          "description": "Generate full Flutter implementation code (default: false)"
+        },
+        "devicePixelRatios": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 1,
+          "description": "Device pixel ratios (1, 1.5, 2, 3, 4) to export PNG at for nodes without exportSettings (default: [2])"
+        }
+      },
+      "required": [
+        "input"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    },
+    "_meta": {
+      "anthropic/maxResultSizeChars": 100000
+    }
+  },
+  {
+    "name": "list_component_variants",
+    "title": "List Component Variants",
+    "description": "List the variants of a Figma component set with the variant axes and defaults Figma defines",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string",
+          "description": "Figma component set URL or file ID"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Node ID (if providing file ID separately)"
+        }
+      },
+      "required": [
+        "input"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "inspect_component_structure",
+    "title": "Inspect Component Structure",
+    "description": "Get a quick overview of component structure, children, and nested components. Use inspect_frame_structure for top-level frames.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string",
+          "description": "Figma component URL or file ID"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Node ID (if providing file ID separately)"
+        },
+        "userDefinedComponent": {
+          "type": "boolean",
+          "description": "Treat a FRAME as a component (when designer hasn't converted to actual component yet) (default: false)"
+        },
+        "showAllChildren": {
+          "type": "boolean",
+          "description": "Include hidden child layers (Figma visible: false) and empty slots (default: false)"
+        }
+      },
+      "required": [
+        "input"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    },
+    "_meta": {
+      "anthropic/maxResultSizeChars": 100000
+    }
+  },
+  {
+    "name": "generate_flutter_implementation",
+    "title": "Generate Flutter Implementation",
+    "description": "Generate complete Flutter widget code for one Figma node, with the style definitions it uses",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string",
+          "description": "Figma node URL or file ID"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Node ID (if providing file ID separately)"
+        },
+        "includeStyleDefinitions": {
+          "type": "boolean",
+          "description": "Include style definitions in output (default: true)"
+        },
+        "widgetName": {
+          "type": "string",
+          "description": "Custom widget class name"
+        }
+      },
+      "required": [
+        "input"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    },
+    "_meta": {
+      "anthropic/maxResultSizeChars": 100000
+    }
+  },
+  {
+    "name": "analyze_frame_as_screen",
+    "title": "Analyze Frame as Screen",
+    "description": "Analyze a Figma frame treated as a screen to extract layout, child layers, and structure information for Flutter screen implementation",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string",
+          "description": "Figma frame URL or file ID"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Node ID (if providing file ID separately)"
+        },
+        "extractAssets": {
+          "type": "boolean",
+          "description": "Export descendants that have exportSettings or a visible IMAGE fill (default: true)"
+        },
+        "projectPath": {
+          "type": "string",
+          "description": "Path to Flutter project for asset export (defaults to current directory)"
+        },
+        "devicePixelRatios": {
+          "type": "array",
+          "items": {
+            "type": "number"
+          },
+          "minItems": 1,
+          "description": "Device pixel ratios (1, 1.5, 2, 3, 4) to export PNG at for nodes without exportSettings (default: [2])"
+        }
+      },
+      "required": [
+        "input"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    },
+    "_meta": {
+      "anthropic/maxResultSizeChars": 100000
+    }
+  },
+  {
+    "name": "inspect_frame_structure",
+    "title": "Inspect Frame Structure",
+    "description": "Get a quick overview of a frame's structure and child layers",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "input": {
+          "type": "string",
+          "description": "Figma frame URL or file ID"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Node ID (if providing file ID separately)"
+        },
+        "showAllChildren": {
+          "type": "boolean",
+          "description": "Include hidden child layers (Figma visible: false) and empty slots (default: false)"
+        }
+      },
+      "required": [
+        "input"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    },
+    "_meta": {
+      "anthropic/maxResultSizeChars": 100000
+    }
+  },
+  {
+    "name": "extract_theme_colors",
+    "title": "Extract Theme Colors from Frame",
+    "description": "Extract colors from a Figma frame of color samples with labels",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fileId": {
+          "type": "string",
+          "description": "Figma file ID"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Node ID of the frame of color samples"
+        },
+        "projectPath": {
+          "type": "string",
+          "description": "Path to Flutter project (stdio: defaults to the current directory; HTTP: required)"
+        },
+        "generateThemeData": {
+          "type": "boolean",
+          "description": "Generate Flutter ThemeData class (defaults to false)"
+        }
+      },
+      "required": [
+        "fileId",
+        "nodeId"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "inspect_color_frame",
+    "title": "Inspect Color Frame",
+    "description": "Inspect the structure of a frame of color samples to understand its contents before extraction",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fileId": {
+          "type": "string",
+          "description": "Figma file ID"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Frame node ID to inspect"
+        }
+      },
+      "required": [
+        "fileId",
+        "nodeId"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "extract_theme_typography",
+    "title": "Extract Theme Typography from Frame",
+    "description": "Extract typography styles from a Figma frame of text samples with different styles",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fileId": {
+          "type": "string",
+          "description": "Figma file ID"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Node ID of the frame of text samples"
+        },
+        "projectPath": {
+          "type": "string",
+          "description": "Path to Flutter project (stdio: defaults to the current directory; HTTP: required)"
+        },
+        "generateTextTheme": {
+          "type": "boolean",
+          "description": "Generate Flutter TextTheme class (defaults to false)"
+        }
+      },
+      "required": [
+        "fileId",
+        "nodeId"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "inspect_text_style_frame",
+    "title": "Inspect Text Style Frame",
+    "description": "Inspect the structure of a frame of text samples to understand its text contents before extraction",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "fileId": {
+          "type": "string",
+          "description": "Figma file ID"
+        },
+        "nodeId": {
+          "type": "string",
+          "description": "Frame node ID to inspect"
+        }
+      },
+      "required": [
+        "fileId",
+        "nodeId"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  },
+  {
+    "name": "generate_golden_file_test",
+    "title": "Generate Golden File Test",
+    "description": "Generate a golden file test for a Flutter widget (testWidgets + matchesGoldenFile). Does not render, compare, or run anything itself — run `flutter test --update-goldens` once to create the reference image, then `flutter test` on later runs to check against it.",
+    "inputSchema": {
+      "type": "object",
+      "properties": {
+        "widgetName": {
+          "type": "string",
+          "description": "Name of the Flutter widget class to test (e.g. ContinueButton)"
+        },
+        "widgetImportPath": {
+          "type": "string",
+          "description": "Import path relative to lib/, e.g. 'widgets/continue_button.dart'"
+        },
+        "projectPath": {
+          "type": "string",
+          "description": "Path to Flutter project (stdio: defaults to the current directory; HTTP: required)"
+        }
+      },
+      "required": [
+        "widgetName",
+        "widgetImportPath"
+      ],
+      "additionalProperties": false,
+      "$schema": "http://json-schema.org/draft-07/schema#"
+    },
+    "execution": {
+      "taskSupport": "forbidden"
+    }
+  }
+]

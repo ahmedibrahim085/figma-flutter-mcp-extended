@@ -1,6 +1,6 @@
 // src/tools/flutter/typography-tool.mts
 
-import {z} from "zod";
+import {z} from "zod/v3";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../../services/figma.js";
 import {figmaTool} from "../../../figma-tool.js";

@@ -2,7 +2,7 @@
 import {existsSync} from 'fs';
 import {writeFile, mkdir, readFile} from 'fs/promises';
 import {join, dirname} from 'path';
-import {z} from 'zod';
+import {z} from 'zod/v3';
 import {ImageDownloadError, type FigmaService} from '../../../services/figma.js';
 import {isEffectivelyVisible} from '../../../utils/visibility.js';
 import {detectConstantsDir} from '../../../utils/project-conventions.js';

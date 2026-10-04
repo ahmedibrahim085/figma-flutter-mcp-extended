@@ -1,5 +1,5 @@
 // tools/flutter/assets.mts
-import {z} from "zod";
+import {z} from "zod/v3";
 import type {McpServer} from "@modelcontextprotocol/sdk/server/mcp.js";
 import {FigmaService} from "../../../services/figma.js";
 import {figmaTool} from "../../figma-tool.js";
@@ -15,7 +15,6 @@ import {validateAndConvertNodeId} from "../../../utils/figma-url-parser.js";
 
 export function registerFlutterAssetTools(server: McpServer, figmaApiKey: string) {
     // Tool: Export Flutter Assets
-    // @ts-ignore TS2589: Known TypeScript limitation with complex Zod schemas in registerTool generics
     server.registerTool(
         "export_flutter_assets",
         {

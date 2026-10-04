@@ -3,7 +3,7 @@
 // get_design_context, get_variable_defs) that call the REST API directly via personal
 // access token — bypassing the official MCP server's 200/day rate limit.
 
-import {z} from 'zod';
+import {z} from 'zod/v3';
 import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
 import {FigmaService, ImageDownloadError, type ImageOptions} from '../../services/figma.js';
 import {FigmaError, FigmaNotFoundError} from '../../types/errors.js';
@@ -89,7 +89,6 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     const figma = new FigmaService(figmaApiKey);
 
     // ── ff_get_metadata ──────────────────────────────────────
-    // @ts-ignore TS2589: Known TypeScript limitation with complex Zod schemas in registerTool generics
     server.registerTool(
         'ff_get_metadata',
         {

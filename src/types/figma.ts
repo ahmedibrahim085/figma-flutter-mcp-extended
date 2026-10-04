@@ -57,6 +57,8 @@ export interface FigmaNode {
     minHeight?: number | null;
     maxHeight?: number | null;
     absoluteBoundingBox?: FigmaBoundingBox;
+    /** The box the node's pixels cover (strokes and effects included); null when nothing of it renders. */
+    absoluteRenderBounds?: FigmaBoundingBox | null;
     layoutMode?: string;
     primaryAxisSizingMode?: string;
     counterAxisSizingMode?: string;

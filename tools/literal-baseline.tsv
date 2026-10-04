@@ -589,9 +589,9 @@ src/tools/figma-core/core-tools.ts	number	0	arg(entries.slice)	render	1	K-CONV	i
 src/tools/figma-core/core-tools.ts	number	0	binary(>)	registerCoreTools	2	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
 src/tools/figma-core/core-tools.ts	number	0	binary(>)	render	1	K-CONV	index, count, midpoint or identity element
 src/tools/figma-core/core-tools.ts	number	0	prop(included)	render	1	K-CONV	index, count, midpoint or identity element
-src/tools/figma-core/core-tools.ts	number	0.01	arg(Math.max)	registerCoreTools	1	K-API	hand: Figma images scale range min 0.01 (file-endpoints page: "A number between 0.01 and 4")
+src/tools/figma-core/core-tools.ts	number	0.01	arg(Math.max)	registerCoreTools	2	K-API	hand: Figma images scale range min 0.01 (file-endpoints page: "A number between 0.01 and 4")
 src/tools/figma-core/core-tools.ts	number	1	arg(         .int()\n                    .min)	registerCoreTools	2	K-API	hand: Figma depth must be a positive integer (min 1), developers.figma.com/docs/rest-api/file-endpoints/
-src/tools/figma-core/core-tools.ts	number	4	arg(Math.min)	registerCoreTools	1	K-API	hand: Figma images scale range max 4
+src/tools/figma-core/core-tools.ts	number	4	arg(Math.min)	registerCoreTools	2	K-API	hand: Figma images scale range max 4
 src/tools/figma-core/core-tools.ts	number	403	arg(FigmaError)	registerCoreTools	1	K-API	R7: HTTP status
 src/tools/figma-core/core-tools.ts	number	403	binary(===)	registerCoreTools	1	K-API	hand: HTTP 403
 src/tools/figma-core/core-tools.ts	string	/me	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
@@ -618,7 +618,6 @@ src/tools/figma-core/core-tools.ts	string	Optional node ID to scope the tree (e.
 src/tools/figma-core/core-tools.ts	string	Read the variables of a Figma file: colors, spacing, typography, 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	Returns page/frame hierarchy with IDs, names, types, and bounding boxes. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Returns the current authenticated user. Use this to verify the Figma MCP is working. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
-src/tools/figma-core/core-tools.ts	string	Target individual top-level frames, not sections or pages.	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	Figma rate-limits it like any call (Tier 3, the least limited tier), so it can return a 429.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	ff_get_design_context	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
 src/tools/figma-core/core-tools.ts	string	ff_get_design_context error	arg(figmaTool)	registerCoreTools	1	K-TEXT	R8: error message text
@@ -639,7 +638,7 @@ src/tools/figma-core/core-tools.ts	string	png	BindingElement	registerCoreTools	1
 src/tools/figma-core/core-tools.ts	string	radii, and other values defined in the Variables panel. 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	styles, text content, and design properties. This is the primary tool for understanding 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	svg	binary(===)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
-src/tools/figma-core/core-tools.ts	string	text	AsExpression	registerCoreTools	6	K-API	R12: MCP content block type
+src/tools/figma-core/core-tools.ts	string	text	AsExpression	registerCoreTools	7	K-API	R12: MCP content block type
 src/tools/figma-core/core-tools.ts	string	what a screen or component looks like and how it is structured. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	📋 Registered core Figma tools: ff_get_metadata, ff_get_screenshot, ff_get_design_context, ff_get_variable_defs, ff_whoami	arg(Logger.diag)	registerCoreTools	1	K-TEXT	R5: log/console text
 src/tools/figma-core/core-tools.ts	template	/files/${…}	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
@@ -2285,3 +2284,34 @@ src/tools/figma-core/core-tools.ts	string	deletedButReferenced	array(VARIABLE_FI
 src/tools/figma-core/core-tools.ts	string	variableIds	array(ID_LIST_FIELDS)	ID_LIST_FIELDS	1	K-API	Figma REST field name (OpenAPI LocalVariableCollection, docs: variables-endpoints)
 src/tools/figma-core/core-tools.ts	string	inheritedVariableIds	array(ID_LIST_FIELDS)	ID_LIST_FIELDS	1	K-API	Figma REST field name (OpenAPI LocalVariableCollection, docs: variables-endpoints)
 src/tools/figma-core/core-tools.ts	string	localVariableIds	array(ID_LIST_FIELDS)	ID_LIST_FIELDS	1	K-API	Figma REST field name (OpenAPI LocalVariableCollection, docs: variables-endpoints)
+src/tools/figma-core/core-tools.ts	string	Target individual top-level frames, not sections or pages. 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
+src/utils/image-size.ts	string	89504e470d0a1a0a	arg(Buffer.from)	PNG_SIGNATURE	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	string	hex	arg(Buffer.from)	PNG_SIGNATURE	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	0	arg(bytes.subarray)	imageSize	1	K-CONV	index, count, midpoint or identity element
+src/utils/image-size.ts	number	8	arg(bytes.subarray)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	16	arg(bytes.readUInt32BE)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	20	arg(bytes.readUInt32BE)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	0	index	imageSize	1	K-CONV	index, count, midpoint or identity element
+src/utils/image-size.ts	number	255	binary(!==)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	1	index	imageSize	1	K-CONV	index, count, midpoint or identity element
+src/utils/image-size.ts	number	216	binary(!==)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	2	var(at)	imageSize	1	K-CONV	index, count, midpoint or identity element
+src/utils/image-size.ts	number	9	binary(+)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	255	binary(!==)	imageSize	2	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	1	binary(+)	imageSize	1	K-CONV	index, count, midpoint or identity element
+src/utils/image-size.ts	number	1	binary(===)	imageSize	1	K-CONV	index, count, midpoint or identity element
+src/utils/image-size.ts	number	208	binary(>=)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	215	binary(<=)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	255	binary(===)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	255	binary(===)	imageSize	2	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	1	ternary	imageSize	1	K-CONV	index, count, midpoint or identity element
+src/utils/image-size.ts	number	2	ternary	imageSize	1	K-CONV	index, count, midpoint or identity element
+src/utils/image-size.ts	number	192	binary(>=)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	207	binary(<=)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	196	binary(!==)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	200	binary(!==)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	204	binary(!==)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	7	binary(+)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	5	binary(+)	imageSize	1	K-API	byte layout of PNG (IHDR) and JPEG (SOF markers): file-format constants
+src/utils/image-size.ts	number	2	binary(+)	imageSize	1	K-CONV	index, count, midpoint or identity element
+src/utils/image-size.ts	number	2	binary(+)	imageSize	2	K-CONV	index, count, midpoint or identity element

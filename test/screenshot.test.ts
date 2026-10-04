@@ -45,11 +45,11 @@ test('a format outside the enum is refused before any Figma call', async () => {
 });
 
 for (const [format, mimeType] of [['png', 'image/png'], ['jpg', 'image/jpeg'], ['svg', 'image/svg+xml']]) {
-    test(`${format} is one image block of ${mimeType}`, async () => {
+    test(`${format} is an image block of ${mimeType}, first in the reply`, async () => {
         const {result} = await screenshot({format});
 
         assert.notEqual(result.isError, true);
-        assert.deepEqual(result.content, [{type: 'image', data: BYTES.toString('base64'), mimeType}]);
+        assert.deepEqual(result.content[0], {type: 'image', data: BYTES.toString('base64'), mimeType});
     });
 }
 
@@ -57,7 +57,6 @@ test('a PDF is an embedded resource of application/pdf, not an image block', asy
     const {result} = await screenshot({format: 'pdf'});
 
     assert.notEqual(result.isError, true);
-    assert.equal(result.content.length, 1);
     const [block] = result.content;
     assert.equal(block.type, 'resource');
     assert.equal(block.resource.mimeType, 'application/pdf');

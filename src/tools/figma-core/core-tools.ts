@@ -13,6 +13,7 @@ import defaults from '../../defaults.json' with { type: 'json' };
 import {BUDGET_META, capIds, countNodes, renderWithinBudget} from '../../utils/budget.js';
 import {label} from '../../utils/labels.js';
 import {generateFigmaUrl} from '../../utils/figma-url-parser.js';
+import {imageSize} from '../../utils/image-size.js';
 
 /** The 403 message Figma documents for an endpoint the file's plan does not include. */
 const PLAN_LIMITED = 'Limited by Figma plan';
@@ -169,7 +170,8 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
             description:
                 'Capture a PNG/JPG/SVG/PDF screenshot of a specific Figma node. ' +
                 'Returns the image as a base64-encoded image content block (a PDF as an embedded resource) or a URL. ' +
-                'Target individual top-level frames, not sections or pages.',
+                'Target individual top-level frames, not sections or pages. ' +
+                label('screenshot', 'boundsNote'),
             inputSchema: {
                 fileKey: z.string().describe('Figma file key'),
                 nodeId: z.string().describe('Node ID to screenshot (e.g. "12:3458")'),
@@ -213,22 +215,26 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
             }
 
             const base64 = image.toString('base64');
+            const size = imageSize(image);
+            // The boxes need a node read (the snapshot answers it, else one /nodes read); a failure costs the boxes, not the image.
+            const boxes = await figma.getNode(fileKey, nodeId).then(
+                (node) => ({absoluteBoundingBox: node.absoluteBoundingBox, absoluteRenderBounds: node.absoluteRenderBounds}),
+                (error: unknown) => ({boundsError: {status: error instanceof FigmaError ? error.statusCode : undefined, message: error instanceof Error ? error.message : String(error)}}),
+            );
+            const info = {
+                nodeId, format, scale: Math.min(Math.max(scale, 0.01), 4), useAbsoluteBounds,
+                ...(size ? {imageWidth: size.width, imageHeight: size.height} : {}),
+                ...boxes,
+            };
+            const infoBlock = {type: 'text' as const, text: JSON.stringify(info)};
             if (format === 'pdf') {
                 // application/pdf is no image: the MCP content types for it are an embedded resource (spec 2025-11-25, tools).
                 const uri = generateFigmaUrl(fileKey, nodeId);
-                return {content: [{type: 'resource' as const, resource: {uri, mimeType: 'application/pdf', blob: base64}}]};
+                return {content: [{type: 'resource' as const, resource: {uri, mimeType: 'application/pdf', blob: base64}}, infoBlock]};
             }
             const mimeType = format === 'jpg' ? 'image/jpeg' : format === 'svg' ? 'image/svg+xml' : 'image/png';
 
-            return {
-                content: [
-                    {
-                        type: 'image' as const,
-                        data: base64,
-                        mimeType,
-                    },
-                ],
-            };
+            return {content: [{type: 'image' as const, data: base64, mimeType}, infoBlock]};
         }),
     );
 

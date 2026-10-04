@@ -15,8 +15,8 @@ const JPG = fixture('screenshot-1_34.jpg');
 const BOX = {x: 1500, y: 100, width: 468, height: 792};
 const NODE = {id: '1:34', name: 'Layout', type: 'FRAME', absoluteBoundingBox: BOX, absoluteRenderBounds: BOX};
 
-/** One ff_get_screenshot call against a fake Figma that renders node 1:34 to `bytes`; `node` is what /nodes answers (undefined: no route, a 404). */
-async function screenshot(args: Record<string, unknown>, bytes: Buffer = PNG, node: object | undefined = NODE) {
+/** One ff_get_screenshot call against a fake Figma that renders node 1:34 to `bytes`; `node` is what /nodes answers (null: no route, a 404). */
+async function screenshot(args: Record<string, unknown>, bytes: Buffer = PNG, node: object | null = NODE) {
     const figma = await startFakeFigma((baseUrl): FakeRoutes => ({
         [`/images/${FILE_KEY}`]: {body: {err: null, images: {'1:34': `${baseUrl}/render/1`}}},
         '/render/1': {body: bytes},
@@ -96,7 +96,7 @@ test('a hidden node keeps absoluteRenderBounds: null', async () => {
 });
 
 test('a failed node read keeps the image and says why in boundsError, with the size still read from the image', async () => {
-    const {result} = await screenshot({}, PNG, undefined);
+    const {result} = await screenshot({}, PNG, null);
 
     assert.notEqual(result.isError, true);
     assert.equal(result.content[0].type, 'image');

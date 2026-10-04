@@ -270,8 +270,8 @@ test('the four JSON tools reply in compact JSON, without indentation or line bre
 
 for (const {tool, query, treeKey} of TREE_TOOLS) {
     test(`${tool}: compact JSON keeps more than 400 of 1500 children inside the budget (pretty JSON kept 215)`, async () => {
-        // A kept child costs about 120 characters in the tree plus about 75 in the frames list, an omitted id about 9:
-        // (100000 - 13500) / (195 - 9) is about 465 children.
+        // Measured on this fixture (one probe): a kept child costs 126.5 characters in the tree and 74.5 in the frames list, an
+        // omitted id 8.48; the reply kept 451 of 1500 children. 400 sits below that so the check does not track small changes.
         const children = Array.from({length: 1500}, (_, i) => wideNode(`2:${i}`));
         const {text} = await callToolOffline(nodesRoute(query, wideNode('1:1', {children})), tool, {fileKey: FILE_KEY, nodeId: '1:1'});
 

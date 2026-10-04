@@ -49,7 +49,9 @@ test('ff_get_design_context asks Figma for the node only: no geometry, no plugin
 
 // Pinned from the request that asked for paths and plugin data (commit 8222242): the reply is byte for byte the same without them.
 // Re-pinned for compact JSON (B3.81). The four fixture pins equal the old pretty reply parsed and printed compact (length and hash
-// computed from the build before the change); the 3,000-node pin moved because more nodes now fit the budget.
+// computed from the build before the change); the 3,000-node pin moved because more nodes now fit the budget. That pin is a
+// snapshot of the new output; the independent checks are in core-tools.test.ts (more than 400 children kept, text.length <=
+// budget, kept + omitted ids = input ids).
 const fixture = (name: string) => {
     const [id, value] = Object.entries<any>(JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf-8')).nodes)[0];
     return {id, document: value.document};

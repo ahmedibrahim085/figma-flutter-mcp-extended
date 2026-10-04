@@ -76,6 +76,8 @@ const sha = (text: string) => createHash('sha256').update(text).digest('hex').sl
 
 // Pinned from the halving search (commit 8222242): the cut reply of each tool is byte for byte what it was. The two JSON tools
 // were re-pinned for compact JSON (B3.81): more children fit, so their cut moved; the other three tools are unchanged.
+// The two re-pinned length/hash values are snapshots of the new output, not independent proof. The independent checks are in
+// core-tools.test.ts: more than 400 of 1500 children kept, text.length <= budget, kept + omitted ids = input ids.
 const PINNED: Array<[tool: string, query: string, args: Record<string, unknown>, children: number, length: number, sha: string]> = [
     ['ff_get_metadata', 'ids=1:1', {fileKey: FILE_KEY}, 1500, 99991, 'fecb47ccaa44a683'],
     ['ff_get_design_context', 'ids=1:1', {fileKey: FILE_KEY}, 1500, 99988, '5b86bcfa7635615f'],

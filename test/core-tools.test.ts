@@ -78,19 +78,35 @@ test('ff_get_variable_defs keeps every documented variable and collection field 
         id: 'VC:1', name: 'Colours', key: 'key-vc1', modes: [{modeId: 'm:1', name: 'Light'}, {modeId: 'm:2', name: 'Dark', parentModeId: 'm:p'}], defaultModeId: 'm:1',
         remote: false, hiddenFromPublishing: false, isExtension: true, parentVariableCollectionId: 'VC:0', rootVariableCollectionId: 'VC:0',
         variableOverrides: {'V:0': aliasOverride}, variableIds: ['V:1'],
+        // Only on the docs page (developers.figma.com variables-endpoints), not in the OpenAPI schema: present when isExtension is true.
+        inheritedVariableIds: ['V:0'], localVariableIds: ['V:1'],
     };
     const {text} = await callToolOffline(variablesRoute([documentedVariable], [documentedCollection]), 'ff_get_variable_defs', {fileKey: FILE_KEY});
 
     const collection = JSON.parse(text).collections['VC:1'];
     assert.deepEqual(collection, {
-        name: 'Colours', key: 'key-vc1', defaultModeId: 'm:1', remote: false, hiddenFromPublishing: false,
-        isExtension: true, parentVariableCollectionId: 'VC:0', rootVariableCollectionId: 'VC:0', variableOverrides: {'V:0': aliasOverride},
+        name: 'Colours', key: 'key-vc1', defaultModeId: 'm:1', remote: false, hiddenFromPublishing: false, variableIds: ['V:1'],
+        isExtension: true, parentVariableCollectionId: 'VC:0', rootVariableCollectionId: 'VC:0', inheritedVariableIds: ['V:0'], localVariableIds: ['V:1'], variableOverrides: {'V:0': aliasOverride},
         modes: [{id: 'm:1', name: 'Light'}, {id: 'm:2', name: 'Dark', parentModeId: 'm:p'}],
         variables: [{
             id: 'V:1', name: 'color/bg', resolvedType: 'COLOR', valuesByMode: {'m:1': {r: 1, g: 1, b: 1, a: 1}}, description: 'Page background', scopes: ['ALL_FILLS'],
             key: 'key-v1', remote: false, hiddenFromPublishing: true, codeSyntax: {WEB: 'var(--bg)'}, deletedButReferenced: false,
         }],
     });
+});
+
+// A collection's id lists repeat the ids that `variables` already holds and do not shrink when the budget cuts the variables,
+// so over the budget they are left out: the listed variables plus omittedVariableIds say the same.
+test('ff_get_variable_defs: the id lists of a collection do not push a cut reply over the budget', async () => {
+    const variables = Array.from({length: 4000}, (_, i) => variable(`V:${i}`, 'VC:a'));
+    const big = {...collection('VC:a', 'Big'), variableIds: variables.map((v) => v.id)};
+    const {text} = await callToolOffline(variablesRoute(variables, [big]), 'ff_get_variable_defs', {fileKey: FILE_KEY});
+
+    const out = JSON.parse(text);
+    assert.ok(text.length <= 100000, `response is ${text.length} characters`);
+    assert.equal(out.truncated, true);
+    assert.equal('variableIds' in out.collections['VC:a'], false);
+    assert.equal(out.variableCount + out.omittedVariableIds.length, 4000);
 });
 
 test('a variable whose collection is not in the response is still listed', async () => {

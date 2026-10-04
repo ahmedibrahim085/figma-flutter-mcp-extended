@@ -17,6 +17,18 @@ import {generateFigmaUrl} from '../../utils/figma-url-parser.js';
 /** The 403 message Figma documents for an endpoint the file's plan does not include. */
 const PLAN_LIMITED = 'Limited by Figma plan';
 
+// The fields Figma documents for a local variable collection, its modes and its variables, besides the ones the reply always
+// builds itself. Sources: the OpenAPI schemas LocalVariableCollection and LocalVariable, plus `inheritedVariableIds` and
+// `localVariableIds`, which only the docs page lists (developers.figma.com/docs/rest-api/variables-endpoints/, "Only present
+// when isExtension is true"). Each is passed on when Figma sent it; a field Figma adds later is one more word here.
+const COLLECTION_FIELDS = ['key', 'defaultModeId', 'remote', 'hiddenFromPublishing', 'variableIds', 'isExtension', 'parentVariableCollectionId',
+    'rootVariableCollectionId', 'inheritedVariableIds', 'localVariableIds', 'variableOverrides'];
+// The id lists repeat the ids that `variables` holds and do not shrink when the budget cuts the variables, so a cut reply leaves them out.
+const ID_LIST_FIELDS = ['variableIds', 'inheritedVariableIds', 'localVariableIds'];
+const MODE_FIELDS = ['parentModeId'];
+const VARIABLE_FIELDS = ['key', 'remote', 'hiddenFromPublishing', 'codeSyntax', 'deletedButReferenced'];
+const passOn = (from: any, names: string[]) => Object.fromEntries(names.filter((name) => from[name] !== undefined).map((name) => [name, from[name]]));
+
 // ────────────────────────────────────────────────────────────
 // Helpers
 // ────────────────────────────────────────────────────────────
@@ -308,7 +320,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 // Figma documents three 403 messages for this endpoint (and an invalid or expired token): only "Limited by Figma
                 // plan" is a plan requirement, so only that one gets the plan sentence; the others stay Figma's own words.
                 if (error instanceof FigmaError && error.statusCode === 403 && error.message.includes(PLAN_LIMITED)) {
-                    throw new FigmaError(`${error.message}. ${label('variables', 'planRequired')}`, error.code, 403);
+                    throw new FigmaError(label('variables', 'planLimited', {message: error.message}), error.code, 403);
                 }
                 throw error;
             });
@@ -324,15 +336,8 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 for (const [collId, coll] of Object.entries(collections) as any[]) {
                     byId[collId] = {
                         name: coll.name,
-                        key: coll.key,
-                        defaultModeId: coll.defaultModeId,
-                        remote: coll.remote,
-                        hiddenFromPublishing: coll.hiddenFromPublishing,
-                        isExtension: coll.isExtension,
-                        parentVariableCollectionId: coll.parentVariableCollectionId,
-                        rootVariableCollectionId: coll.rootVariableCollectionId,
-                        variableOverrides: coll.variableOverrides,
-                        modes: coll.modes?.map((m: any) => ({id: m.modeId, name: m.name, parentModeId: m.parentModeId})),
+                        ...passOn(coll, count < entries.length ? COLLECTION_FIELDS.filter((field) => !ID_LIST_FIELDS.includes(field)) : COLLECTION_FIELDS),
+                        modes: coll.modes?.map((m: any) => ({id: m.modeId, name: m.name, ...passOn(m, MODE_FIELDS)})),
                         variables: [] as any[],
                     };
                 }
@@ -345,8 +350,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     };
                     if (v.description) entry.description = v.description;
                     if (v.scopes) entry.scopes = v.scopes;
-                    // The other fields Figma documents for a variable (OpenAPI LocalVariable), kept when Figma sent them.
-                    Object.assign(entry, {key: v.key, remote: v.remote, hiddenFromPublishing: v.hiddenFromPublishing, codeSyntax: v.codeSyntax, deletedButReferenced: v.deletedButReferenced});
+                    Object.assign(entry, passOn(v, VARIABLE_FIELDS));
 
                     (byId[v.variableCollectionId] ??= {variables: []}).variables.push(entry);
                 }

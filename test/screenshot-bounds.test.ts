@@ -11,7 +11,7 @@ import {FILE_KEY} from './helpers/offline-tool.ts';
 
 const fixture = (name: string) => readFileSync(new URL(`./fixtures/${name}`, import.meta.url));
 const PNG = fixture('screenshots/1_34.png');
-const JPG = fixture('screenshot-1_34.jpg');
+const JPG = fixture('screenshots/1_34.jpg');
 const BOX = {x: 1500, y: 100, width: 468, height: 792};
 const NODE = {id: '1:34', name: 'Layout', type: 'FRAME', absoluteBoundingBox: BOX, absoluteRenderBounds: BOX};
 
@@ -113,6 +113,18 @@ test('one node read, one image request: the size costs no Figma read', async () 
     const paths = requests.map((r) => r.path);
     assert.equal(paths.filter((p) => p === `/files/${FILE_KEY}/nodes`).length, 1, paths.join(' '));
     assert.equal(paths.filter((p) => p === `/images/${FILE_KEY}`).length, 1, paths.join(' '));
+});
+
+test('a PNG cut off inside its header keeps the image and gives no size', async () => {
+    const cutOff = PNG.subarray(0, 10);
+    const {result} = await screenshot({}, cutOff);
+
+    assert.notEqual(result.isError, true);
+    assert.deepEqual(result.content[0], {type: 'image', data: cutOff.toString('base64'), mimeType: 'image/png'});
+    const info = second(result);
+    assert.equal('imageWidth' in info, false);
+    assert.equal('imageHeight' in info, false);
+    assert.deepEqual(info.absoluteBoundingBox, BOX);
 });
 
 test('a render Figma reports as failed reads no node', async () => {

@@ -595,11 +595,9 @@ src/tools/figma-core/core-tools.ts	number	4	arg(Math.min)	registerCoreTools	1	K-
 src/tools/figma-core/core-tools.ts	number	403	arg(FigmaError)	registerCoreTools	1	K-API	R7: HTTP status
 src/tools/figma-core/core-tools.ts	number	403	binary(===)	registerCoreTools	1	K-API	hand: HTTP 403
 src/tools/figma-core/core-tools.ts	string	/me	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
-src/tools/figma-core/core-tools.ts	string	Access denied. This file may not have published variables, 	binary(+)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	COMPONENT	array	summariseNode	1	K-API	Figma REST enum value
 src/tools/figma-core/core-tools.ts	string	COMPONENT_SET	array	summariseNode	1	K-API	Figma REST enum value
 src/tools/figma-core/core-tools.ts	string	Extract the design context for a Figma node: layout tree, component structure, 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
-src/tools/figma-core/core-tools.ts	string	FORBIDDEN	arg(FigmaError)	registerCoreTools	1	K-SCHEMA	R6: our error code identifier
 src/tools/figma-core/core-tools.ts	string	FRAME	array	summariseNode	1	K-API	Figma REST enum value
 src/tools/figma-core/core-tools.ts	string	Figma Who Am I	prop(title)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Figma file key	arg(z.string().describe)	registerCoreTools	3	K-SCHEMA	R10: tool/param title or description
@@ -623,6 +621,8 @@ src/tools/figma-core/core-tools.ts	string	Returns the current authenticated user
 src/tools/figma-core/core-tools.ts	string	Target individual top-level frames, not sections or pages.	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	The Variables REST API requires an Enterprise plan (other plans get 403 "Limited by Figma plan").	binary(+)	registerCoreTools	1	K-TEXT	hand: Figma plan fact, verified: research/02-figma-variables-access.md:7,24-26
 src/tools/figma-core/core-tools.ts	string	Figma rate-limits it like any call (Tier 3, the least limited tier), so it can return a 429.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	This tool is exempt from rate limits — always safe to call.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	Use this to discover all top-level frames before extracting individual ones.	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	ff_get_design_context	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
 src/tools/figma-core/core-tools.ts	string	ff_get_design_context error	arg(figmaTool)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	ff_get_metadata	arg(server.registerTool)	registerCoreTools	1	K-SCHEMA	R11: tool name
@@ -638,7 +638,6 @@ src/tools/figma-core/core-tools.ts	string	image/jpeg	ternary	registerCoreTools	1
 src/tools/figma-core/core-tools.ts	string	image/svg+xml	ternary	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	jpg	binary(===)	registerCoreTools	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-core/core-tools.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
-src/tools/figma-core/core-tools.ts	string	or your access token lacks the required scope. 	binary(+)	registerCoreTools	1	K-TEXT	hand: error text, no design fact
 src/tools/figma-core/core-tools.ts	string	png	BindingElement	registerCoreTools	1	K-SCHEMA	hand: tool contract default format png, stated in the tool description core-tools.ts:156; png is a documented Figma format; Figma page states no default (UNVERIFIED what API does without format)
 src/tools/figma-core/core-tools.ts	string	radii, and other values defined in the Variables panel. 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	styles, text content, and design properties. This is the primary tool for understanding 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
@@ -2268,3 +2267,5 @@ src/utils/budget.ts	string		return	budgetNote	1	K-TEXT	report, label, log or err
 src/utils/budget.ts	template	omittedNodeCount: ${…}\n	ternary	budgetNote	1	K-TEXT	report, label, log or error text
 src/utils/budget.ts	template	\ntruncated: true\nomittedNodeIds: ${…}\n${…}	return	budgetNote	1	K-TEXT	report, label, log or error text
 src/utils/budget.ts	string	, 	arg(listed.join)	budgetNote	1	K-TEXT	report, label, log or error text
+src/tools/figma-core/core-tools.ts	string	Limited by Figma plan	var(PLAN_LIMITED)	PLAN_LIMITED	1	K-API	the 403 message Figma documents for a plan-gated endpoint (developers.figma.com variables-endpoints)
+src/tools/figma-core/core-tools.ts	template	${…}. ${…}	arg(FigmaError)	registerCoreTools	1	K-TEXT	developer-facing join of Figma's message and the labels-file plan sentence

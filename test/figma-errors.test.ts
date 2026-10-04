@@ -24,13 +24,25 @@ const analyzeComponent = (response: FakeResponse) =>
 
 const sent = (requests: RecordedRequest[]) => requests.map((r) => ({path: r.path, query: r.query}));
 
-test('403 on variables is a tool error that names the Enterprise plan', async () => {
+// Figma documents the 403 of the Variables endpoints: "API is not available. Possible error messages are Limited by Figma plan,
+// Incorrect account type, or Invalid scope. This could also indicate the developer / OAuth token is invalid or expired"
+// (https://developers.figma.com/docs/rest-api/variables-endpoints/). Only the first is a plan requirement.
+test('403 "Limited by Figma plan" on variables is Figma\'s message plus the plan Figma documents', async () => {
     const {text, isError, requests} = await variableDefs(PLAN_LIMITED);
 
     assert.equal(isError, true);
-    assert.match(text, /The Variables REST API requires an Enterprise plan \(other plans get 403 "Limited by Figma plan"\)\./);
+    assert.equal(text, 'ff_get_variable_defs error: Figma 403: Limited by Figma plan. The Variables REST API is available only to full members of Enterprise orgs.');
     assert.deepEqual(sent(requests), [{path: VARIABLES_PATH, query: {}}]);
 });
+
+for (const message of ['Invalid token', 'Invalid scope', 'Incorrect account type']) {
+    test(`403 "${message}" on variables is Figma's own message and never a plan requirement`, async () => {
+        const {text, isError} = await variableDefs({status: 403, body: {status: 403, err: message}});
+
+        assert.equal(isError, true);
+        assert.equal(text, `ff_get_variable_defs error: Figma 403: ${message}`);
+    });
+}
 
 test('429 on variables is a tool error that shows the wait, plan tier and limit type', async () => {
     const {text, isError} = await variableDefs(rateLimited(354850));

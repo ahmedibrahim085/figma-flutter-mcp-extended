@@ -14,6 +14,9 @@ import {BUDGET_META, capIds, countNodes, renderWithinBudget} from '../../utils/b
 import {label} from '../../utils/labels.js';
 import {generateFigmaUrl} from '../../utils/figma-url-parser.js';
 
+/** The 403 message Figma documents for an endpoint the file's plan does not include. */
+const PLAN_LIMITED = 'Limited by Figma plan';
+
 // ────────────────────────────────────────────────────────────
 // Helpers
 // ────────────────────────────────────────────────────────────
@@ -302,15 +305,10 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
         },
         figmaTool('ff_get_variable_defs error', async ({fileKey}) => {
             const data = await figma.get<any>(`/files/${fileKey}/variables/local`).catch((error) => {
-                // 403 often means the file doesn't have variables or access is restricted
-                if (error instanceof FigmaError && error.statusCode === 403) {
-                    throw new FigmaError(
-                        'Access denied. This file may not have published variables, ' +
-                        'or your access token lacks the required scope. ' +
-                        'The Variables REST API requires an Enterprise plan (other plans get 403 "Limited by Figma plan").',
-                        'FORBIDDEN',
-                        403,
-                    );
+                // Figma documents three 403 messages for this endpoint (and an invalid or expired token): only "Limited by Figma
+                // plan" is a plan requirement, so only that one gets the plan sentence; the others stay Figma's own words.
+                if (error instanceof FigmaError && error.statusCode === 403 && error.message.includes(PLAN_LIMITED)) {
+                    throw new FigmaError(`${error.message}. ${label('variables', 'planRequired')}`, error.code, 403);
                 }
                 throw error;
             });
@@ -326,7 +324,15 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                 for (const [collId, coll] of Object.entries(collections) as any[]) {
                     byId[collId] = {
                         name: coll.name,
-                        modes: coll.modes?.map((m: any) => ({id: m.modeId, name: m.name})),
+                        key: coll.key,
+                        defaultModeId: coll.defaultModeId,
+                        remote: coll.remote,
+                        hiddenFromPublishing: coll.hiddenFromPublishing,
+                        isExtension: coll.isExtension,
+                        parentVariableCollectionId: coll.parentVariableCollectionId,
+                        rootVariableCollectionId: coll.rootVariableCollectionId,
+                        variableOverrides: coll.variableOverrides,
+                        modes: coll.modes?.map((m: any) => ({id: m.modeId, name: m.name, parentModeId: m.parentModeId})),
                         variables: [] as any[],
                     };
                 }
@@ -339,6 +345,8 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
                     };
                     if (v.description) entry.description = v.description;
                     if (v.scopes) entry.scopes = v.scopes;
+                    // The other fields Figma documents for a variable (OpenAPI LocalVariable), kept when Figma sent them.
+                    Object.assign(entry, {key: v.key, remote: v.remote, hiddenFromPublishing: v.hiddenFromPublishing, codeSyntax: v.codeSyntax, deletedButReferenced: v.deletedButReferenced});
 
                     (byId[v.variableCollectionId] ??= {variables: []}).variables.push(entry);
                 }

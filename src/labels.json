@@ -13,5 +13,8 @@
   },
   "budget": {
     "cutNote": "A reply over the size limit keeps the first nodes in document order and sets truncated: true; omittedNodeIds lists the ones left out, and when that list is itself too long it is cut off and omittedNodeCount (omittedVariableCount for variables) gives the true number left out."
+  },
+  "variables": {
+    "planRequired": "The Variables REST API is available only to full members of Enterprise orgs."
   }
 }

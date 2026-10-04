@@ -598,7 +598,6 @@ src/tools/figma-core/core-tools.ts	string	/me	arg(figma.get)	registerCoreTools	1
 src/tools/figma-core/core-tools.ts	string	Access denied. This file may not have published variables, 	binary(+)	registerCoreTools	1	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	string	COMPONENT	array	summariseNode	1	K-API	Figma REST enum value
 src/tools/figma-core/core-tools.ts	string	COMPONENT_SET	array	summariseNode	1	K-API	Figma REST enum value
-src/tools/figma-core/core-tools.ts	string	Capture a PNG/JPG/SVG screenshot of a specific Figma node. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Extract the design context for a Figma node: layout tree, component structure, 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	FORBIDDEN	arg(FigmaError)	registerCoreTools	1	K-SCHEMA	R6: our error code identifier
 src/tools/figma-core/core-tools.ts	string	FRAME	array	summariseNode	1	K-API	Figma REST enum value
@@ -612,7 +611,6 @@ src/tools/figma-core/core-tools.ts	string	Get Figma Node Screenshot	prop(title)	
 src/tools/figma-core/core-tools.ts	string	Get Figma Variable Definitions	prop(title)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Get the node tree structure of a Figma file or a specific node. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	How deep into the node tree to traverse; omit for all levels. 	binary(+)	registerCoreTools	2	K-TEXT	report, label, log or error text
-src/tools/figma-core/core-tools.ts	string	Image format: png, jpg, svg, or pdf (default: png)	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Figma use_absolute_bounds (default: false): use the full dimensions of the node 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	regardless of whether or not it is cropped or the space around it is empty. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Use this to export text nodes without cropping.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
@@ -624,7 +622,6 @@ src/tools/figma-core/core-tools.ts	string	Prefer this over separate ff_get_scree
 src/tools/figma-core/core-tools.ts	string	Read the variables of a Figma file: colors, spacing, typography, 	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	Returns page/frame hierarchy with IDs, names, types, and bounding boxes. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Returns the current authenticated user. Use this to verify the Figma MCP is working. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
-src/tools/figma-core/core-tools.ts	string	Returns the image as a base64-encoded image content block or a URL. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Target individual top-level frames, not sections or pages.	binary(+)	registerCoreTools	1	K-TEXT	report, label, log or error text
 src/tools/figma-core/core-tools.ts	string	The Variables REST API requires an Enterprise plan (other plans get 403 "Limited by Figma plan").	binary(+)	registerCoreTools	1	K-TEXT	hand: Figma plan fact, verified: research/02-figma-variables-access.md:7,24-26
 src/tools/figma-core/core-tools.ts	string	Figma rate-limits it like any call (Tier 3, the least limited tier), so it can return a 429.	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
@@ -655,11 +652,9 @@ src/tools/figma-core/core-tools.ts	string	📋 Registered core Figma tools: ff_g
 src/tools/figma-core/core-tools.ts	template	/files/${…}	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
 src/tools/figma-core/core-tools.ts	template	/files/${…}/nodes	arg(figma.get)	registerCoreTools	2	K-API	R14: Figma REST endpoint path
 src/tools/figma-core/core-tools.ts	template	/files/${…}/variables/local	arg(figma.get)	registerCoreTools	1	K-API	R14: Figma REST endpoint path
-src/tools/figma-core/core-tools.ts	template	No image returned for node ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
 src/tools/figma-core/core-tools.ts	template	Node not found: ${…}	arg(FigmaNotFoundError)	registerCoreTools	2	K-TEXT	R8: error message text
 src/tools/figma-core/core-tools.ts	template	Scale factor 0.01-4 (default: ${…}). Higher = more detail.	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/figma-core/core-tools.ts	template	Screenshot URL (fetch failed): ${…}	prop(text)	registerCoreTools	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
-src/tools/figma-core/core-tools.ts	template	image/${…}	ternary	registerCoreTools	1	K-API	R15: MIME type
 src/tools/figma-tool.ts	string	, 	arg([...wait, ...error.details].join)	describeFailure	1	K-API	R13: HTTP/MCP/JSON-RPC/Node/Figma protocol token, typeof tag or delimiter
 src/tools/figma-tool.ts	string	text	prop(type)	figmaTool	1	K-API	rule: MCP content type
 src/tools/figma-tool.ts	template	 (${…})	binary(&&)	describeFailure	1	K-TEXT	R17: report/label/message text with no design fact (formatting of Figma-sourced values)
@@ -2112,7 +2107,6 @@ src/services/figma.ts	template	/files/${…}/nodes?ids=${…}	arg(this.cachedReq
 src/services/figma.ts	template	/files/${…}/nodes?ids=${…}	arg(this.cachedRequest)	getNodeWithStyles	1	K-API	Figma REST path, query or image format token
 src/services/figma.ts	number	0	binary(===)	getImageBytes	2	K-CONV	hash and entry naming for the cache; not a design fact
 src/services/figma.ts	string	image	arg(entryName)	entry	1	K-CONV	hash and entry naming for the cache; not a design fact
-src/tools/figma-core/core-tools.ts	type-string	format	LiteralType	registerCoreTools	1	K-API	Figma image format or base64 encoding token
 src/extractors/flutter/style-library.ts	string	number	binary(===)	borderRadius	1	K-API	JS typeof result
 src/extractors/flutter/style-library.ts	number	0	binary(>)	borderRadius	3	K-CONV	radius > 0 = rounded
 src/extractors/flutter/style-library.ts	template	BorderRadius.circular(${…})	ternary	borderRadius	1	K-DART	emitted Dart code
@@ -2256,3 +2250,15 @@ src/services/figma-snapshot.ts	string	string	binary(===)	entryMaps	3	K-API	typeo
 src/services/figma-snapshot.ts	string	StyleId	arg(key.endsWith)	entryMaps	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
 src/services/figma-snapshot.ts	string	styles	binary(===)	entryMaps	1	K-API	Figma REST field, query key or path (OpenAPI GetFileNodesResponse, GetFile); protocol token
 src/services/figma-snapshot.ts	string	object	binary(===)	entryMaps	1	K-API	typeof tag
+src/tools/figma-core/core-tools.ts	string	Capture a PNG/JPG/SVG/PDF screenshot of a specific Figma node. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	Returns the image as a base64-encoded image content block (a PDF as an embedded resource) or a URL. 	binary(+)	registerCoreTools	1	K-API	MCP content type or media type (spec 2025-11-25, tools)
+src/tools/figma-core/core-tools.ts	string	png	array-arg(z\n                    .enum)	registerCoreTools	1	K-API	Figma /images format enum (OpenAPI GetImages)
+src/tools/figma-core/core-tools.ts	string	jpg	array-arg(z\n                    .enum)	registerCoreTools	1	K-API	Figma /images format enum (OpenAPI GetImages)
+src/tools/figma-core/core-tools.ts	string	svg	array-arg(z\n                    .enum)	registerCoreTools	1	K-API	Figma /images format enum (OpenAPI GetImages)
+src/tools/figma-core/core-tools.ts	string	pdf	array-arg(z\n                    .enum)	registerCoreTools	1	K-API	Figma /images format enum (OpenAPI GetImages)
+src/tools/figma-core/core-tools.ts	string	Image format (default: png)	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	pdf	binary(===)	registerCoreTools	1	K-API	Figma /images format enum (OpenAPI GetImages)
+src/tools/figma-core/core-tools.ts	template	${…}/design/${…}?node-id=${…}	var(uri)	registerCoreTools	1	K-API	Figma web URL of a node, the uri of an embedded resource
+src/tools/figma-core/core-tools.ts	string	resource	AsExpression	registerCoreTools	1	K-API	MCP content type or media type (spec 2025-11-25, tools)
+src/tools/figma-core/core-tools.ts	string	application/pdf	prop(mimeType)	registerCoreTools	1	K-API	MCP content type or media type (spec 2025-11-25, tools)
+src/tools/figma-core/core-tools.ts	string	image/png	ternary	registerCoreTools	1	K-API	MCP content type or media type (spec 2025-11-25, tools)

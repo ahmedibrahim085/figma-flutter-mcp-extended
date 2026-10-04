@@ -11,6 +11,7 @@ import {figmaTool} from '../figma-tool.js';
 import {Logger} from '../../utils/logger.js';
 import defaults from '../../defaults.json' with { type: 'json' };
 import {BUDGET_META, countNodes, renderWithinBudget} from '../../utils/budget.js';
+import {label} from '../../utils/labels.js';
 
 // ────────────────────────────────────────────────────────────
 // Helpers
@@ -143,21 +144,22 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     );
 
     // ── ff_get_screenshot ────────────────────────────────────
+    // @ts-ignore TS2589: Known TypeScript limitation with complex Zod schemas in registerTool generics
     server.registerTool(
         'ff_get_screenshot',
         {
             title: 'Get Figma Node Screenshot',
             description:
-                'Capture a PNG/JPG/SVG screenshot of a specific Figma node. ' +
-                'Returns the image as a base64-encoded image content block or a URL. ' +
+                'Capture a PNG/JPG/SVG/PDF screenshot of a specific Figma node. ' +
+                'Returns the image as a base64-encoded image content block (a PDF as an embedded resource) or a URL. ' +
                 'Target individual top-level frames, not sections or pages.',
             inputSchema: {
                 fileKey: z.string().describe('Figma file key'),
                 nodeId: z.string().describe('Node ID to screenshot (e.g. "12:3458")'),
                 format: z
-                    .string()
+                    .enum(['png', 'jpg', 'svg', 'pdf'])
                     .optional()
-                    .describe('Image format: png, jpg, svg, or pdf (default: png)'),
+                    .describe('Image format (default: png)'),
                 scale: z
                     .number()
                     .optional()
@@ -174,13 +176,14 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
         },
         figmaTool('ff_get_screenshot error', async ({fileKey, nodeId, format = 'png', scale = defaults.screenshotScale, useAbsoluteBounds = false}) => {
             const image = (await figma.getImageBytes(fileKey, [nodeId], {
-                format: format as ImageOptions['format'],
+                format,
                 scale: Math.min(Math.max(scale, 0.01), 4),
                 // Only when true: the cache entry of a call without it keeps the key it had before the argument existed.
                 ...(useAbsoluteBounds ? {useAbsoluteBounds: true} : {}),
             }))[nodeId];
             if (!image) {
-                return {content: [{type: 'text' as const, text: `No image returned for node ${nodeId}`}]};
+                // Figma documents a null render as a failed render, an API failure and so a tool error (decision 48).
+                return {isError: true, content: [{type: 'text' as const, text: label('screenshot', 'renderFailed', {nodeId})}]};
             }
             if (image instanceof ImageDownloadError) {
                 if (image.status === undefined) throw image;
@@ -193,7 +196,12 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
             }
 
             const base64 = image.toString('base64');
-            const mimeType = format === 'jpg' ? 'image/jpeg' : format === 'svg' ? 'image/svg+xml' : `image/${format}`;
+            if (format === 'pdf') {
+                // application/pdf is no image: the MCP content types for it are an embedded resource (spec 2025-11-25, tools).
+                const uri = `${defaults.figmaWebUrl}/design/${fileKey}?node-id=${encodeURIComponent(nodeId)}`;
+                return {content: [{type: 'resource' as const, resource: {uri, mimeType: 'application/pdf', blob: base64}}]};
+            }
+            const mimeType = format === 'jpg' ? 'image/jpeg' : format === 'svg' ? 'image/svg+xml' : 'image/png';
 
             return {
                 content: [

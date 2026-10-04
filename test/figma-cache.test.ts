@@ -21,6 +21,8 @@ const nodeRoutes = (meta: object): FakeRoutes => ({
 });
 const cacheEnv = () => ({FIGMA_CACHE: 'on', FIGMA_SNAPSHOT: 'off', FIGMA_CACHE_DIR: mkdtempSync(join(tmpdir(), 'figma-cache-'))});
 const paths = (requests: Array<{path: string}>) => requests.map((request) => request.path);
+/** The image requests only: ff_get_screenshot also reads its node for the boxes (S8), which is not what the screenshot cache tests are about. */
+const imagePaths = (requests: Array<{path: string}>) => paths(requests).filter((path) => path.startsWith('/images/') || path.startsWith('/render/'));
 
 test('a second identical call asks /meta only; a changed last_touched_at alone refetches', async () => {
     const env = cacheEnv();
@@ -115,8 +117,9 @@ test('image bytes are cached, not the image URL', async () => {
     const [first] = await callToolsOffline(routes, [call], env);
     const [second] = await callToolsOffline(routes, [call], env);
 
-    assert.deepEqual(paths(first.requests), [META, `/images/${FILE_KEY}`, '/render/1']);
-    assert.deepEqual(paths(second.requests), [META]);
+    assert.deepEqual(imagePaths(first.requests), [`/images/${FILE_KEY}`, '/render/1']);
+    assert.deepEqual(imagePaths(second.requests), []);
+    assert.ok(paths(second.requests).includes(META), 'the cached entry is still checked against the file version');
     assert.equal(second.isError, false);
 });
 
@@ -152,13 +155,13 @@ test('a screenshot with useAbsoluteBounds and one without do not share a cache e
     const [fullSecond] = await callToolsOffline(routes, [full], env);
     const [plainSecond] = await callToolsOffline(routes, [plain], env);
 
-    assert.deepEqual(paths(plainFirst.requests), [META, `/images/${FILE_KEY}`, '/render/cropped']);
+    assert.deepEqual(imagePaths(plainFirst.requests), [`/images/${FILE_KEY}`, '/render/cropped']);
     // The flag must miss the plain call's entry and fetch its own render.
-    assert.deepEqual(paths(fullFirst.requests), [META, `/images/${FILE_KEY}`, '/render/full']);
-    assert.deepEqual(fullFirst.requests[1].query.use_absolute_bounds, 'true');
+    assert.deepEqual(imagePaths(fullFirst.requests), [`/images/${FILE_KEY}`, '/render/full']);
+    assert.deepEqual(fullFirst.requests.find((request) => request.path === `/images/${FILE_KEY}`)!.query.use_absolute_bounds, 'true');
     // Each is then served from its own entry.
-    assert.deepEqual(paths(fullSecond.requests), [META]);
-    assert.deepEqual(paths(plainSecond.requests), [META]);
+    assert.deepEqual(imagePaths(fullSecond.requests), []);
+    assert.deepEqual(imagePaths(plainSecond.requests), []);
 });
 
 test('ff_get_design_context reads the entry ff_get_metadata cached: both ask Figma for the same node query', async () => {

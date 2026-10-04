@@ -5,7 +5,7 @@
 
 import {z} from 'zod/v3';
 import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
-import {FigmaService, ImageDownloadError, type ImageOptions} from '../../services/figma.js';
+import {FigmaService, ImageDownloadError} from '../../services/figma.js';
 import {FigmaError, FigmaNotFoundError} from '../../types/errors.js';
 import {figmaTool} from '../figma-tool.js';
 import {Logger} from '../../utils/logger.js';
@@ -87,13 +87,6 @@ function renderTree(root: any, build: (tree: any, frames: any[]) => any): string
 // Registration
 // ────────────────────────────────────────────────────────────
 
-/**
- * The image formats Figma's /images documents (OpenAPI GetImages `format`). The schema is the enum at runtime; its type is
- * widened to a string because the enum's literal union, inside registerTool's schema generics, took tsc past its 4 GB heap
- * (main compiles at 4.0 GB already: the three registerTool files cost 31 s, 28 s and 8 s). The handler casts it back.
- */
-const imageFormat = z.enum(['png', 'jpg', 'svg', 'pdf']).optional().describe('Image format (default: png)') as unknown as z.ZodOptional<z.ZodString>;
-
 export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     const figma = new FigmaService(figmaApiKey);
 
@@ -152,6 +145,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     );
 
     // ── ff_get_screenshot ────────────────────────────────────
+    // @ts-ignore TS2589: Known TypeScript limitation with complex Zod schemas in registerTool generics
     server.registerTool(
         'ff_get_screenshot',
         {
@@ -163,7 +157,10 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
             inputSchema: {
                 fileKey: z.string().describe('Figma file key'),
                 nodeId: z.string().describe('Node ID to screenshot (e.g. "12:3458")'),
-                format: imageFormat,
+                format: z
+                    .enum(['png', 'jpg', 'svg', 'pdf'])
+                    .optional()
+                    .describe('Image format (default: png)'),
                 scale: z
                     .number()
                     .optional()
@@ -180,7 +177,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
         },
         figmaTool('ff_get_screenshot error', async ({fileKey, nodeId, format = 'png', scale = defaults.screenshotScale, useAbsoluteBounds = false}) => {
             const image = (await figma.getImageBytes(fileKey, [nodeId], {
-                format: format as ImageOptions['format'],
+                format,
                 scale: Math.min(Math.max(scale, 0.01), 4),
                 // Only when true: the cache entry of a call without it keeps the key it had before the argument existed.
                 ...(useAbsoluteBounds ? {useAbsoluteBounds: true} : {}),

@@ -2252,13 +2252,12 @@ src/services/figma-snapshot.ts	string	styles	binary(===)	entryMaps	1	K-API	Figma
 src/services/figma-snapshot.ts	string	object	binary(===)	entryMaps	1	K-API	typeof tag
 src/tools/figma-core/core-tools.ts	string	Capture a PNG/JPG/SVG/PDF screenshot of a specific Figma node. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	Returns the image as a base64-encoded image content block (a PDF as an embedded resource) or a URL. 	binary(+)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
+src/tools/figma-core/core-tools.ts	string	png	array-arg(z\n                    .enum)	registerCoreTools	1	K-API	Figma /images format enum (OpenAPI GetImages)
+src/tools/figma-core/core-tools.ts	string	jpg	array-arg(z\n                    .enum)	registerCoreTools	1	K-API	Figma /images format enum (OpenAPI GetImages)
+src/tools/figma-core/core-tools.ts	string	svg	array-arg(z\n                    .enum)	registerCoreTools	1	K-API	Figma /images format enum (OpenAPI GetImages)
+src/tools/figma-core/core-tools.ts	string	pdf	array-arg(z\n                    .enum)	registerCoreTools	1	K-API	Figma /images format enum (OpenAPI GetImages)
+src/tools/figma-core/core-tools.ts	string	Image format (default: png)	arg(optional()\n                    .describe)	registerCoreTools	1	K-SCHEMA	R10: tool/param title or description
 src/tools/figma-core/core-tools.ts	string	pdf	binary(===)	registerCoreTools	1	K-API	Figma /images format enum (OpenAPI GetImages)
 src/tools/figma-core/core-tools.ts	string	resource	AsExpression	registerCoreTools	1	K-API	MCP content type or media type (spec 2025-11-25, tools)
 src/tools/figma-core/core-tools.ts	string	application/pdf	prop(mimeType)	registerCoreTools	1	K-API	MCP content type or media type (spec 2025-11-25, tools)
 src/tools/figma-core/core-tools.ts	string	image/png	ternary	registerCoreTools	1	K-API	MCP content type or media type (spec 2025-11-25, tools)
-src/tools/figma-core/core-tools.ts	string	png	array-arg(z.enum)	imageFormat	1	K-API	Figma /images format enum (OpenAPI GetImages)
-src/tools/figma-core/core-tools.ts	string	jpg	array-arg(z.enum)	imageFormat	1	K-API	Figma /images format enum (OpenAPI GetImages)
-src/tools/figma-core/core-tools.ts	string	svg	array-arg(z.enum)	imageFormat	1	K-API	Figma /images format enum (OpenAPI GetImages)
-src/tools/figma-core/core-tools.ts	string	pdf	array-arg(z.enum)	imageFormat	1	K-API	Figma /images format enum (OpenAPI GetImages)
-src/tools/figma-core/core-tools.ts	string	Image format (default: png)	arg(jpg', 'svg', 'pdf']).optional().describe)	imageFormat	1	K-SCHEMA	R10: tool/param title or description
-src/tools/figma-core/core-tools.ts	type-string	format	LiteralType	registerCoreTools	1	K-SCHEMA	type-level literal

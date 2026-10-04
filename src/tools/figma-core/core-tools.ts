@@ -5,13 +5,14 @@
 
 import {z} from 'zod/v3';
 import type {McpServer} from '@modelcontextprotocol/sdk/server/mcp.js';
-import {FigmaService, ImageDownloadError, type ImageOptions} from '../../services/figma.js';
+import {FigmaService, ImageDownloadError} from '../../services/figma.js';
 import {FigmaError, FigmaNotFoundError} from '../../types/errors.js';
 import {figmaTool} from '../figma-tool.js';
 import {Logger} from '../../utils/logger.js';
 import defaults from '../../defaults.json' with { type: 'json' };
 import {BUDGET_META, countNodes, renderWithinBudget} from '../../utils/budget.js';
 import {label} from '../../utils/labels.js';
+import {generateFigmaUrl} from '../../utils/figma-url-parser.js';
 
 // ────────────────────────────────────────────────────────────
 // Helpers
@@ -198,7 +199,7 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
             const base64 = image.toString('base64');
             if (format === 'pdf') {
                 // application/pdf is no image: the MCP content types for it are an embedded resource (spec 2025-11-25, tools).
-                const uri = `${defaults.figmaWebUrl}/design/${fileKey}?node-id=${encodeURIComponent(nodeId)}`;
+                const uri = generateFigmaUrl(fileKey, nodeId);
                 return {content: [{type: 'resource' as const, resource: {uri, mimeType: 'application/pdf', blob: base64}}]};
             }
             const mimeType = format === 'jpg' ? 'image/jpeg' : format === 'svg' ? 'image/svg+xml' : 'image/png';

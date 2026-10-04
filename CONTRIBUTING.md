@@ -104,6 +104,10 @@ src/
 - **Temp projects.** Tests that write files (asset export) create their own temp Flutter project and remove it when the test ends.
 - **Pinned defects.** `test/characterization.test.ts` (hand-built nodes) and `test/real-fixtures.test.ts` (real Figma fixtures) assert today's known-wrong output. Each test name says `pins current behaviour, slice N replaces this`. A change that fixes one of these defects rewrites that test to assert the correct output in the same commit; never delete a pin to make the suite pass.
 
+### Report text (`src/labels.json`)
+
+The text a migrated tool prints (report sentences, error messages, labels) is in `src/labels.json`, grouped by tool, with `{name}` placeholders. Code reads it with `label('group', 'key', {name: value})` from `src/utils/labels.ts`; a key the file lacks is a build error, and a placeholder with no value throws. `tools/labels-migrated.json` lists the source files whose text has moved: the literal baseline refuses a `K-TEXT` row for those files, so text cannot drift back into code. To migrate a group: move its text, delete its baseline rows, add the file to the list, and pin the reply text in a test first (see `test/labels.test.ts`). Tool descriptions and parameter text are not in the file yet.
+
 ### Defaults (`src/defaults.json`)
 
 Environment facts live in `src/defaults.json`, not in code: the HTTP port, the install command shown in the start-up hint, the Figma web URL, the retry policy, the Material 3 breakpoint steps (width and height lower bounds), the default device pixel ratios for PNG export, and the folder and file names the tools write (assets, theme, typography, golden tests). Change a value there to change the behaviour; no code edit is needed. The `lib/` and `test/` folders themselves are not in it: the Dart package layout fixes them, so the folder names in the file are relative to them (`themeSubdir` and `constantsSubdir` under `lib/`, `goldenTestSubdir` under `test/`). The CLI flags and environment variables (`--port`, `HTTP_PORT`, `FIGMA_API_BASE_URL`, `FIGMA_API_KEY`) still override what they override.

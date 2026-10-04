@@ -1655,25 +1655,19 @@ src/tools/flutter/screens/screen-tool.ts	template	Screen with node ID "${…}" n
 src/tools/flutter/screens/screen-tool.ts	template	\nAsset Export Warning: ${…}\n	binary(=)	registerScreenTools	1	K-TEXT	bulk: report/log text with no design fact (screen-tool.ts:109)
 src/tools/flutter/testing/golden-test-tool.ts	regex	/([a-z0-9])([A-Z])/g	arg(name\n        .replace)	toSnakeCase	1	K-SCHEMA	rule: identifier/filename sanitising regex
 src/tools/flutter/testing/golden-test-tool.ts	string	$1_$2	arg(name\n        .replace)	toSnakeCase	1	K-SCHEMA	hand: snake_case file name formatting
-src/tools/flutter/testing/golden-test-tool.ts	string	Error generating golden file test	arg(figmaTool)	registerGoldenTestTools	1	K-TEXT	R8: error message text
 src/tools/flutter/testing/golden-test-tool.ts	string	Generate Golden File Test	prop(title)	registerGoldenTestTools	1	K-SCHEMA	tool or parameter name, title or description
-src/tools/flutter/testing/golden-test-tool.ts	string	Generate a golden file test for a Flutter widget (testWidgets + 	binary(+)	registerGoldenTestTools	1	K-TEXT	report, label, log or error text
+src/tools/flutter/testing/golden-test-tool.ts	string	Generate a golden file test for a Flutter widget (testWidgets + 	binary(+)	registerGoldenTestTools	1	K-SCHEMA	tool description, shown to the client; not report text
 src/tools/flutter/testing/golden-test-tool.ts	string	Import path relative to lib/, e.g. 'widgets/continue_button.dart'	arg(z.string().describe)	registerGoldenTestTools	1	K-SCHEMA	rule: tool name / zod schema / description
 src/tools/flutter/testing/golden-test-tool.ts	string	Name of the Flutter widget class to test (e.g. ContinueButton)	arg(z.string().describe)	registerGoldenTestTools	1	K-SCHEMA	rule: tool name / zod schema / description
-src/tools/flutter/testing/golden-test-tool.ts	string	`flutter test` on later runs to check against it.	binary(+)	registerGoldenTestTools	1	K-DART	rule: Dart code template in a generator
+src/tools/flutter/testing/golden-test-tool.ts	string	`flutter test` on later runs to check against it.	binary(+)	registerGoldenTestTools	1	K-SCHEMA	tool description, shown to the client; not report text
 src/tools/flutter/testing/golden-test-tool.ts	string	generate_golden_file_test	arg(server.registerTool)	registerGoldenTestTools	1	K-SCHEMA	tool or parameter name, title or description
 src/tools/flutter/testing/golden-test-tool.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
-src/tools/flutter/testing/golden-test-tool.ts	string	matchesGoldenFile). Does not render, compare, or run anything itself — 	binary(+)	registerGoldenTestTools	1	K-TEXT	report, label, log or error text
-src/tools/flutter/testing/golden-test-tool.ts	string	run `flutter test --update-goldens` once to create the reference image, then 	binary(+)	registerGoldenTestTools	1	K-DART	rule: Dart code template in a generator
+src/tools/flutter/testing/golden-test-tool.ts	string	matchesGoldenFile). Does not render, compare, or run anything itself — 	binary(+)	registerGoldenTestTools	1	K-SCHEMA	tool description, shown to the client; not report text
+src/tools/flutter/testing/golden-test-tool.ts	string	run `flutter test --update-goldens` once to create the reference image, then 	binary(+)	registerGoldenTestTools	1	K-SCHEMA	tool description, shown to the client; not report text
 src/tools/flutter/testing/golden-test-tool.ts	string	text	prop(type)	registerGoldenTestTools	3	K-API	rule: MCP content type
-src/tools/flutter/testing/golden-test-tool.ts	template	${…}${…}	arg(join)	registerGoldenTestTools	1	K-TEXT	report, label, log or error text
-src/tools/flutter/testing/golden-test-tool.ts	template	${…}, then `flutter test` on later runs to check against it.	binary(+)	registerGoldenTestTools	1	K-DART	rule: Dart code template in a generator
+src/tools/flutter/testing/golden-test-tool.ts	template	${…}${…}	arg(join)	registerGoldenTestTools	1	K-API	file name composition: widget file name plus suffix
 src/tools/flutter/testing/golden-test-tool.ts	template	${…}/${…}.png	var(goldenFilePath)	registerGoldenTestTools	1	K-API	file path or request key composition
-src/tools/flutter/testing/golden-test-tool.ts	template	Golden file test written to ${…}\n\n	binary(+)	registerGoldenTestTools	1	K-TEXT	report, label, log or error text
-src/tools/flutter/testing/golden-test-tool.ts	template	Run `flutter test --update-goldens` once to create the reference image at 	binary(+)	registerGoldenTestTools	1	K-DART	rule: Dart code template in a generator
-src/tools/flutter/testing/golden-test-tool.ts	template	This only sets up the test structure — it does not render or compare anything.\n	binary(+)	registerGoldenTestTools	1	K-DART	rule: Dart code template in a generator
 src/tools/flutter/testing/golden-test-tool.ts	template	import 'package:flutter/material.dart';\nimport 'package:flutter_test/flutter_test.dart';\nimport 'package:${…}/${…}';\n\nvoid main() {\n  testWidgets('${…} gol	var(content)	registerGoldenTestTools	1	K-DART	rule: Dart code template in a generator
-src/tools/flutter/testing/golden-test-tool.ts	template	pubspec.yaml in ${…} has no name: line, so the widget import cannot be written. Nothing was written.	prop(text)	registerGoldenTestTools	1	K-TEXT	report, label, log or error text
 src/tools/flutter/theme/colors/theme-generator.ts	string		arg(    ${role}: AppColors.${role},\n`).join)	generateColorScheme	1	K-TEXT	report, label, log or error text
 src/tools/flutter/theme/colors/theme-generator.ts	string		ternary	generateColorScheme	1	K-TEXT	report, label, log or error text
 src/tools/flutter/theme/colors/theme-generator.ts	string		ternary	generateThemeDataContent	2	K-TEXT	report, label, log or error text
@@ -2182,7 +2176,6 @@ src/utils/project-conventions.ts	string	pubspec.yaml	arg(join)	detectProjectName
 src/utils/project-conventions.ts	string	pubspec.yaml	arg(join)	hasPubspec	1	K-API	Flutter project file name
 src/utils/project-conventions.ts	string	test	arg(join)	detectGoldenTestDir	1	K-API	hand: test/ Dart package layout
 src/utils/project-conventions.ts	string	utf-8	arg(readFile)	detectProjectName	1	K-API	hand: file encoding
-src/utils/project-conventions.ts	template	No pubspec.yaml in ${…}. Run this in a Flutter project (flutter create), or pass projectPath. Nothing was requested or written.	return	missingPubspecMessage	1	K-TEXT	report, label, log or error text
 src/utils/retry.ts	number	1	binary(-)	withRetry	1	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
 src/utils/retry.ts	number	1	var(attempt)	withRetry	1	K-CONV	R4: 0/1/2 index, emptiness, increment or arity check
 src/utils/retry.ts	number	1000	binary(*)	withRetry	1	K-CONV	hand: seconds to ms
@@ -2257,7 +2250,6 @@ src/server.ts	string	POST	arg(res.status(405).set)	methodNotAllowed	1	K-API	HTTP
 src/server.ts	string	2.0	prop(jsonrpc)	methodNotAllowed	1	K-API	JSON-RPC version
 src/server.ts	number	-32000	prop(code)	methodNotAllowed	1	K-API	JSON-RPC error code
 src/server.ts	string	Method not allowed.	prop(message)	methodNotAllowed	1	K-TEXT	report, label, log or error text
-src/utils/project-conventions.ts	string	projectPath is required over HTTP: the server's working folder is not the client's project. Pass the Flutter project's path on the machine that runs this server	arg(Error)	resolveProjectPath	1	K-TEXT	report, label, log or error text
 src/utils/project-conventions.ts	string	Path to Flutter project (stdio: defaults to the current directory; HTTP: required)	var(PROJECT_PATH_DESCRIPTION)	PROJECT_PATH_DESCRIPTION	1	K-SCHEMA	rule: tool name / zod schema / description
 src/services/figma-cache.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
 src/services/figma-cache.ts	string	off	binary(===)	figmaCacheDir	1	K-API	cache folder: env var value or OS cache folder convention (env-paths, XDG)
@@ -2400,3 +2392,7 @@ src/tools/flutter/components/component-tool.ts	string	─	PropertyAccessExpressi
 src/tools/flutter/components/component-tool.ts	number	30	arg('─'.repeat)	variantSection	1	K-TEXT	rule: separator width in report text
 src/utils/budget.ts	string	anthropic/maxResultSizeChars	object-key	BUDGET_META	1	K-API	Claude Code tool metadata key (S1 code.claude.com MCP output limits)
 src/server.ts	template	To report a problem with this server, open an issue at ${…}/new/choose. Say which tool you called and with what arguments (Figma file and node ids redacted), wh	prop(instructions)	createServer	1	K-TEXT	server instructions text sent to MCP clients; the URL itself is read from defaults.json
+src/utils/labels.ts	string	json	AssertEntry	(module)	1	K-API	file extension or encoding name
+src/utils/labels.ts	template	No label ${…}.${…} in src/labels.json	arg(Error)	label	1	K-TEXT	developer error: names the label a call asked for and the file lacks
+src/utils/labels.ts	regex	/\{(\w+)\}/g	arg(text.replace)	label	1	K-SCHEMA	the {name} placeholder syntax of src/labels.json
+src/utils/labels.ts	template	Label ${…}.${…} needs a value for {${…}}	arg(Error)	label	1	K-TEXT	developer error: names the placeholder a call gave no value

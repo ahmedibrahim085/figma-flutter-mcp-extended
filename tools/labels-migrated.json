@@ -1,0 +1,6 @@
+{
+  "files": [
+    "src/tools/flutter/testing/golden-test-tool.ts",
+    "src/utils/project-conventions.ts"
+  ]
+}

@@ -6,6 +6,7 @@ import {join} from "path";
 import {mkdir, writeFile} from "fs/promises";
 import {detectProjectName, detectGoldenTestDir, hasPubspec, missingPubspecMessage, resolveProjectPath, PROJECT_PATH_DESCRIPTION} from "../../../utils/project-conventions.js";
 import defaults from '../../../defaults.json' with { type: 'json' };
+import {label} from '../../../utils/labels.js';
 
 function toSnakeCase(name: string): string {
     return name
@@ -29,7 +30,7 @@ export function registerGoldenTestTools(server: McpServer, _figmaApiKey: string)
                 projectPath: z.string().optional().describe(PROJECT_PATH_DESCRIPTION)
             }
         },
-        figmaTool('Error generating golden file test', async ({widgetName, widgetImportPath, projectPath: givenPath}) => {
+        figmaTool(label('goldenTest', 'error'), async ({widgetName, widgetImportPath, projectPath: givenPath}) => {
             const projectPath = resolveProjectPath(givenPath);
             if (!hasPubspec(projectPath)) {
                 return {isError: true, content: [{type: "text", text: missingPubspecMessage(projectPath)}]};
@@ -37,7 +38,7 @@ export function registerGoldenTestTools(server: McpServer, _figmaApiKey: string)
             // A missing pubspec.yaml is reported above, so only a pubspec without `name:` reaches this message.
             const projectName = await detectProjectName(projectPath);
             if (!projectName) {
-                return {isError: true, content: [{type: "text", text: `pubspec.yaml in ${projectPath} has no name: line, so the widget import cannot be written. Nothing was written.`}]};
+                return {isError: true, content: [{type: "text", text: label('goldenTest', 'noProjectName', {projectPath})}]};
             }
             const testDir = await detectGoldenTestDir(projectPath);
             await mkdir(testDir, {recursive: true});
@@ -73,11 +74,7 @@ await expectLater(
             return {
                 content: [{
                     type: "text",
-                    text:
-                        `Golden file test written to ${testFilePath}\n\n` +
-                        `This only sets up the test structure — it does not render or compare anything.\n` +
-                        `Run \`flutter test --update-goldens\` once to create the reference image at ` +
-                        `${goldenFilePath}, then \`flutter test\` on later runs to check against it.`
+                    text: label('goldenTest', 'written', {path: testFilePath, goldenPath: goldenFilePath})
                 }]
             };
         })

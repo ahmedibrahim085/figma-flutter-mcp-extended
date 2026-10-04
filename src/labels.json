@@ -1,0 +1,11 @@
+{
+  "goldenTest": {
+    "error": "Error generating golden file test",
+    "written": "Golden file test written to {path}\n\nThis only sets up the test structure — it does not render or compare anything.\nRun `flutter test --update-goldens` once to create the reference image at {goldenPath}, then `flutter test` on later runs to check against it.",
+    "noProjectName": "pubspec.yaml in {projectPath} has no name: line, so the widget import cannot be written. Nothing was written."
+  },
+  "project": {
+    "noPubspec": "No pubspec.yaml in {projectPath}. Run this in a Flutter project (flutter create), or pass projectPath. Nothing was requested or written.",
+    "pathRequiredOverHttp": "projectPath is required over HTTP: the server's working folder is not the client's project. Pass the Flutter project's path on the machine that runs this server. Nothing was requested or written."
+  }
+}

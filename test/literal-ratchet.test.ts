@@ -125,3 +125,31 @@ test('every baseline line has an allowed class and a sane count; a fact class na
         if (klass.startsWith('F-')) assert.match(reason, /ticket \d+|B3\.\d+|decision \d+/, `fact row without an owner: ${line}`);
     }
 });
+
+// ── a group moved to src/labels.json keeps no report text in code ───────────
+
+test('a K-TEXT baseline row for a file migrated to the labels file fails the check', () => {
+    const row = ['src/tools/x.ts', 'string', 'Hello there', 'var(GREETING)', 'GREETING', '1', 'K-TEXT', 'report text'].join('\t');
+    withFixture("export const GREETING = 'Hello there';\n", [row], (repo) => {
+        writeFileSync(join(repo, 'tools', 'labels-migrated.json'), JSON.stringify({files: ['src/tools/x.ts']}));
+        const result = check(repo);
+        assert.equal(result.status, 1, result.stderr);
+        assert.match(result.stderr, /src\/tools\/x\.ts/);
+        assert.match(result.stderr, /src\/labels\.json/);
+    });
+});
+
+test('the real baseline holds no K-TEXT row for a file listed in tools/labels-migrated.json', () => {
+    const migrated: string[] = JSON.parse(readFileSync(join(ROOT, 'tools', 'labels-migrated.json'), 'utf-8')).files;
+    const rows = readFileSync(BASELINE, 'utf-8').split('\n').filter(Boolean).map((line) => line.split('\t'));
+
+    assert.ok(migrated.length > 0);
+    assert.deepEqual(rows.filter((cells) => cells[6] === 'K-TEXT' && migrated.includes(cells[0])), []);
+});
+
+test('the group and key of a label() call are references to src/labels.json, not literals', () => {
+    withFixture("declare function label(group: string, key: string): string;\nexport const text = label('goldenTest', 'written');\n", [], (repo) => {
+        const result = check(repo);
+        assert.equal(result.status, 0, result.stderr);
+    });
+});

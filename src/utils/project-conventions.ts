@@ -3,6 +3,7 @@ import {existsSync} from 'fs';
 import {readFile, readdir} from 'fs/promises';
 import {join} from 'path';
 import defaults from '../defaults.json' with { type: 'json' };
+import {label} from './labels.js';
 
 /** The Dart package name in pubspec.yaml, needed to build `package:<name>/...` imports; undefined when the file or its `name:` is missing. */
 export async function detectProjectName(projectPath: string): Promise<string | undefined> {
@@ -16,7 +17,7 @@ export async function detectProjectName(projectPath: string): Promise<string | u
 
 /** Why a tool that edits a Flutter project stops: there is no pubspec.yaml to build on, and none is invented. */
 export function missingPubspecMessage(projectPath: string): string {
-    return `No pubspec.yaml in ${projectPath}. Run this in a Flutter project (flutter create), or pass projectPath. Nothing was requested or written.`;
+    return label('project', 'noPubspec', {projectPath});
 }
 
 /** The `projectPath` argument text of every tool that writes files; it matches resolveProjectPath. */
@@ -33,7 +34,7 @@ export function configureProjectPath(isHttpMode: boolean): void {
 export function resolveProjectPath(projectPath: string | undefined): string {
     if (projectPath !== undefined) return projectPath;
     if (overHttp) {
-        throw new Error("projectPath is required over HTTP: the server's working folder is not the client's project. Pass the Flutter project's path on the machine that runs this server. Nothing was requested or written.");
+        throw new Error(label('project', 'pathRequiredOverHttp'));
     }
     return process.cwd();
 }

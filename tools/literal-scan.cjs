@@ -78,7 +78,10 @@ for (const file of files) {
     (function visit(node) {
         const p = node.parent;
         const isModuleSpec = p && (ts.isImportDeclaration(p) || ts.isExportDeclaration(p)) && p.moduleSpecifier === node;
-        if (!isModuleSpec) {
+        // The group and key of label('group', 'key') name an entry of src/labels.json. They are references, not facts, and
+        // the compiler checks them against the file's keys, so a typo is a build error rather than a missing label.
+        const isLabelKey = p && ts.isCallExpression(p) && ts.isIdentifier(p.expression) && p.expression.text === 'label' && ts.isStringLiteral(node);
+        if (!isModuleSpec && !isLabelKey) {
             if (ts.isNumericLiteral(node) || ts.isBigIntLiteral(node)) {
                 const neg = ts.isPrefixUnaryExpression(p) && p.operator === ts.SyntaxKind.MinusToken;
                 emit(node, inType(node) ? 'type-number' : 'number', (neg ? '-' : '') + node.text);
@@ -117,6 +120,16 @@ if (!checking) {
         const missing = [klass?.trim() ? '' : 'no class', reason?.trim() ? '' : 'no reason'].filter(Boolean);
         if (missing.length > 0) {
             problems.push(`tools/literal-baseline.tsv: ${key}\n  has ${missing.join(' and ')}. Every baseline row needs its class and the reason the literal may stay.\n  ${line}`);
+        }
+    }
+    // A file whose report text moved to src/labels.json may not get its text back in code under a K-TEXT row.
+    const migratedFile = path.join(repo, 'tools', 'labels-migrated.json');
+    const migrated = fs.existsSync(migratedFile) ? JSON.parse(fs.readFileSync(migratedFile, 'utf8')).files : [];
+    for (const [key, {line}] of allowed) {
+        const cells = line.split('\t');
+        if (cells[6] === 'K-TEXT' && migrated.includes(cells[0])) {
+            problems.push(`tools/literal-baseline.tsv: ${key}\n  is a K-TEXT row for ${cells[0]}, which is listed in tools/labels-migrated.json: its report text lives in src/labels.json.\n` +
+                `  Move the text to src/labels.json (read it with label() from src/utils/labels.ts) and delete this line.\n  ${line}`);
         }
     }
     for (const {line, cells} of rows) {

@@ -72,9 +72,10 @@ test('the golden-test replies are the labels file text with the placeholders fil
     assert.equal(text, expected);
 });
 
-test('label fills every placeholder, and a missing value or an unknown key throws instead of printing {name}', () => {
+test('label fills every placeholder; a missing value, an unused value or an unknown key throws instead of printing {name}', () => {
     assert.equal(label('project', 'noPubspec', {projectPath: '/x'}),
         'No pubspec.yaml in /x. Run this in a Flutter project (flutter create), or pass projectPath. Nothing was requested or written.');
     assert.throws(() => label('project', 'noPubspec', {}), /projectPath/);
     assert.throws(() => label('project', 'noSuchKey' as never), /noSuchKey/);
+    assert.throws(() => label('project', 'noPubspec', {projectPath: '/x', unused: 'y'}), /unused/);
 });

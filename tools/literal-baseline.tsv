@@ -2396,3 +2396,6 @@ src/utils/labels.ts	string	json	AssertEntry	(module)	1	K-API	file extension or e
 src/utils/labels.ts	template	No label ${…}.${…} in src/labels.json	arg(Error)	label	1	K-TEXT	developer error: names the label a call asked for and the file lacks
 src/utils/labels.ts	regex	/\{(\w+)\}/g	arg(text.replace)	label	1	K-SCHEMA	the {name} placeholder syntax of src/labels.json
 src/utils/labels.ts	template	Label ${…}.${…} needs a value for {${…}}	arg(Error)	label	1	K-TEXT	developer error: names the placeholder a call gave no value
+src/utils/labels.ts	number	0	binary(>)	label	1	K-CONV	rule: 0/1/-1/2 identity, index, count, halving or Alignment -1..1 math
+src/utils/labels.ts	template	Label ${…}.${…} got a value for ${…} that its text does not use	arg(Error)	label	1	K-TEXT	developer error: names the value a call gave that the label text does not use
+src/utils/labels.ts	string	, 	arg(unused.join)	label	1	K-TEXT	separator in a developer error list

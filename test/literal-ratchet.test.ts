@@ -147,9 +147,17 @@ test('the real baseline holds no K-TEXT row for a file listed in tools/labels-mi
     assert.deepEqual(rows.filter((cells) => cells[6] === 'K-TEXT' && migrated.includes(cells[0])), []);
 });
 
-test('the group and key of a label() call are references to src/labels.json, not literals', () => {
-    withFixture("declare function label(group: string, key: string): string;\nexport const text = label('goldenTest', 'written');\n", [], (repo) => {
+test('the group and key of a call to the label imported from utils/labels are references, not literals', () => {
+    withFixture("import {label} from '../utils/labels.js';\nexport const text = label('goldenTest', 'written');\n", [], (repo) => {
         const result = check(repo);
         assert.equal(result.status, 0, result.stderr);
+    });
+});
+
+test('a local function called label is not exempt: its text argument is still a literal', () => {
+    withFixture("function label(text: string) { return text; }\nexport const x = label('Some text');\n", [], (repo) => {
+        const result = check(repo);
+        assert.equal(result.status, 1, result.stderr);
+        assert.match(result.stderr, /string Some text/);
     });
 });

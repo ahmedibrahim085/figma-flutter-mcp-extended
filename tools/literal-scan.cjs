@@ -71,6 +71,13 @@ const rows = [];
 for (const file of files) {
     const src = ts.createSourceFile(file, fs.readFileSync(file, 'utf8'), ts.ScriptTarget.Latest, true);
     const rel = path.relative(repo, file);
+    // The names under which this file imports label() from src/utils/labels: only calls to those are exempt, so another
+    // function that happens to be called label() keeps its text arguments counted.
+    const labelNames = new Set();
+    for (const statement of src.statements) {
+        const named = ts.isImportDeclaration(statement) && /(^|\/)labels\.js$/.test(statement.moduleSpecifier.text) && statement.importClause?.namedBindings;
+        if (named && ts.isNamedImports(named)) for (const item of named.elements) if ((item.propertyName ?? item.name).text === 'label') labelNames.add(item.name.text);
+    }
     const emit = (node, kind, text) => {
         const line = src.getLineAndCharacterOfPosition(node.getStart()).line + 1;
         rows.push({line, cells: [rel, kind, clean(text), clean(context(node)), clean(fnName(node))]});
@@ -78,9 +85,9 @@ for (const file of files) {
     (function visit(node) {
         const p = node.parent;
         const isModuleSpec = p && (ts.isImportDeclaration(p) || ts.isExportDeclaration(p)) && p.moduleSpecifier === node;
-        // The group and key of label('group', 'key') name an entry of src/labels.json. They are references, not facts, and
+        // The group and key of label('group', 'key'), imported from src/utils/labels, name an entry of src/labels.json. They are references, not facts, and
         // the compiler checks them against the file's keys, so a typo is a build error rather than a missing label.
-        const isLabelKey = p && ts.isCallExpression(p) && ts.isIdentifier(p.expression) && p.expression.text === 'label' && ts.isStringLiteral(node);
+        const isLabelKey = p && ts.isCallExpression(p) && ts.isIdentifier(p.expression) && labelNames.has(p.expression.text) && ts.isStringLiteral(node);
         if (!isModuleSpec && !isLabelKey) {
             if (ts.isNumericLiteral(node) || ts.isBigIntLiteral(node)) {
                 const neg = ts.isPrefixUnaryExpression(p) && p.operator === ts.SyntaxKind.MinusToken;

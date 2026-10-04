@@ -145,7 +145,6 @@ export function registerCoreTools(server: McpServer, figmaApiKey: string) {
     );
 
     // ── ff_get_screenshot ────────────────────────────────────
-    // @ts-ignore TS2589: Known TypeScript limitation with complex Zod schemas in registerTool generics
     server.registerTool(
         'ff_get_screenshot',
         {

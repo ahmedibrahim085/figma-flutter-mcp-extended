@@ -13,7 +13,6 @@ export interface ComponentAnalysis {
     children: ComponentChild[];
     nestedComponents: NestedComponentInfo[];
     variants?: ComponentVariant[];
-    skippedNodes?: SkippedNodeInfo[];
 }
 
 /**
@@ -257,12 +256,3 @@ export interface ComponentVariant {
     isDefault: boolean;
 }
 
-/**
- * Information about nodes that were skipped due to limits
- */
-export interface SkippedNodeInfo {
-    nodeId: string;
-    name: string;
-    type: string;
-    reason: 'depth_limit' | 'max_nodes';
-}

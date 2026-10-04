@@ -183,11 +183,9 @@ src/extractors/components/types.ts	type-string	STRETCH	LiteralType	(module)	1	K-
 src/extractors/components/types.ts	type-string	absolute	LiteralType	(module)	1	K-SCHEMA	rule R7: own output enum / key in a TS type
 src/extractors/components/types.ts	type-string	auto-layout	LiteralType	(module)	1	K-SCHEMA	rule R7: own output enum / key in a TS type
 src/extractors/components/types.ts	type-string	capitalize	LiteralType	(module)	1	K-SCHEMA	rule R7: own output enum / key in a TS type
-src/extractors/components/types.ts	type-string	depth_limit	LiteralType	(module)	1	K-SCHEMA	rule R7: own output enum / key in a TS type
 src/extractors/components/types.ts	type-string	frame	LiteralType	(module)	1	K-SCHEMA	rule R7: own output enum / key in a TS type
 src/extractors/components/types.ts	type-string	horizontal	LiteralType	(module)	1	K-SCHEMA	rule R7: own output enum / key in a TS type
 src/extractors/components/types.ts	type-string	lowercase	LiteralType	(module)	1	K-SCHEMA	rule R7: own output enum / key in a TS type
-src/extractors/components/types.ts	type-string	max_nodes	LiteralType	(module)	1	K-SCHEMA	rule R7: own output enum / key in a TS type
 src/extractors/components/types.ts	type-string	mixed	LiteralType	(module)	1	K-SCHEMA	rule R7: own output enum / key in a TS type
 src/extractors/components/types.ts	type-string	sentence	LiteralType	(module)	1	K-SCHEMA	rule R7: own output enum / key in a TS type
 src/extractors/components/types.ts	type-string	uppercase	LiteralType	(module)	1	K-SCHEMA	rule R7: own output enum / key in a TS type

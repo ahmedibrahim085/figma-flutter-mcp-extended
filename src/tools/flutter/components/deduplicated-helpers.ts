@@ -761,8 +761,7 @@ export function addVisualContextToDeduplicatedReport(
         } : undefined
       }
     })),
-    nestedComponents: analysis.nestedComponents,
-    skippedNodes: []
+    nestedComponents: analysis.nestedComponents
   };
 
   return generateComponentVisualContext(componentAnalysis, figmaUrl, nodeId);

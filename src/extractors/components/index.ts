@@ -38,7 +38,6 @@ export type {
     ComponentChild,
     NestedComponentInfo,
     ComponentVariant,
-    SkippedNodeInfo,
     CategorizedEffects,
     DropShadowEffect,
     InnerShadowEffect,

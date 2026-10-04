@@ -36,7 +36,7 @@
   {
     "name": "ff_get_screenshot",
     "title": "Get Figma Node Screenshot",
-    "description": "Capture a PNG/JPG/SVG/PDF screenshot of a specific Figma node. Returns the image as a base64-encoded image content block (a PDF as an embedded resource) or a URL. Target individual top-level frames, not sections or pages.",
+    "description": "Capture a PNG/JPG/SVG/PDF screenshot of a specific Figma node. Returns the image as a base64-encoded image content block (a PDF as an embedded resource) or a URL. Target individual top-level frames, not sections or pages. After the image comes a text block with nodeId, format, scale, useAbsoluteBounds, the node's absoluteBoundingBox and absoluteRenderBounds from Figma, and imageWidth and imageHeight read from the image itself (png and jpg only; an svg or pdf file has no pixel size). boundsError says why the boxes are missing when the node could not be read; the image is still returned.",
     "inputSchema": {
       "type": "object",
       "properties": {

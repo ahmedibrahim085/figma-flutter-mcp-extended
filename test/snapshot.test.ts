@@ -176,8 +176,8 @@ function bigFile(frames: number, perFrame: number) {
 }
 
 for (const tool of ['ff_get_metadata', 'ff_get_design_context']) {
-    test(`${tool}: frames of a 3,000-node file, one of them cut by the budget, equal the /nodes replies`, async () => {
-        const {file, frames} = bigFile(6, 499);
+    test(`${tool}: frames of a 7,200-node file, cut by the budget, equal the /nodes replies`, async () => {
+        const {file, frames} = bigFile(6, 1199);
         const env = cacheEnv();
         const reads = frames.map((frame): Call => [tool, {fileKey: FILE_KEY, nodeId: frame.id}]);
         const snap = await callToolsOffline(fileRoutes(file), reads, env);
@@ -186,7 +186,7 @@ for (const tool of ['ff_get_metadata', 'ff_get_design_context']) {
             const nodes = await viaNodes(reads[i], frame.id, {document: frame, components: {}, componentSets: {}, schemaVersion: 0, styles: {}});
             assert.equal(snap[i].text, nodes.text, frame.id);
         }
-        assert.match(snap[0].text, /"truncated": true/);
+        assert.match(snap[0].text, /"truncated":true/);
         assert.deepEqual(paths(snap[0].requests), [META, FILE]);
         assert.deepEqual(paths(snap[5].requests), [META]);
     });
@@ -280,7 +280,7 @@ test('a 120,000-node file: five nodes, one frame cut by the budget, equal the /n
             assert.equal(snap[i].isError, false, `${tool} ${id}`);
             assert.equal(snap[i].text, nodes[i].text, `${tool} ${id}`);
         }
-        assert.match(snap[4].text, /"truncated": true/, `${tool}: the big frame is cut by the budget`);
+        assert.match(snap[4].text, /"truncated":true/, `${tool}: the big frame is cut by the budget`);
         assert.deepEqual(paths(snap[0].requests), [META, FILE]);
         assert.deepEqual(paths(snap[4].requests), [META]);
     }
